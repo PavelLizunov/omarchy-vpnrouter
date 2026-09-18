@@ -1,0 +1,23 @@
+# Python bytecode and test cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local backend binaries and temporary staging in bin/
+# Tracks the wrapper script but excludes compiled/unpacked binaries
+bin/*
+!bin/vpnrouter-headless
+*.tmp
+*.bak
+
+# Testing and development runtime artifacts
+.test-runtime/
+test-output/
+
+# Editor and OS metadata
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
