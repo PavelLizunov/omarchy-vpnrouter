@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.pavellizunov.vpnrouter",
+  "name": "VPNRouter",
+  "version": "0.1.0",
+  "author": "Pavel Lizunov",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/PavelLizunov/omarchy-vpnrouter",
+  "repository": "https://github.com/PavelLizunov/omarchy-vpnrouter",
+  "description": "Native Linux VPNRouter client for Omarchy Quattro",
+  "keywords": [
+    "vpn",
+    "network",
+    "proxy",
+    "sing-box",
+    "privacy",
+    "security"
+  ],
+  "kinds": [
+    "bar-widget",
+    "service"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml",
+    "service": "Service.qml"
+  },
+  "barWidget": {
+    "displayName": "VPNRouter",
+    "description": "Native Linux VPNRouter client for Omarchy Quattro",
+    "category": "Network",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "mode": "simple",
+      "showLatency": true,
+      "locale": "auto"
+    },
+    "schema": [
+      {
+        "key": "mode",
+        "type": "enum",
+        "label": "Display mode",
+        "options": [
+          "simple",
+          "advanced"
+        ],
+        "defaultValue": "simple"
+      },
+      {
+        "key": "showLatency",
+        "type": "boolean",
+        "label": "Show latency in bar and list",
+        "defaultValue": true
+      },
+      {
+        "key": "locale",
+        "type": "enum",
+        "label": "Language",
+        "options": [
+          "auto",
+          "en",
+          "ru"
+        ],
+        "defaultValue": "auto"
+      }
+    ]
+  }
+}
