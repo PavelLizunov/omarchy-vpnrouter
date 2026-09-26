@@ -1,0 +1,38 @@
+name: test
+
+on:
+  push:
+    branches: [main, v3.0-prep, dsh/**]
+  pull_request:
+    branches: [main, v3.0-prep]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Bash syntax check (setup/wrapper/runner)
+        run: bash -n setup bin/vpnrouter-headless tests/qml-test-runner.sh
+
+      - name: Python packaging tests
+        run: python3 tests/test-packaging.py
+
+      - name: Node UI contract, i18n, model, protocol, and service tests
+        run: |
+          set -euo pipefail
+          for f in tests/test-ui-*.js; do
+            echo "Running $f..."
+            node "$f"
+          done
+
+      # Note: Quickshell runtime is unavailable on standard ubuntu-latest runners.
+      # Offscreen QML load verification (tests/qml-test-runner.sh) is explicitly
+      # not executed in CI; no fake passes are permitted per contributor contract.
