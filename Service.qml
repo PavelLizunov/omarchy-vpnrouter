@@ -263,14 +263,18 @@ Item {
     handleIncomingFrame(frame)
   }
 
+  property bool _shuttingDown: false
+
   function checkHelperAndStart() {
     if (processDisabled) return
     if (backendProc.running) return
+    root._shuttingDown = false
     starting = true
     backendProc.running = true
   }
 
   function tearDown() {
+    root._shuttingDown = true
     retryTimer.stop()
     if (backendProc.running) {
       backendProc.signal(15) // SIGTERM
@@ -324,9 +328,11 @@ Item {
       root._pendingUrgentCount = 0
       root.flushAllQueued("process_exited", "Backend process exited with code " + exitCode)
 
-      // Schedule exponential backoff reconnect
-      if (exitCode !== 0) {
-        root.lastError = "Backend exited (code " + exitCode + "). Retrying…"
+      // Schedule exponential backoff reconnect unless intentionally shut down
+      if (!root._shuttingDown) {
+        root.lastError = exitCode !== 0
+          ? "Backend exited (code " + exitCode + "). Retrying…"
+          : "Backend connection closed unexpectedly. Reconnecting…"
         var nextDelay = Math.min(30000, root.retryBackoffMs * (root.retryCount > 0 ? 1.5 : 1.0))
         root.retryBackoffMs = Math.round(nextDelay)
         root.retryCount++
@@ -402,6 +408,7 @@ Item {
       var errMsg = error ? error.message : "Error"
       root.lastError = errMsg
       if (errCode === "conflict") {
+        root.flushQueuedMutations("Operation cancelled due to configuration revision conflict; refresh required.")
         root.refreshSnapshot()
       }
       root.errorNotice(errCode, errMsg)
