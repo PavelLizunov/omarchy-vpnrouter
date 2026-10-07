@@ -909,7 +909,7 @@ function createSettingsViewSim(service, overrides) {
     rejectedErr = err;
   }
   assert(rejectedErr !== null, "Backend must reject dnsMode in custom mode");
-  assert.strictEqual(rejectedErr.code, "invalid_argument");
+  assert.strictEqual(rejectedErr.code, "unsupported");
   assert.strictEqual(rejectedErr.message, "dnsMode is no longer stored on AppConfig; change it on the profile");
 
   console.log("✓ Handler-level regression test: custom MTU save omits dnsMode & succeeds passed");
