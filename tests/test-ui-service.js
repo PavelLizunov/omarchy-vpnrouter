@@ -748,22 +748,9 @@ function emulateBackendSettingsSet(storage, requestParams) {
     throw { code: "invalid_argument", message: "Missing values parameter" };
   }
 
-  // dnsMode validation (SettingsFeature.cs line 175-204)
+  // Current SettingsFeature rejects dnsMode outright. It is profile data.
   if ("dnsMode" in values) {
-    if (isCustom) {
-      throw { code: "invalid_argument", message: "dnsMode cannot be configured in custom config mode" };
-    }
-    if (values.dnsMode === null) {
-      storage.dnsModeOverride = null;
-    } else if (typeof values.dnsMode === "string") {
-      const raw = values.dnsMode.trim().toLowerCase();
-      if (raw !== "vpn_only" && raw !== "smart" && raw !== "direct") {
-        throw { code: "invalid_argument", message: "dnsMode must be 'vpn_only', 'smart', or 'direct'" };
-      }
-      storage.dnsModeOverride = raw;
-    } else {
-      throw { code: "invalid_argument", message: "dnsMode must be a string or null" };
-    }
+    throw { code: "unsupported", message: "dnsMode is no longer stored on AppConfig; change it on the profile" };
   }
 
   // mtu validation (SettingsFeature.cs line 127-136)
@@ -892,7 +879,7 @@ function createSettingsViewSim(service, overrides) {
 
   // 1. Verify payload properties
   assert.strictEqual(payload.mtu, 1380, "Payload MTU must be updated value");
-  assert.strictEqual(payload.dnsMode, undefined, "Custom mode save MUST omit dnsMode");
+  assert.strictEqual(payload.dnsMode, undefined, "Settings save MUST omit dnsMode");
   assert.strictEqual("dnsMode" in payload, false, "dnsMode property must not exist on payload object");
 
   // 2. Handler-level backend emulation with valid omitted dnsMode
@@ -923,7 +910,7 @@ function createSettingsViewSim(service, overrides) {
   }
   assert(rejectedErr !== null, "Backend must reject dnsMode in custom mode");
   assert.strictEqual(rejectedErr.code, "invalid_argument");
-  assert.strictEqual(rejectedErr.message, "dnsMode cannot be configured in custom config mode");
+  assert.strictEqual(rejectedErr.message, "dnsMode is no longer stored on AppConfig; change it on the profile");
 
   console.log("✓ Handler-level regression test: custom MTU save omits dnsMode & succeeds passed");
 }
@@ -965,31 +952,31 @@ function createSettingsViewSim(service, overrides) {
   // Test 1: vpn_only
   view.selectDnsMode("vpn_only");
   const pVpnOnly = view.buildSettingsPayload();
-  assert.strictEqual(pVpnOnly.dnsMode, "vpn_only");
+  assert.strictEqual("dnsMode" in pVpnOnly, false, "Save must not send vpn_only");
   emulateBackendSettingsSet(backendStorage, { revision: backendStorage.revision, values: pVpnOnly });
-  assert.strictEqual(backendStorage.dnsModeOverride, "vpn_only");
+  assert.strictEqual(backendStorage.dnsModeOverride, null);
 
   // Test 2: smart
   view.selectDnsMode("smart");
   const pSmart = view.buildSettingsPayload();
-  assert.strictEqual(pSmart.dnsMode, "smart");
+  assert.strictEqual("dnsMode" in pSmart, false, "Save must not send smart");
   emulateBackendSettingsSet(backendStorage, { revision: backendStorage.revision, values: pSmart });
-  assert.strictEqual(backendStorage.dnsModeOverride, "smart");
+  assert.strictEqual(backendStorage.dnsModeOverride, null);
 
   // Test 3: direct
   view.selectDnsMode("direct");
   const pDirect = view.buildSettingsPayload();
-  assert.strictEqual(pDirect.dnsMode, "direct");
+  assert.strictEqual("dnsMode" in pDirect, false, "Save must not send direct");
   emulateBackendSettingsSet(backendStorage, { revision: backendStorage.revision, values: pDirect });
-  assert.strictEqual(backendStorage.dnsModeOverride, "direct");
+  assert.strictEqual(backendStorage.dnsModeOverride, null);
 
   // Test 4: nullable reset (profile default)
   view.resetProfileDefault();
   assert.strictEqual(view.dnsModeVal, null, "dnsModeVal must be null after resetProfileDefault");
   const pReset = view.buildSettingsPayload();
-  assert.strictEqual(pReset.dnsMode, null, "Payload dnsMode must be null for profile-default reset");
+  assert.strictEqual("dnsMode" in pReset, false, "Reset must not send dnsMode either");
   emulateBackendSettingsSet(backendStorage, { revision: backendStorage.revision, values: pReset });
-  assert.strictEqual(backendStorage.dnsModeOverride, null, "Backend storage dnsModeOverride must be reset to null");
+  assert.strictEqual(backendStorage.dnsModeOverride, null, "Backend storage stays untouched");
 
   // Test 5: Negative check - invalid enum values rejected by backend handler
   const invalidModes = ["invalid_mode", "", "leak", 123];
@@ -1001,7 +988,7 @@ function createSettingsViewSim(service, overrides) {
       err = e;
     }
     assert(err !== null, "Invalid dnsMode '" + inv + "' must be rejected by backend");
-    assert.strictEqual(err.code, "invalid_argument");
+    assert.strictEqual(err.code, "unsupported");
   }
 
   console.log("✓ Normal mode settings save with enum values and nullable reset passed");
@@ -1296,7 +1283,7 @@ function createSettingsViewSim(service, overrides) {
   const draft = getDraft(svc);
   assert.strictEqual(draft, null, "Profile default must remain selected after refresh");
   const view = createSettingsViewSim(svc, { dnsModeVal: draft });
-  assert.strictEqual(view.buildSettingsPayload().dnsMode, null, "Unrelated save must not turn inherited mode into explicit override");
+  assert.strictEqual("dnsMode" in view.buildSettingsPayload(), false, "Unrelated save must not send dnsMode");
   assert.strictEqual(getDraft({ settingsData: { dnsMode: "smart", dnsModeOverride: "direct" } }), "direct");
   assert.strictEqual(getDraft({ settingsData: { dnsMode: "smart" } }), "smart", "Older backend response remains compatible");
   console.log("Actual QML DNS reset/readback/save and semantics mapping passed");

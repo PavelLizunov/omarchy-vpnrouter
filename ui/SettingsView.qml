@@ -75,9 +75,7 @@ Item {
     // Omit unavailable protection rather than resubmitting an unsupported true
     // value or silently disabling an existing safety preference.
     if (root.hasDnsLockdownCap) payload.dnsLeakLockdown = root.dnsLeakVal
-    if (!root.isCustomMode) {
-      payload.dnsMode = root.dnsModeVal !== undefined ? root.dnsModeVal : null
-    }
+    // dnsMode is profile data on current Core. Sending it makes settings.set fail.
     return payload
   }
 
@@ -217,73 +215,18 @@ Item {
           }
         }
 
-        // DNS Mode
+        // DNS mode is read from the profile. Current Core rejects writing it here.
         Column {
           width: parent.width
           spacing: Style.space(6)
 
-          Row {
-            spacing: Style.space(12)
-
-            Text {
-              width: Style.space(160)
-              text: root.tr("settings.dnsMode")
-              color: root.isCustomMode ? Color.muted : Color.foreground
-              font.family: Style.font.family
-              font.pixelSize: Style.font.bodySmall
-              anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Row {
-              spacing: Style.space(6)
-              opacity: root.isCustomMode ? 0.5 : 1.0
-
-              Repeater {
-                model: ["vpn_only", "smart", "direct"]
-
-                Rectangle {
-                  width: dnsText.implicitWidth + Style.space(16)
-                  height: Style.spacing.controlHeight
-                  radius: Style.cornerRadius
-                  color: (!root.isCustomMode && root.dnsModeVal === modelData) ? Style.selectedFill : (dnsMouse.containsMouse && !root.isCustomMode ? Style.hoverFill : Style.normalFill)
-                  border.color: (!root.isCustomMode && root.dnsModeVal === modelData) ? Color.accent : Style.normalBorderColor
-                  border.width: 1
-
-                  Text {
-                    id: dnsText
-                    anchors.centerIn: parent
-                    text: {
-                      if (modelData === "vpn_only") return root.tr("settings.dnsMode.vpnOnly")
-                      if (modelData === "smart") return root.tr("settings.dnsMode.smart")
-                      if (modelData === "direct") return root.tr("settings.dnsMode.direct")
-                      return modelData.toUpperCase()
-                    }
-                    color: (!root.isCustomMode && root.dnsModeVal === modelData) ? Color.accent : (root.isCustomMode ? Color.muted : Color.foreground)
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                  }
-
-                  MouseArea {
-                    id: dnsMouse
-                    anchors.fill: parent
-                    hoverEnabled: !root.isCustomMode
-                    cursorShape: root.isCustomMode ? Qt.ArrowCursor : Qt.PointingHandCursor
-                    onClicked: {
-                      if (!root.isCustomMode) {
-                        root.dnsModeVal = modelData
-                      }
-                    }
-                  }
-                }
-              }
-
-              Button {
-                visible: !root.isCustomMode && root.dnsModeVal !== null
-                variant: "subtle"
-                text: root.tr("settings.dnsMode.resetDefault")
-                onClicked: root.dnsModeVal = null
-              }
-            }
+          Text {
+            width: parent.width
+            text: root.tr("settings.dnsMode") + ": " + (root.dnsModeVal || root.tr("settings.dnsMode.resetDefault"))
+            color: Color.muted
+            font.family: Style.font.family
+            font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.WordWrap
           }
 
           // Read-only custom DNS note or forced StrictDns / Full tunnel explanation

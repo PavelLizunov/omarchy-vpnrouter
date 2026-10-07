@@ -295,8 +295,7 @@ ShellRoot {
       var payloadNormal = view.buildSettingsPayload()
       verify(payloadNormal !== null, "buildSettingsPayload must return object")
       compare(payloadNormal.mtu, 1420, "Default MTU must be 1420")
-      verify(payloadNormal.dnsMode !== undefined, "Normal payload must include dnsMode")
-      compare(payloadNormal.dnsMode, "vpn_only", "Default dnsMode in normal mode should be vpn_only")
+      verify(!("dnsMode" in payloadNormal), "Settings save must not send dnsMode; it is profile data")
 
       // Switch to custom mode
       serviceItem.configMode = "custom"
