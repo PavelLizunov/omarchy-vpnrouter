@@ -1,0 +1,818 @@
+#!/usr/bin/env bash
+# setup - Packaging and lifecycle manager for Omarchy VPNRouter plugin
+# Manifest ID: io.github.pavellizunov.vpnrouter
+# License: GPL-3.0
+#
+# Invariants & Security Contract:
+# 1. Zero privilege escalation: no root password prompts, no sudo, no NOPASSWD, no root shell.
+# 2. Zero unauthorized downloads: does NOT invent release URLs or fetch arbitrary code.
+#    Installs exclusively from locally supplied built directories (explicit offline local install).
+# 3. Zero implicit activation or restarts: does NOT automatically enable the plugin,
+#    mutate VPN routes, or restart services.
+# 4. Refuses active backend update: does NOT send signals (SIGTERM/SIGKILL) to running processes.
+#    Refuses update if an active backend process is detected.
+# 5. Strict data preservation: user configurations, keys, and profiles in ~/.config/vpnrouter
+#    are strictly preserved during setup, update, and removal.
+# 6. Single payload directory & safe backup-and-rename: Omarchy validator prohibits ANY
+#    symlink in plugin; setup simplifies to a single plugin-relative bin/backend/ payload directory.
+#    Stages in a sibling temporary directory, backs up old dir, and renames new (not a single
+#    atomic swap; rolls back automatically on failure).
+# 7. Fail-closed lock state: unknown or unverifiable session lock states fail closed on live hosts.
+# 8. Post-install manifest & plugin validation: manifest structure and host plugin validation are
+#    strictly enforced AFTER final install; fails and rolls back if host validator rejects.
+# 9. Safe protocol handshake: no arbitrary --version probes or unbounded command substitution;
+#    handshakes ONLY over --stdio --data-dir <fresh private temporary directory>, bounded output
+#    reader and timeout, detecting protocol v1 matching id result without tolerating error.
+
+set -euo pipefail
+
+plugin_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+install_tmp=""
+backup_tmp=""
+install_committed=0
+
+# Ensure clean exit and rollback on trap
+cleanup() {
+  if [[ -n "$install_tmp" && -e "$install_tmp" ]]; then
+    rm -rf "$install_tmp" 2>/dev/null || true
+  fi
+  if [[ -n "$backup_tmp" && -e "$backup_tmp" ]]; then
+    local target_backend_dir="$plugin_dir/bin/backend"
+    if [[ "$install_committed" -eq 0 ]]; then
+      rm -rf "$target_backend_dir" 2>/dev/null || true
+      mv "$backup_tmp" "$target_backend_dir" 2>/dev/null || true
+    else
+      rm -rf "$backup_tmp" 2>/dev/null || true
+    fi
+  fi
+}
+trap cleanup EXIT INT TERM
+
+require_python() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    printf '%s\n' "setup: error: python3 is required for setup operations; aborting." >&2
+    exit 1
+  fi
+}
+
+ensure_shell_unlocked() {
+  if command -v omarchy-shell >/dev/null 2>&1; then
+    local status
+    if ! status="$(timeout 3s omarchy-shell lock status 2>/dev/null)"; then
+      printf '%s\n' "setup: error: failed to query Omarchy session lock status; failing closed." >&2
+      exit 1
+    fi
+    if [[ -z "$status" ]]; then
+      printf '%s\n' "setup: error: empty lock status received from omarchy-shell; failing closed." >&2
+      exit 1
+    fi
+    require_python
+    if ! python3 -c '
+import json, sys
+raw = sys.stdin.read().strip()
+if not raw:
+    sys.exit(1)
+try:
+    data = json.loads(raw)
+except Exception:
+    sys.exit(1)
+if isinstance(data, dict):
+    if data.get("locked") is False and data.get("requested") is False and data.get("secure") is False:
+        sys.exit(0)
+    sys.exit(1)
+if isinstance(data, bool):
+    if data is False:
+        sys.exit(0)
+    sys.exit(1)
+sys.exit(1)
+' <<<"$status" >/dev/null 2>&1; then
+      printf '%s\n' "setup: error: Omarchy session is locked or lock status unverifiable; refusing installation." >&2
+      printf '%s\n' "Unlock the session first." >&2
+      exit 1
+    fi
+  fi
+}
+
+validate_plugin_structure() {
+  local manifest="$plugin_dir/manifest.json"
+  if [[ ! -f "$manifest" || ! -r "$manifest" ]]; then
+    printf '%s\n' "setup: error: manifest.json missing or not readable at $manifest" >&2
+    return 1
+  fi
+
+  require_python
+  if ! python3 -c '
+import json, sys
+with open(sys.argv[1], "r", encoding="utf-8") as f:
+    data = json.load(f)
+assert data.get("id") == "io.github.pavellizunov.vpnrouter", "Unexpected manifest id"
+assert "entryPoints" in data, "Missing entryPoints in manifest"
+assert data.get("entryPoints", {}).get("service") == "Service.qml", "Invalid service entrypoint"
+' "$manifest" 2>/dev/null; then
+    printf '%s\n' "setup: error: manifest.json validation failed." >&2
+    return 1
+  fi
+
+  # Zero symlinks invariant: Omarchy validator strictly prohibits any symlinks in plugin tree
+  local symlink_found
+  symlink_found="$(find "$plugin_dir" -type l 2>/dev/null | head -n 1 || true)"
+  if [[ -n "$symlink_found" ]]; then
+    printf '%s\n' "setup: error: prohibited symlink detected in plugin directory: $symlink_found" >&2
+    return 1
+  fi
+
+  if command -v omarchy >/dev/null 2>&1; then
+    if ! omarchy plugin validate "$plugin_dir"; then
+      printf '%s\n' "setup: error: 'omarchy plugin validate' failed for $plugin_dir." >&2
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
+check_no_active_backend() {
+  local active_pid=""
+  if [[ -d /proc ]]; then
+    for pid_dir in /proc/[0-9]*; do
+      [[ -d "$pid_dir" ]] || continue
+      local pid="${pid_dir##*/}"
+      [[ "$pid" == "$$" || "$pid" == "$PPID" ]] && continue
+
+      local exe=""
+      exe="$(readlink "$pid_dir/exe" 2>/dev/null || true)"
+      if [[ "$exe" == */VPNRouter.Headless || "$exe" == "VPNRouter.Headless" ]]; then
+        active_pid="$pid"
+        break
+      fi
+
+      if [[ -r "$pid_dir/cmdline" ]]; then
+        local args=()
+        while IFS= read -r -d '' arg; do
+          args+=("$arg")
+        done < "$pid_dir/cmdline" 2>/dev/null || true
+
+        if [[ ${#args[@]} -gt 0 ]]; then
+          local a0="${args[0]}"
+          if [[ "$a0" == */VPNRouter.Headless || "$a0" == "VPNRouter.Headless" ]]; then
+            active_pid="$pid"
+            break
+          fi
+          if [[ "$a0" == */dotnet || "$a0" == "dotnet" || "$a0" == */python* || "$a0" == python* ]]; then
+            for arg in "${args[@]:1}"; do
+              if [[ "$arg" == */VPNRouter.Headless || "$arg" == "VPNRouter.Headless" || "$arg" == */VPNRouter.Headless.dll || "$arg" == "VPNRouter.Headless.dll" ]]; then
+                active_pid="$pid"
+                break 2
+              fi
+            done
+          fi
+        fi
+      fi
+    done
+  elif command -v pgrep >/dev/null 2>&1; then
+    while read -r pid; do
+      [[ -z "$pid" ]] && continue
+      [[ "$pid" == "$$" || "$pid" == "$PPID" ]] && continue
+      active_pid="$pid"
+      break
+    done < <(pgrep -f "VPNRouter\.Headless" 2>/dev/null || true)
+  fi
+
+  if [[ -n "$active_pid" ]]; then
+    printf '%s\n' "setup: error: active backend process detected (PID $active_pid); refusing update." >&2
+    printf '%s\n' "Stop the active backend before running setup. Setup will not signal or kill running processes." >&2
+    exit 1
+  fi
+}
+
+validate_backend_executable() {
+  local bin_path="$1"
+  if [[ ! -f "$bin_path" || ! -x "$bin_path" ]]; then
+    printf '%s\n' "setup: error: backend binary is not executable: $bin_path" >&2
+    return 1
+  fi
+
+  require_python
+
+  # Bounded handshake over --stdio --data-dir <fresh private temporary directory>
+  # Avoids setup launching helper on default user configuration.
+  # No arbitrary --version probe/fallback; detects v1 matching id result without tolerating error.
+  local probe_dir
+  probe_dir="$(mktemp -d "$plugin_dir/bin/.probe_tmp.XXXXXX" 2>/dev/null || mktemp -d)"
+
+  local ret=0
+  if ! python3 -c '
+import json, os, selectors, subprocess, sys, time
+
+bin_path = sys.argv[1]
+probe_dir = sys.argv[2]
+req_id = "setup-probe"
+req = json.dumps({"v": 1, "id": req_id, "method": "snapshot", "params": {}}) + "\n"
+req_bytes = req.encode("utf-8")
+
+MAX_FRAME_BYTES = 256 * 1024  # 256 KiB protocol frame max
+TIMEOUT_SECONDS = 3.0
+
+proc = None
+sel = None
+stdout_chunks = []
+total_stdout_bytes = 0
+proc_returncode = None
+timeout_hit = False
+frame_overflow = False
+
+try:
+    proc = subprocess.Popen(
+        [bin_path, "--stdio", "--data-dir", probe_dir],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        bufsize=0
+    )
+except Exception as ex:
+    sys.stderr.write(f"setup: error: failed to launch backend: {ex}\n")
+    sys.exit(1)
+
+try:
+    try:
+        proc.stdin.write(req_bytes)
+        proc.stdin.flush()
+        proc.stdin.close()
+    except (BrokenPipeError, OSError):
+        pass
+
+    os.set_blocking(proc.stdout.fileno(), False)
+    os.set_blocking(proc.stderr.fileno(), False)
+
+    sel = selectors.DefaultSelector()
+    sel.register(proc.stdout, selectors.EVENT_READ, data="stdout")
+    sel.register(proc.stderr, selectors.EVENT_READ, data="stderr")
+
+    deadline = time.monotonic() + TIMEOUT_SECONDS
+    stdout_open = True
+    stderr_open = True
+
+    while stdout_open or stderr_open:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            timeout_hit = True
+            break
+
+        events = sel.select(timeout=max(0.01, min(remaining, 0.5)))
+        for key, _ in events:
+            stream_name = key.data
+            if stream_name == "stdout":
+                chunk = proc.stdout.read(65536)
+                if chunk == b"":
+                    sel.unregister(proc.stdout)
+                    stdout_open = False
+                elif chunk is not None:
+                    # Strict check: max bytes checked BEFORE adding to accumulator
+                    if total_stdout_bytes + len(chunk) > MAX_FRAME_BYTES:
+                        frame_overflow = True
+                        stdout_open = False
+                        break
+                    stdout_chunks.append(chunk)
+                    total_stdout_bytes += len(chunk)
+            elif stream_name == "stderr":
+                chunk = proc.stderr.read(65536)
+                if chunk == b"":
+                    sel.unregister(proc.stderr)
+                    stderr_open = False
+                elif chunk is not None:
+                    # Discard stderr without exposing content or accumulating
+                    pass
+
+        if frame_overflow:
+            break
+        if any(b"\n" in c for c in stdout_chunks):
+            break
+        if proc.poll() is not None:
+            break
+
+finally:
+    # Deterministic cleanup and process wait
+    if sel is not None:
+        sel.close()
+
+    if proc is not None:
+        if proc.poll() is None:
+            if timeout_hit or frame_overflow:
+                try:
+                    proc.kill()
+                    proc.wait(timeout=1.0)
+                except OSError:
+                    pass
+            else:
+                try:
+                    proc.wait(timeout=1.0)
+                except subprocess.TimeoutExpired:
+                    try:
+                        proc.kill()
+                        proc.wait(timeout=1.0)
+                    except (subprocess.TimeoutExpired, OSError):
+                        pass
+        proc_returncode = proc.poll()
+        for s in (proc.stdin, proc.stdout, proc.stderr):
+            if s and not s.closed:
+                try:
+                    s.close()
+                except OSError:
+                    pass
+
+if timeout_hit:
+    sys.stderr.write("setup: error: backend handshake timed out after 3s\n")
+    sys.exit(1)
+
+if frame_overflow:
+    sys.stderr.write("setup: error: backend output exceeded maximum frame limit (256 KiB)\n")
+    sys.exit(1)
+
+if proc_returncode is not None and proc_returncode != 0 and not stdout_chunks:
+    # Discard stderr without exposing content
+    sys.stderr.write(f"setup: error: backend process exited with status {proc_returncode}\n")
+    sys.exit(1)
+
+stdout_bytes = b"".join(stdout_chunks)
+lines = [l.strip() for l in stdout_bytes.decode("utf-8", errors="replace").splitlines() if l.strip()]
+if not lines:
+    sys.stderr.write("setup: error: backend closed connection without returning protocol frame\n")
+    sys.exit(1)
+
+try:
+    frame = json.loads(lines[0])
+except Exception as ex:
+    sys.stderr.write(f"setup: error: malformed JSON response from backend: {ex}\n")
+    sys.exit(1)
+
+if not isinstance(frame, dict):
+    sys.stderr.write("setup: error: protocol frame must be a JSON object\n")
+    sys.exit(1)
+
+# Unknown field rejection: contract allows strictly {"v", "id", "result"} or {"v", "id", "error"}
+frame_keys = set(frame.keys())
+if frame_keys != {"v", "id", "result"} and frame_keys != {"v", "id", "error"}:
+    sys.stderr.write("setup: error: protocol frame structure violates contract (unknown or invalid fields)\n")
+    sys.exit(1)
+
+# Strict v int1 validation: type must be integer, not boolean or float, and value must be 1
+v_val = frame["v"]
+if type(v_val) is not int or isinstance(v_val, bool) or v_val != 1:
+    sys.stderr.write(f"setup: error: protocol version mismatch (expected integer 1, got {type(v_val).__name__} {v_val})\n")
+    sys.exit(1)
+
+# id validation: must be string and match request id
+id_val = frame["id"]
+if not isinstance(id_val, str) or id_val != req_id:
+    sys.stderr.write(f"setup: error: response id mismatch (expected {req_id}, got {id_val})\n")
+    sys.exit(1)
+
+# error validation: setup handshake fails closed on error
+if "error" in frame:
+    err_val = frame["error"]
+    if not isinstance(err_val, dict):
+        sys.stderr.write("setup: error: protocol error must be an object\n")
+        sys.exit(1)
+    code = err_val.get("code")
+    if not isinstance(code, str) or not code:
+        sys.stderr.write("setup: error: protocol error missing valid string code\n")
+        sys.exit(1)
+    sys.stderr.write(f"setup: error: backend returned protocol error: {code}\n")
+    sys.exit(1)
+
+# result validation: must be dict
+if "result" not in frame or not isinstance(frame["result"], dict):
+    sys.stderr.write("setup: error: backend response missing result object\n")
+    sys.exit(1)
+
+sys.exit(0)
+' "$bin_path" "$probe_dir"; then
+    ret=1
+  fi
+
+  rm -rf "$probe_dir" 2>/dev/null || true
+
+  if [[ "$ret" -eq 0 ]]; then
+    printf '%s\n' "  Wire Protocol: v1 (conforms to plans/omarchy-protocol-v1.md)"
+    return 0
+  else
+    return 1
+  fi
+}
+
+check_dependencies() {
+  printf '%s\n' "=== Checking Dependencies ==="
+  local missing=0
+
+  if command -v python3 >/dev/null 2>&1; then
+    printf '%s\n' "  [OK] python3: $(python3 --version 2>/dev/null || echo 'present')"
+  else
+    printf '%s\n' "  [ERROR] python3 not found in PATH (required for setup operations)"
+    missing=$((missing + 1))
+  fi
+
+  if command -v dotnet >/dev/null 2>&1; then
+    printf '%s\n' "  [OK] dotnet: $(dotnet --version 2>/dev/null || echo 'present')"
+  else
+    printf '%s\n' "  [NOTICE] dotnet CLI not found in PATH (required if compiling from source or running framework-dependent backend)"
+  fi
+
+  if command -v ip >/dev/null 2>&1; then
+    printf '%s\n' "  [OK] ip (iproute2): present"
+  else
+    printf '%s\n' "  [WARN] ip (iproute2) not found in PATH"
+    missing=$((missing + 1))
+  fi
+
+  if command -v nft >/dev/null 2>&1; then
+    printf '%s\n' "  [OK] nft (nftables): present (note: firewall killSwitch/DNS lockdown is pending a privileged broker)"
+  else
+    printf '%s\n' "  [NOTICE] nft (nftables) not found (firewall killSwitch/DNS lockdown is pending a privileged broker)"
+  fi
+
+  if [[ -x "$plugin_dir/bin/backend/sing-box" ]]; then
+    printf '%s\n' "  [OK] sing-box: present in plugin payload ($plugin_dir/bin/backend/sing-box)"
+  elif command -v sing-box >/dev/null 2>&1; then
+    printf '%s\n' "  [OK] sing-box: present on PATH ($(command -v sing-box))"
+  else
+    printf '%s\n' "  [NOTICE] sing-box not found in plugin payload or system PATH"
+  fi
+
+  local app_singbox="${XDG_CONFIG_HOME:-$HOME/.config}/vpnrouter/bin/sing-box"
+  if [[ ! -x "$app_singbox" ]]; then
+    printf '%s\n' "  [NOTICE] Deployment gap: upstream VPNRouter.Core resolves sing-box strictly at:"
+    printf '%s\n' "           $app_singbox"
+    printf '%s\n' "           Packaged sing-box resides in $plugin_dir/bin/backend/sing-box."
+    printf '%s\n' "           Until upstream backend supports plugin-relative co-location, copy or link"
+    printf '%s\n' "           sing-box to $app_singbox to enable connection capabilities."
+  fi
+
+  printf '%s\n' "  [NOTICE] Privileged firewall operations (killSwitch, DNS lockdown) are not implemented via Polkit; pending privileged broker"
+
+  return 0
+}
+
+show_status() {
+  printf '%s\n' "=== Omarchy VPNRouter Plugin Status ==="
+  printf '%s\n' "Plugin ID: io.github.pavellizunov.vpnrouter"
+  printf '%s\n' "License: GPL-3.0"
+  printf '%s\n' "Plugin Directory: $plugin_dir"
+
+  local packaged_bin="$plugin_dir/bin/backend/VPNRouter.Headless"
+  local sys_bin="/usr/lib/vpnrouter-headless/VPNRouter.Headless"
+  local active_bin=""
+
+  if [[ -f "$packaged_bin" && -x "$packaged_bin" ]]; then
+    active_bin="$packaged_bin"
+    printf '%s\n' "Backend status: INSTALLED (packaged at $packaged_bin)"
+  elif [[ -f "$sys_bin" && -x "$sys_bin" ]]; then
+    active_bin="$sys_bin"
+    printf '%s\n' "Backend status: INSTALLED (system at $sys_bin)"
+  else
+    printf '%s\n' "Backend status: NOT INSTALLED"
+    printf '%s\n' "Development Status: Upstream VPNRouter.Headless is under active development in"
+    printf '%s\n' "  https://github.com/PavelLizunov/VPNRouter and has not shipped a pre-built binary yet."
+  fi
+
+  if [[ -n "$active_bin" ]]; then
+    printf '%s\n' "=== Backend Protocol Validation ==="
+    validate_backend_executable "$active_bin" || true
+  fi
+
+  check_dependencies
+
+  local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/vpnrouter"
+  printf '%s\n' "=== User Data & Configuration ==="
+  printf '%s\n' "Config Directory: $config_dir"
+  if [[ -d "$config_dir" ]]; then
+    printf '%s\n' "Existing configuration: FOUND (preserved, never deleted by setup)"
+  else
+    printf '%s\n' "Existing configuration: None (will be initialized on first explicit configuration save)"
+  fi
+}
+
+show_development_notice() {
+  cat << 'EOF'
+-------------------------------------------------------------------------------
+Omarchy VPNRouter Plugin (io.github.pavellizunov.vpnrouter)
+Current Development Status Notice:
+
+Upstream backend 'VPNRouter.Headless' is currently in active development
+in the main repository: https://github.com/PavelLizunov/VPNRouter.
+Pre-built binaries have not yet been published to public release feeds.
+
+Security Invariant:
+This setup script NEVER invents unverified download URLs, NEVER executes
+unreviewed remote scripts, and NEVER elevates to root via sudo or NOPASSWD.
+
+To supply and install a locally compiled backend:
+1. Build VPNRouter.Headless in your local VPNRouter checkout:
+   dotnet publish VPNRouter.Headless/VPNRouter.Headless.csproj \
+     -c Release -r linux-x64 --self-contained -o /tmp/vpnrouter-headless-build
+
+2. Run setup pointing to your built directory:
+   ./setup --backend-dir /tmp/vpnrouter-headless-build
+
+To enable the plugin in Omarchy (explicit user action required):
+   omarchy plugin enable io.github.pavellizunov.vpnrouter
+-------------------------------------------------------------------------------
+EOF
+}
+
+remove_backend() {
+  printf '%s\n' "=== Removing Packaged Backend ==="
+  require_python
+  check_no_active_backend
+  ensure_shell_unlocked
+
+  rm -rf "$plugin_dir/bin/backend" 2>/dev/null || true
+  rm -rf "$plugin_dir/bin/versions" 2>/dev/null || true
+  rm -rf "$plugin_dir/bin/current" 2>/dev/null || true
+  rm -f "$plugin_dir/bin/VPNRouter.Headless" 2>/dev/null || true
+  rm -f "$plugin_dir/bin/sing-box" 2>/dev/null || true
+  rm -rf "$plugin_dir/bin"/.vpnrouter-* 2>/dev/null || true
+  rm -rf "$plugin_dir/bin"/.*_backup_* 2>/dev/null || true
+  rm -rf "$plugin_dir/bin"/.*_stage_* 2>/dev/null || true
+  rm -rf "$plugin_dir/bin"/.probe_tmp.* 2>/dev/null || true
+
+  local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/vpnrouter"
+  printf '%s\n' "---------------------------------------------------------------"
+  printf '%s\n' "DATA PRESERVATION ASSURANCE:"
+  printf '%s\n' "User VPN configuration, keys, and profiles in:"
+  printf '%s\n' "  $config_dir"
+  printf '%s\n' "have been strictly PRESERVED and untouched."
+  printf '%s\n' "---------------------------------------------------------------"
+  if ! validate_plugin_structure; then
+    exit 1
+  fi
+}
+
+install_from_backend_dir() {
+  local bdir="$1"
+  if [[ -z "$bdir" ]]; then
+    printf '%s\n' "setup: error: --backend-dir requires path" >&2
+    exit 1
+  fi
+  if [[ ! -d "$bdir" ]]; then
+    printf '%s\n' "setup: error: backend directory '$bdir' does not exist" >&2
+    exit 1
+  fi
+
+  # Python is strictly required and checked before any setup mutations
+  require_python
+
+  local abs_bdir
+  abs_bdir="$(cd -- "$bdir" && pwd -P)"
+
+  local src_bin="$abs_bdir/VPNRouter.Headless"
+  if [[ ! -f "$src_bin" ]]; then
+    printf '%s\n' "setup: error: $src_bin not found in supplied directory '$abs_bdir'" >&2
+    printf '%s\n' "Ensure you publish VPNRouter.Headless first." >&2
+    exit 1
+  fi
+
+  # Refuse update if backend process is currently active (no active update race claims)
+  check_no_active_backend
+
+  # Live host lock check fails closed
+  ensure_shell_unlocked
+
+  # Create sibling staging directory in bin/
+  mkdir -p "$plugin_dir/bin"
+  local stage_dir
+  stage_dir="$(mktemp -d "$plugin_dir/bin/.stage_backend.XXXXXX")"
+  install_tmp="$stage_dir"
+
+  printf '%s\n' "Staging backend build materials from $abs_bdir ..."
+
+  # Published catalogs are runtime inputs, not optional documentation. Keep their
+  # relative layout and read bounded regular files without following symlinks.
+  python3 - "$abs_bdir" "$stage_dir" <<'PY'
+import os, pathlib, stat, sys
+source = pathlib.Path(sys.argv[1]) / "profiles"
+target = pathlib.Path(sys.argv[2]) / "profiles"
+limit = 1024 * 1024
+try:
+    directory_fd = os.open(source, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    try:
+        target.mkdir(mode=0o755)
+        for name in ("default.json", "default-linux.json"):
+            fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, dir_fd=directory_fd)
+            try:
+                info = os.fstat(fd)
+                if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
+                    raise ValueError("catalog must be a regular file at most 1 MiB")
+                with os.fdopen(fd, "rb", closefd=False) as stream:
+                    data = stream.read(limit + 1)
+                if len(data) > limit:
+                    raise ValueError("catalog exceeds 1 MiB")
+            finally:
+                os.close(fd)
+            (target / name).write_bytes(data)
+            (target / name).chmod(0o644)
+    finally:
+        os.close(directory_fd)
+except (OSError, ValueError):
+    sys.stderr.write("setup: error: missing or unsafe published profiles; refusing incomplete payload.\n")
+    sys.exit(1)
+PY
+
+  # Validate and copy build materials with allowlist and no symlinks/traversal
+  local item item_base
+  while IFS= read -r -d '' item; do
+    item_base="$(basename "$item")"
+
+    # Reject symlinks in build materials
+    if [[ -L "$item" ]]; then
+      printf '%s\n' "setup: error: symlink detected in build directory: $item (symlinks forbidden in build materials)" >&2
+      exit 1
+    fi
+
+    # Prohibit trailing dot or leading hyphen in filename
+    if [[ "$item_base" == -* || "$item_base" == *\. ]]; then
+      printf '%s\n' "setup: error: invalid filename in build materials: $item_base (leading hyphen or trailing dot prohibited)" >&2
+      exit 1
+    fi
+
+    if [[ -d "$item" ]]; then
+      continue
+    fi
+
+    if [[ ! -f "$item" ]]; then
+      printf '%s\n' "setup: error: non-regular file in build materials; refusing payload." >&2
+      exit 1
+    fi
+
+    # Allowlist check: copy regular dependencies using '--' delimiter
+    case "$item_base" in
+      VPNRouter.Headless|sing-box)
+        cp -- "$item" "$stage_dir/$item_base"
+        chmod 755 -- "$stage_dir/$item_base"
+        ;;
+      *.so|*.so.*|*.dll|*.json|*.pdb|*.xml|*.dat)
+        cp -- "$item" "$stage_dir/$item_base"
+        chmod 644 -- "$stage_dir/$item_base"
+        ;;
+      *)
+        # Ignore other non-build files (e.g. temporary build logs or hidden files)
+        ;;
+    esac
+  done < <(find "$abs_bdir" -mindepth 1 -maxdepth 1 -print0)
+
+  if [[ ! -f "$stage_dir/VPNRouter.Headless" ]]; then
+    printf '%s\n' "setup: error: failed to stage VPNRouter.Headless executable" >&2
+    exit 1
+  fi
+
+  printf '%s\n' "Validating staged backend ..."
+  if ! validate_backend_executable "$stage_dir/VPNRouter.Headless"; then
+    printf '%s\n' "setup: error: staged backend validation failed; aborting installation." >&2
+    exit 1
+  fi
+
+  # Final guard checks before directory swap
+  check_no_active_backend
+  ensure_shell_unlocked
+
+  local target_backend_dir="$plugin_dir/bin/backend"
+  local backup_dir="$plugin_dir/bin/.backend_backup_$$"
+  local has_backup=0
+
+  # Document: Directory replacement is backup-then-rename, not a single atomic swap; rollback on failure
+  printf '%s\n' "Installing backend payload to $target_backend_dir (backup-and-rename with rollback) ..."
+
+  if [[ -d "$target_backend_dir" ]]; then
+    mv "$target_backend_dir" "$backup_dir"
+    backup_tmp="$backup_dir"
+    has_backup=1
+  fi
+
+  if ! mv "$stage_dir" "$target_backend_dir"; then
+    printf '%s\n' "setup: error: failed to place backend into $target_backend_dir; rolling back." >&2
+    if [[ "$has_backup" -eq 1 ]]; then
+      mv "$backup_dir" "$target_backend_dir" 2>/dev/null || true
+      backup_tmp=""
+    fi
+    exit 1
+  fi
+  install_tmp=""
+
+  # Invoke manifest and plugin validator AFTER final install
+  printf '%s\n' "Validating plugin structure after final install ..."
+  if ! validate_plugin_structure; then
+    printf '%s\n' "setup: error: manifest/plugin validation failed after final install; rolling back." >&2
+    rm -rf "$target_backend_dir" 2>/dev/null || true
+    if [[ "$has_backup" -eq 1 ]]; then
+      mv "$backup_dir" "$target_backend_dir" 2>/dev/null || true
+      backup_tmp=""
+    fi
+    exit 1
+  fi
+
+  # Mark transaction committed: clean up backup directory
+  install_committed=1
+  if [[ "$has_backup" -eq 1 ]]; then
+    rm -rf "$backup_dir" 2>/dev/null || true
+    backup_tmp=""
+  fi
+
+  printf '%s\n' "Installation complete."
+  printf '%s\n' ""
+  printf '%s\n' "Notice: Plugin has NOT been activated automatically."
+  printf '%s\n' "To activate in Omarchy shell, run:"
+  printf '%s\n' "  omarchy plugin enable io.github.pavellizunov.vpnrouter"
+}
+
+show_help() {
+  cat << 'EOF'
+Usage: ./setup [OPTIONS]
+
+Omarchy VPNRouter Plugin packaging and lifecycle management.
+
+Options:
+  --backend-dir, -b <PATH>    Install backend binaries from local build directory
+  --status, -s, --check       Display plugin status, backend detection, and dependencies
+  --remove, -r                Remove packaged backend binaries (preserves user config/data)
+  --help, -h                  Display this help message
+
+Security & Design Invariants:
+  - Python 3 is strictly required before any setup mutations (no weak jq fallback).
+  - No root passwords or sudoers/NOPASSWD modifications.
+  - Privileged firewall route filtering (killSwitch/DNS lockdown) pending privileged broker.
+  - No automatic downloads from the network; offline supplied build directory only.
+  - No implicit activation of plugin or VPN.
+  - Refuses active backend update (no active update race claims; inactive backend required).
+  - Unknown lock state on live host fails closed.
+  - Single payload directory bin/backend/ (zero symlinks permitted in plugin).
+  - Staging rejects symlinks, leading hyphens, and trailing dots in filenames.
+  - Staging in sibling temporary directory; backup-and-rename replacement with rollback.
+  - Manifest validator invoked after final install; fails and rolls back on error.
+  - Handshake only --stdio --data-dir fresh private temporary directory (no production config touch).
+  - Bounded selector reading stdout/stderr with monotonic timeout; max bytes checked before accumulator.
+  - Preserves user configuration in ~/.config/vpnrouter.
+
+Examples:
+  ./setup --backend-dir /path/to/VPNRouter/VPNRouter.Headless/bin/Release/net10.0/linux-x64/publish
+  ./setup --status
+  ./setup --remove
+EOF
+}
+
+# CLI Dispatch
+backend_dir=""
+action=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --backend-dir|-b)
+      [[ $# -lt 2 ]] && { printf '%s\n' "setup: error: --backend-dir requires path" >&2; exit 1; }
+      backend_dir="$2"
+      action="install_dir"
+      shift 2
+      ;;
+    --artifact|-a)
+      printf '%s\n' "setup: error: --artifact is not supported; use explicit offline local directory install (--backend-dir <PATH>)." >&2
+      exit 1
+      ;;
+    --sha256)
+      printf '%s\n' "setup: error: --sha256 is not supported; use explicit offline local directory install (--backend-dir <PATH>)." >&2
+      exit 1
+      ;;
+    --status|-s|--check)
+      action="status"
+      shift
+      ;;
+    --remove|-r)
+      action="remove"
+      shift
+      ;;
+    --help|-h)
+      show_help
+      exit 0
+      ;;
+    *)
+      printf '%s\n' "setup: error: unknown option '$1'" >&2
+      show_help >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ "$action" == "install_dir" ]]; then
+  install_from_backend_dir "$backend_dir"
+elif [[ "$action" == "remove" ]]; then
+  remove_backend
+elif [[ "$action" == "status" ]]; then
+  show_status
+elif [[ -n "$backend_dir" ]]; then
+  install_from_backend_dir "$backend_dir"
+else
+  # Default invocation: if backend is already present, report status; otherwise display development notice and fail safely
+  if [[ -x "$plugin_dir/bin/backend/VPNRouter.Headless" || -x "/usr/lib/vpnrouter-headless/VPNRouter.Headless" ]]; then
+    show_status
+  else
+    show_development_notice
+    check_dependencies
+    exit 1
+  fi
+fi
