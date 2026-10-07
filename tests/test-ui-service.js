@@ -1060,7 +1060,7 @@ function createSettingsViewSim(service, overrides) {
   viewSupported.toggleDnsLeak(false);
   assert.strictEqual(viewSupported.dnsLeakVal, false, "Should toggle to false when capability supported");
 
-  // 4. DNS mode choices disabled in custom mode
+  // 4. DNS mode is shown from the profile and is not a control.
   const svcCustom = createServiceSimulator();
   svcCustom.applySnapshot({
     state: "disconnected",
@@ -1073,26 +1073,17 @@ function createSettingsViewSim(service, overrides) {
   const viewCustom = createSettingsViewSim(svcCustom);
   assert.strictEqual(viewCustom.isCustomMode, true);
   assert.strictEqual(viewCustom.dnsModeVal, "custom");
+  assert.strictEqual("dnsMode" in viewCustom.buildSettingsPayload(), false, "Custom mode still must not send dnsMode");
 
-  // Attempt to select another mode in custom mode
-  viewCustom.selectDnsMode("smart");
-  assert.strictEqual(viewCustom.dnsModeVal, "custom", "DNS mode selection must be ignored in custom mode");
-
-  viewCustom.resetProfileDefault();
-  assert.strictEqual(viewCustom.dnsModeVal, "custom", "Reset to profile default must be ignored in custom mode");
-
-  // 5. Verify QML source bindings for unsupported controls
+  // 5. The old DNS mode buttons are gone. The screen only prints the profile value.
   const settingsQmlPath = path.join(__dirname, "../ui/SettingsView.qml");
   const settingsQml = fs.readFileSync(settingsQmlPath, "utf8");
 
   assert(settingsQml.includes("enabled: root.hasDnsLockdownCap"), "dnsLeak toggle must bind enabled to hasDnsLockdownCap");
   assert(settingsQml.includes('description: !root.hasDnsLockdownCap ? root.tr("settings.dnsLeakUnsupported") : ""'),
     "dnsLeak toggle must show localized unsupported description when disabled");
-  assert(settingsQml.includes("opacity: root.isCustomMode ? 0.5 : 1.0"), "DNS mode choices row must have disabled opacity in custom mode");
-  assert(settingsQml.includes("hoverEnabled: !root.isCustomMode"), "DNS mode mouse areas must disable hover in custom mode");
-  assert(settingsQml.includes("cursorShape: root.isCustomMode ? Qt.ArrowCursor : Qt.PointingHandCursor"),
-    "DNS mode mouse areas must show arrow cursor in custom mode");
-  assert(settingsQml.includes("if (!root.isCustomMode)"), "DNS mode click handler and save payload must check !root.isCustomMode");
+  assert(!settingsQml.includes("selectDnsMode"), "Settings must not keep a DNS mode selector");
+  assert(settingsQml.includes("dnsMode is profile data"), "Settings must say why dnsMode is not sent");
 
   console.log("✓ Unsupported control handling (dnsLeak & custom DNS mode choices) passed");
 }
