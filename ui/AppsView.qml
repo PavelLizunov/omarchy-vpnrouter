@@ -9,6 +9,7 @@ import "../lib/Model.js" as Model
 Item {
   id: root
   property var service: null
+  property var appLibrary: null
   property int i18nRevision: service ? service.i18nRevision : 0
   property string searchQuery: ""
 
@@ -24,6 +25,12 @@ Item {
   readonly property var configuredApps: !service || !service.apps ? [] : (routingAppsMode === "include" ? service.apps.include : service.apps.exclude) || []
   readonly property var runningApps: Model.runningApplications(service ? service.apps : null, searchQuery)
   readonly property bool hasSuggestions: !!(service && service.apps && Array.isArray(service.apps.runningApps))
+
+  function appIconSource(name) {
+    // Match the dock: the shell index also finds icons added after startup.
+    if (root.appLibrary && typeof root.appLibrary.iconSource === "function") return root.appLibrary.iconSource(name)
+    return Quickshell.iconPath(name, true) || Quickshell.iconPath("application-x-executable", true)
+  }
 
   function addApp(name) {
     if (!name || !root.service) return
@@ -159,7 +166,8 @@ Item {
           Image {
             Layout.preferredWidth: Style.space(28)
             Layout.preferredHeight: Style.space(28)
-            source: Quickshell.iconPath(modelData.icon, true) || Quickshell.iconPath("application-x-executable", true)
+            objectName: "vpnAppIcon-" + modelData.name
+            source: root.appIconSource(modelData.icon)
             sourceSize: Qt.size(Style.space(28), Style.space(28))
             fillMode: Image.PreserveAspectFit
           }

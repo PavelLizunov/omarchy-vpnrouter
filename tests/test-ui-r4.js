@@ -14,19 +14,19 @@ const I18n = library('lib/I18n.js');
 I18n.setCatalogs(JSON.parse(read('locales/en.json')), JSON.parse(read('locales/ru.json')));
 const apps = {runningApps: [
   {name: 'helper', displayName: 'Background helper'},
-  {name: 'Firefox', displayName: 'Firefox Browser', desktopId: 'firefox.desktop', icon: 'firefox'},
+  {name: 'firefox', displayName: 'Firefox Browser', desktopId: 'firefox.desktop', icon: 'firefox'},
   {name: 'steam', displayName: 'Steam', hasWindow: true, icon: 'https://invalid/icon'},
-  {name: 'Firefox', displayName: 'Duplicate'},
+  {name: 'firefox', displayName: 'Duplicate'},
   {name: 'systemd', desktopId: 'misclassified.desktop'},
   {name: 'dbus-broker'}, {name: 'pipewire'}, {name: 'kworker/1:1'},
   {name: '../unsafe'}, null
 ]};
 assert.deepStrictEqual(Model.runningApplications({running: ['systemd', 'firefox']}), [], 'Old peers must not expose raw process suggestions');
-assert.deepStrictEqual(Model.runningApplications(apps).map(x => x.name), ['Firefox', 'steam', 'helper']);
-assert.deepStrictEqual(Model.runningApplications(apps, 'browser').map(x => x.name), ['Firefox']);
-assert.deepStrictEqual(Model.runningApplications(apps, 'FIREFOX').map(x => x.name), ['Firefox']);
+assert.deepStrictEqual(Model.runningApplications(apps).map(x => x.name), ['firefox', 'steam', 'helper']);
+assert.deepStrictEqual(Model.runningApplications(apps, 'browser').map(x => x.name), ['firefox']);
+assert.deepStrictEqual(Model.runningApplications(apps, 'FIREFOX').map(x => x.name), ['firefox']);
 assert.strictEqual(Model.runningApplications(apps, 'steam')[0].icon, 'application-x-executable');
-assert.strictEqual(Model.runningApplications(apps, 'Firefox')[0].name, 'Firefox', 'Display search never changes the exact match key');
+assert.strictEqual(Model.runningApplications(apps, 'firefox')[0].name, 'firefox', 'Display search never changes the exact match key');
 assert.strictEqual(Model.runningApplications({runningApps: Array.from({length: 300}, (_, i) => ({name: 'app' + i}))}).length, 200);
 const servers = [{id: 's', name: 'Sub', source: 'subscription', subscriptionId: 'one', removable: false},
   {id: 'u', name: 'Legacy'}, {id: 'm', name: 'Manual', source: 'manual', removable: true}];
@@ -69,13 +69,17 @@ function functions(file, context) {
 }
 const writes = [];
 const root = {service: {setApps: (mode, names) => writes.push({mode, names: [...names]})},
-  configuredApps: ['Firefox'], routingAppsMode: 'include'};
+  configuredApps: ['firefox'], routingAppsMode: 'include'};
 functions('ui/AppsView.qml', {root, I18n, Model});
-root.addApp('Firefox');
+root.addApp('firefox');
 assert.strictEqual(writes.length, 0, 'No duplicate additions');
+root.appLibrary = {iconSource: name => 'shell-icon:' + name};
+assert.strictEqual(root.appIconSource('chromium'), 'shell-icon:chromium', 'Use the host app library when injected');
+root.addApp('CustomCaseApp');
+assert.deepStrictEqual(writes.pop(), {mode: 'include', names: ['firefox', 'CustomCaseApp']}, 'User match names retain exact case');
 root.addApp('steam');
-assert.deepStrictEqual(writes.pop(), {mode: 'include', names: ['Firefox', 'steam']});
-root.removeApp('Firefox');
+assert.deepStrictEqual(writes.pop(), {mode: 'include', names: ['firefox', 'steam']});
+root.removeApp('firefox');
 assert.deepStrictEqual(writes.pop(), {mode: 'include', names: []});
 // Exercise the real navigation function and form behavior using inert callbacks.
 const route = {mode: 'simple', setDisplayMode(value) {this.mode = value;}};

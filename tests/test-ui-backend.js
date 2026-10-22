@@ -141,7 +141,7 @@ const hero = {service: {...snapshot, backendMissing: false}, connected: false, b
 qmlFunctions('ui/HeroCard.qml', {root: hero, I18n, Model});
 assert.strictEqual(hero.availabilityText(), snapshot.unavailableReason);
 hero.service.backendMissing = true;
-assert.match(hero.availabilityText(), /^VPNRouter backend is not installed\n.*vpnrouter-headless/);
+assert.match(hero.availabilityText(), /^VPNRouter service is not installed\n.*vpnrouter-headless/);
 hero.connected = true;
 assert.strictEqual(hero.availabilityText(), '');
 // Execute the real control bindings as JavaScript with both capability values.

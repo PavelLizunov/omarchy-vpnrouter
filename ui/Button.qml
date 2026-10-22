@@ -16,7 +16,8 @@ Item {
   implicitWidth: Math.max(Style.space(72), contentRow.implicitWidth + Style.space(24))
   implicitHeight: Style.spacing.controlHeight
 
-  activeFocusOnTab: true
+  opacity: enabled ? 1 : 0.4
+  activeFocusOnTab: enabled && !busy
   onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
   Accessible.role: Accessible.Button
   Accessible.name: root.text
@@ -35,7 +36,7 @@ Item {
   }
 
   readonly property color bgFill: {
-    if (!root.enabled) return Qt.rgba(0, 0, 0, 0.05)
+    if (!root.enabled) return Style.normalFill
     if (variant === "primary" || variant === "danger") {
       if (pressed) return Style.pressedFill
       if (hot || activeFocus) return Style.hoverFill
@@ -59,6 +60,7 @@ Item {
   }
 
   readonly property color borderColor: {
+    if (!root.enabled) return Style.normalBorderColor
     if (activeFocus) return Style.focusBorderColor
     if (variant === "primary") return Commons.Color.accent
     if (variant === "danger") return Commons.Color.urgent
@@ -97,7 +99,7 @@ Item {
       Text {
         textFormat: Text.PlainText
         visible: root.busy
-        text: "󰦞"
+        text: "\u{f0772}"
         color: root.textColor
         font.family: Style.font.family
         font.pixelSize: Style.font.iconSmall

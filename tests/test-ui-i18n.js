@@ -198,3 +198,10 @@ console.log("ALL I18N TESTS PASSED!\n");
   }
   console.log('✓ Real QML translators resolve across empty UI contexts and follow shell language/overrides');
 }
+
+// Product wording must describe the service, not its implementation layers.
+for (const [key, value] of Object.entries(ruJson)) {
+  assert(!/\b(?:backend|runtime|helper|TUN|legacy|Smart)\b/i.test(value), `${key}: implementation jargon in Russian UI`);
+}
+assert.strictEqual(ruJson['backend.notInstalled'], 'Служба VPNRouter не установлена');
+assert.strictEqual(enJson['backend.notInstalled'], 'VPNRouter service is not installed');

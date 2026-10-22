@@ -1,6 +1,7 @@
 // OFFSCREEN TEST FIXTURE ONLY. Real Service/locales; inert responses, no backend process.
 import QtQuick
 import QtTest
+import Quickshell
 import qs.Commons as Commons
 import ".." as Vpn
 Rectangle {
@@ -10,13 +11,14 @@ Rectangle {
  property string locale: "en"
  property string tab: "servers"
  property string scenario: "empty"
+ property bool missingService: false
  property bool previewReady: false
  property bool runInteractions: false
  property bool scrollBottom: false
  property string appQuery: ""
  property var result: ({})
  property var messages: []
- property var selectedApps: scenario === "populated" ? ["Firefox"] : []
+ property var selectedApps: scenario === "populated" ? ["chromium"] : []
  function find(item, predicate) {
    if (predicate(item)) return item
    var children = item.children || []
@@ -42,9 +44,9 @@ Rectangle {
    case "subscriptions.list": res = {items: scenario === "populated" ? [{id:"one",name:"Example subscription (fixture)",serverCount:1,enabled:true}] : [], total:scenario === "populated" ? 1 : 0}; break
    case "apps.list": res = {include:fixture.selectedApps, exclude:[], running:["systemd","pipewire","firefox"]};
      if (scenario !== "legacy") res.runningApps = scenario === "populated" ? [
-       {name:"Firefox",displayName:"Firefox Browser",icon:"firefox",desktopId:"firefox.desktop",hasWindow:true},
+       {name:"chromium",displayName:"Chromium",icon:"chromium",desktopId:"chromium.desktop",hasWindow:true},
        {name:"steam",displayName:"Steam",icon:"steam",desktopId:"steam.desktop"},
-       {name:"very-long-process-name-for-elision",displayName:"An unusually long application name for clipping review",icon:null},
+       {name:"very-long-process-name-for-elision",displayName:"An unusually long application name for clipping review",icon:"vpnrouter-fixture-icon-does-not-exist"},
        {name:"systemd",displayName:"Must never be visible"}] : [];
      break
    case "apps.set": fixture.selectedApps = request.params.names; res = {state:"disconnected",revision:"fixture",capabilities:{connect:false}}; break
@@ -81,11 +83,28 @@ Rectangle {
        var viewport = fixture.find(consumer,function(x) {return x.objectName === "vpnContentViewport"})
        viewport.contentY = Math.max(0,viewport.contentHeight-viewport.height)
      }
+     if (fixture.missingService) { service.backendMissing = true; service.state = "unavailable"; service.unavailableReasonCode = null }
      if (!fixture.runInteractions) readyTimer.start()
      else { try { test.test_interactions() } catch(e) { console.error("R4_NATIVE_FAIL", String(e)); fixture.previewReady = true } }
    }
  }
- Timer { id: readyTimer; interval: 180; onTriggered: fixture.previewReady = true }
+ Timer { id: readyTimer; interval: 180; onTriggered: {
+   if (fixture.scenario === "populated") {
+     var icon = fixture.find(consumer,function(x) {return x.objectName === "vpnAppIcon-chromium"})
+     var fallback = fixture.find(consumer,function(x) {return x.objectName === "vpnAppIcon-very-long-process-name-for-elision"})
+     if (!icon || icon.status !== Image.Ready || String(icon.source) === Quickshell.iconPath("application-x-executable",true)) { console.error("R4B_ICON_FAIL");return }
+     if (!fallback || fallback.status !== Image.Ready || String(fallback.source) !== Quickshell.iconPath("application-x-executable",true)) { console.error("R4B_FALLBACK_FAIL", fallback ? String(fallback.source) : "null", Quickshell.iconPath("application-x-executable",true), fallback ? fallback.status : -1);return }
+     console.log("R4B_ICONS", String(icon.source), String(fallback.source))
+   }
+   var hero = fixture.find(consumer,function(x) {return x.addSubscriptionRequested !== undefined && x.connectRequested !== undefined})
+   var heroViewport = fixture.find(hero,function(x) {return x.objectName === "vpnHeroViewport"})
+   var page = fixture.find(consumer,function(x) {return x.objectName === "vpnContentViewport"})
+   if (Math.abs(hero.height - Math.min(Commons.Style.space(176),heroViewport.contentHeight + Commons.Style.space(24))) > 0.1) { console.error("R4B_HERO_FAIL");return }
+   var connect = fixture.find(hero,function(x) {return x.text === service.tr("action.connect") && x.clicked !== undefined})
+   if (connect && (connect.enabled || connect.opacity !== 0.4 || connect.borderColor !== Commons.Style.normalBorderColor || connect.activeFocusOnTab)) { console.error("R4B_DISABLED_FAIL");return }
+   console.log("R4B_LAYOUT",JSON.stringify({heroHeight:hero.height,heroContent:heroViewport.contentHeight,pageHeight:page.height,disabled:connect ? !connect.enabled : null}))
+   fixture.previewReady = true
+ } }
  TestCase {
    id: test
    name: "VPNRouterR4Native"
@@ -101,10 +120,19 @@ Rectangle {
        nav.tabSelected(tabs[i]);wait(30)
        compare(JSON.stringify([frame.x,frame.y,frame.width,frame.height,nav.x,nav.y,hero.x,hero.y,hero.width,hero.height]),JSON.stringify(start),"Shared geometry: " + tabs[i])
      }
+     if (fixture.scenario === "populated") {
+       var disabledConnect = fixture.find(hero,function(x) {return x.text === service.tr("action.connect") && x.clicked !== undefined})
+       verify(disabledConnect !== null && !disabledConnect.enabled)
+       var beforeDisabledClick = fixture.messages.length
+       mouseClick(disabledConnect); wait(30)
+       compare(fixture.messages.length,beforeDisabledClick,"Disabled Connect cannot send a request")
+       verify(!disabledConnect.activeFocusOnTab,"Disabled Connect is skipped by Tab")
+     }
      service.lastError = "Fixture error text that wraps across several lines and should scroll inside the hero instead of shifting the navigation."
      service.busy = true
      wait(30)
-     compare(JSON.stringify([frame.x,frame.y,frame.width,frame.height,nav.x,nav.y,hero.x,hero.y,hero.width,hero.height]),JSON.stringify(start),"Loading/error geometry")
+     compare(JSON.stringify([frame.x,frame.y,frame.width,frame.height]),JSON.stringify(start.slice(0,4)),"Loading/error frame geometry")
+     verify(hero.height <= Commons.Style.space(176),"Long hero content stays capped")
      service.lastError = ""; service.busy = false; wait(30)
      if (fixture.scenario === "populated") {
        nav.tabSelected("apps"); wait(50)
@@ -115,11 +143,11 @@ Rectangle {
        add.forceActiveFocus(); wait(40)
        keyClick(Qt.Key_Return); wait(60)
        verify(service.apps.include.indexOf("steam") !== -1,"Exact process selected through keyboard")
-       var remove = fixture.find(apps,function(x) {return x.tooltipText === service.tr("apps.removeApp",["Firefox"])})
+       var remove = fixture.find(apps,function(x) {return x.tooltipText === service.tr("apps.removeApp",["chromium"])})
        verify(remove !== null)
        remove.forceActiveFocus(); wait(40)
        keyClick(Qt.Key_Space); wait(60)
-       verify(service.apps.include.indexOf("Firefox") === -1,"Selected app removed")
+       verify(service.apps.include.indexOf("chromium") === -1,"Selected app removed")
        var search = fixture.find(apps,function(x) {return x.placeholderText === service.tr("apps.searchPlaceholder")})
        search.forceActiveFocus(); wait(20)
        keyClick(Qt.Key_S); keyClick(Qt.Key_T); keyClick(Qt.Key_E); keyClick(Qt.Key_A); keyClick(Qt.Key_M); wait(30)

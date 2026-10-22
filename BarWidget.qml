@@ -57,7 +57,8 @@ Ui.BarWidget {
   readonly property bool showLatencySetting: setting("showLatency", true) !== false
 
   readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
-  readonly property string stateIcon: ({ disconnected: "󰖪", connecting: "󰦞", connected: "󰖂", error: "󰅚", unavailable: "󰒣", missing: "󰆍" })[visualState]
+  // Material Design shield family from the host bar's Nerd Font.
+  readonly property string stateIcon: ({ disconnected: "\u{f0499}", connecting: "\u{f11a3}", connected: "\u{f0cc8}", error: "\u{f0ecd}", unavailable: "\u{f099c}", missing: "\u{f0add}" })[visualState]
   readonly property color inkColor: visualState === "error" || visualState === "unavailable" ? (bar ? bar.urgent : Commons.Color.urgent) : visualState === "connected" || visualState === "connecting" ? Commons.Color.accent : (bar ? bar.foreground : Commons.Color.foreground)
 
   readonly property string barTooltip: {
@@ -168,20 +169,24 @@ Ui.BarWidget {
 
       Text {
         textFormat: Text.PlainText
-        id: barGlyph
         text: root.stateIcon
         color: root.inkColor
         font.family: Style.font.family
         font.pixelSize: Style.font.iconSmall
         anchors.verticalCenter: parent.verticalCenter
+      }
 
+      Text {
+        visible: root.visualState === "connecting"
+        textFormat: Text.PlainText
+        text: "\u{f0772}" // md-loading: progress without rotating the shield.
+        color: root.inkColor
+        font.family: Style.font.family
+        font.pixelSize: Style.font.iconSmall
+        anchors.verticalCenter: parent.verticalCenter
         NumberAnimation on rotation {
-          running: root.visualState === "connecting"
-          onRunningChanged: if (!running) barGlyph.rotation = 0
-          from: 0
-          to: 360
-          loops: Animation.Infinite
-          duration: 1000
+          running: root.visualState === "connecting" && !Style.reduceMotion
+          from: 0; to: 360; loops: Animation.Infinite; duration: 1000
         }
       }
 

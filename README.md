@@ -25,8 +25,10 @@ This repository provides the Omarchy Quattro shell plugin interface, packaging l
 
 When the server and subscription lists are both empty, **Add a subscription** in
 the hero or Servers tab opens the Subscriptions form. Opening the form does not
-fetch anything. The advanced panel keeps one fitted frame, fixed navigation and
-internal scrolling. Tab traverses controls; Escape closes the panel. Enter submits
+fetch anything. The advanced panel keeps one fitted frame and internal scrolling.
+The hero fits its content up to a fixed maximum, leaving more room for the page
+when messages are short. Navigation stays in place when switching tabs. Tab
+traverses controls; Escape closes the panel. Enter submits
 single-line forms; multiline server/configuration editors use Ctrl+Enter.
 
 The Apps tab uses optional `apps.list.runningApps` metadata for display names,

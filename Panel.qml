@@ -384,6 +384,7 @@ Ui.Panel {
             }
 
             VpnUi.AppsView {
+              appLibrary: root.hostWidget && root.hostWidget.effectiveShell ? root.hostWidget.effectiveShell.appLibrary : null
               visible: root.currentTab === "apps"
               width: parent.width
               service: root.service

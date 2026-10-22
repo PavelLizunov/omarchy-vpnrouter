@@ -22,6 +22,8 @@ Item {
   property bool strictRouteVal: (service && service.settingsData) ? service.settingsData.strictRoute : false
   property bool strictDnsVal: (service && service.settingsData) ? service.settingsData.strictDns : false
   property var dnsModeVal: savedDnsMode()
+  readonly property string dnsModeText: root.tr(root.dnsModeVal === null ? "settings.dnsMode.resetDefault"
+    : ({vpn_only: "settings.dnsMode.vpnOnly", smart: "settings.dnsMode.smart", direct: "settings.dnsMode.direct", custom: "settings.dnsMode.custom"})[root.dnsModeVal] || "protocol.unknown")
 
   function savedDnsMode() {
     var data = service ? service.settingsData : null
@@ -167,6 +169,7 @@ Item {
           Text {
             textFormat: Text.PlainText
             width: Style.space(160)
+            wrapMode: Text.WordWrap
             text: root.tr("settings.mtu")
             color: Commons.Color.foreground
             font.family: Style.font.family
@@ -249,7 +252,7 @@ Item {
           Text {
             textFormat: Text.PlainText
             width: parent.width
-            text: root.tr("settings.dnsModeValue", [root.dnsModeVal || root.tr("settings.dnsMode.resetDefault")])
+            text: root.tr("settings.dnsModeValue", [root.dnsModeText])
             color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall

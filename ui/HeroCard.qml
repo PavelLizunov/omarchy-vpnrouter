@@ -38,8 +38,8 @@ Rectangle {
   border.width: Style.normalBorderWidth
 
   implicitWidth: parent ? parent.width : Style.space(480)
-  // Reserve the shared header area across data, loading and error transitions.
-  implicitHeight: Style.space(176)
+  // The panel owns a stable frame; shorter status text gives space to the tab.
+  implicitHeight: Math.min(Style.space(176), cardColumn.implicitHeight + Style.space(24))
 
   readonly property bool needsSetup: !!(service && service.serversLoaded && service.subscriptionsLoaded && service.servers.length === 0 && service.subscriptions.length === 0 && !connected && !busy && service.configMode !== "custom")
   readonly property bool canConnect: service && service.capabilities && service.capabilities.connect === true
@@ -78,6 +78,7 @@ Rectangle {
           height: width
           radius: width / 2
           anchors.verticalCenter: parent.verticalCenter
+          opacity: connectBtnMouse.enabled ? 1 : 0.4
           color: root.connected ? Commons.Color.accent : (root.busy ? Commons.Color.urgent : Style.hoverFill)
           border.color: root.connected ? Commons.Color.accent : Style.hoverBorderColor
           border.width: connectBtnMouse.activeFocus ? Style.focusBorderWidth : 1
@@ -88,7 +89,7 @@ Rectangle {
             textFormat: Text.PlainText
             id: connectionGlyph
             anchors.centerIn: parent
-            text: root.busy ? "󰦞" : (root.connected ? "󰖂" : "󱚤")
+            text: root.busy ? "\u{f0772}" : (root.connected ? "󰖂" : "󱚤")
             color: root.connected ? Commons.Color.background : Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.display
@@ -219,7 +220,7 @@ Rectangle {
 
           Text {
             textFormat: Text.PlainText
-            text: "󰦞"
+            text: "\u{f0772}"
             color: Commons.Color.accent
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
