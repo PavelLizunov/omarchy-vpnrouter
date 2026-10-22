@@ -14,11 +14,11 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
-  implicitHeight: Style.space(34)
+  implicitHeight: tabRow.implicitHeight
 
   readonly property var tabs: {
     var _ = i18nRevision
@@ -35,78 +35,69 @@ Item {
     ]
   }
 
-  Flickable {
-    id: flick
-    anchors.fill: parent
-    contentWidth: tabRow.implicitWidth
-    contentHeight: height
-    flickableDirection: Flickable.HorizontalFlick
-    boundsBehavior: Flickable.StopAtBounds
-    clip: true
+  Grid {
+    id: tabRow
+    width: parent.width
+    columns: 3
+    spacing: Style.space(4)
 
-    Row {
-      id: tabRow
-      height: parent.height
-      spacing: Style.space(4)
+    Repeater {
+      model: root.tabs
 
-      Repeater {
-        model: root.tabs
+      Item {
+        id: tabItem
+        width: (root.width - Style.space(8)) / 3
+        height: Style.spacing.controlHeight
+        activeFocusOnTab: true
 
-        Item {
-          id: tabItem
-          width: tabBtnRow.implicitWidth + Style.space(16)
-          height: root.height
-          activeFocusOnTab: true
+        Keys.onReturnPressed: { root.currentTab = modelData.id; root.tabSelected(modelData.id) }
+        Keys.onEnterPressed: { root.currentTab = modelData.id; root.tabSelected(modelData.id) }
+        Keys.onSpacePressed: { root.currentTab = modelData.id; root.tabSelected(modelData.id) }
 
-          Keys.onReturnPressed: { root.currentTab = modelData.id; root.tabSelected(modelData.id) }
-          Keys.onEnterPressed: { root.currentTab = modelData.id; root.tabSelected(modelData.id) }
-          Keys.onSpacePressed: { root.currentTab = modelData.id; root.tabSelected(modelData.id) }
+        readonly property bool active: root.currentTab === modelData.id
+        readonly property bool hot: tabMouse.containsMouse
 
-          readonly property bool active: root.currentTab === modelData.id
-          readonly property bool hot: tabMouse.containsMouse
+        Rectangle {
+          anchors.fill: parent
+          radius: Style.cornerRadius
+          color: active ? Style.selectedFill : (hot ? Style.hoverFill : "transparent")
+          border.color: (tabItem.activeFocus || tabMouse.activeFocus) ? Style.focusBorderColor : (active ? Commons.Color.accent : "transparent")
+          border.width: (tabItem.activeFocus || tabMouse.activeFocus) ? Style.focusBorderWidth : (active ? 1 : 0)
 
-          Rectangle {
-            anchors.fill: parent
-            radius: Style.cornerRadius
-            color: active ? Style.selectedFill : (hot ? Style.hoverFill : "transparent")
-            border.color: (tabItem.activeFocus || tabMouse.activeFocus) ? Style.focusBorderColor : (active ? Commons.Color.accent : "transparent")
-            border.width: (tabItem.activeFocus || tabMouse.activeFocus) ? Style.focusBorderWidth : (active ? 1 : 0)
+          Behavior on color { ColorAnimation { duration: 150 } }
 
-            Behavior on color { ColorAnimation { duration: 150 } }
+          Row {
+            id: tabBtnRow
+            anchors.centerIn: parent
+            spacing: Style.space(6)
 
-            Row {
-              id: tabBtnRow
-              anchors.centerIn: parent
-              spacing: Style.space(6)
+            Text {
+              text: modelData.icon
+              color: active ? Commons.Color.accent : Commons.Color.foreground
+              font.family: Style.font.family
+              font.pixelSize: Style.font.iconSmall
+              anchors.verticalCenter: parent.verticalCenter
+            }
 
-              Text {
-                text: modelData.icon
-                color: active ? Commons.Color.accent : (hot ? Commons.Color.foreground : Commons.Color.muted)
-                font.family: Style.font.family
-                font.pixelSize: Style.font.iconSmall
-                anchors.verticalCenter: parent.verticalCenter
-              }
-
-              Text {
-                text: modelData.label
-                color: active ? Commons.Color.foreground : (hot ? Commons.Color.foreground : Commons.Color.muted)
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-                anchors.verticalCenter: parent.verticalCenter
-              }
+            Text {
+              text: modelData.label
+              color: Commons.Color.foreground
+              font.family: Style.font.family
+              font.pixelSize: Style.font.bodySmall
+              anchors.verticalCenter: parent.verticalCenter
             }
           }
+        }
 
-          MouseArea {
-            id: tabMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-              tabItem.forceActiveFocus()
-              root.currentTab = modelData.id
-              root.tabSelected(modelData.id)
-            }
+        MouseArea {
+          id: tabMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: {
+            tabItem.forceActiveFocus()
+            root.currentTab = modelData.id
+            root.tabSelected(modelData.id)
           }
         }
       }

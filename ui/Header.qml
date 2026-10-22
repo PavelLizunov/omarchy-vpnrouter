@@ -11,12 +11,12 @@ Item {
   property string mode: "simple" // "simple" | "advanced"
   readonly property string currentLocale: {
     var _ = i18nRevision
-    return I18n.getEffectiveLocale()
+    return root.service ? root.service.effectiveLocale : "en"
   }
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   signal modeChangeRequested(string nextMode)
@@ -24,11 +24,14 @@ Item {
   signal closeRequested()
 
   implicitWidth: parent ? parent.width : Style.space(480)
-  implicitHeight: Style.space(44)
+  implicitHeight: headerTop.implicitHeight + stateBadge.implicitHeight + Style.space(8)
 
   Row {
+    id: headerTop
     anchors.left: parent.left
-    anchors.verticalCenter: parent.verticalCenter
+    anchors.right: headerActions.left
+    anchors.rightMargin: Style.space(8)
+    anchors.top: parent.top
     spacing: Style.space(10)
 
     Text {
@@ -40,6 +43,7 @@ Item {
     }
 
     Column {
+      width: parent.width - Style.space(32)
       anchors.verticalCenter: parent.verticalCenter
       spacing: Style.space(1)
 
@@ -51,38 +55,48 @@ Item {
       }
 
       Text {
+        width: parent.width
+        wrapMode: Text.WordWrap
         text: root.tr("app.subtitle")
-        color: Commons.Color.muted
+        color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
       }
     }
 
-    StatusBadge {
-      anchors.verticalCenter: parent.verticalCenter
-      service: root.service
-      i18nRevision: root.i18nRevision
-      state: root.service ? root.service.state : "unavailable"
-    }
+  }
+
+  StatusBadge {
+    id: stateBadge
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    service: root.service
+    i18nRevision: root.i18nRevision
+    state: root.service ? root.service.state : "unavailable"
   }
 
   Row {
+    id: headerActions
     anchors.right: parent.right
-    anchors.verticalCenter: parent.verticalCenter
+    anchors.top: parent.top
     spacing: Style.space(6)
 
-    // Language toggle (EN / RU)
+    // Explicit overrides cycle back to the shell language (AUTO).
     Rectangle {
-      width: Style.space(32)
+      id: langButton
+      activeFocusOnTab: true
+      Keys.onReturnPressed: root.localeToggled()
+      Keys.onSpacePressed: root.localeToggled()
+      width: Style.space(48)
       height: Style.spacing.controlHeight
       radius: Style.cornerRadius
       color: langMouse.containsMouse ? Style.hoverFill : Style.normalFill
-      border.color: langMouse.activeFocus ? Style.focusBorderColor : Style.normalBorderColor
+      border.color: (langButton.activeFocus || langMouse.activeFocus) ? Style.focusBorderColor : Style.normalBorderColor
       border.width: Style.normalBorderWidth
 
       Text {
         anchors.centerIn: parent
-        text: root.currentLocale.toUpperCase()
+        text: root.service && root.service.locale === "auto" ? "AUTO" : root.currentLocale.toUpperCase()
         color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
@@ -93,17 +107,21 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.localeToggled()
+        onClicked: { langButton.forceActiveFocus(); root.localeToggled() }
       }
     }
 
     // Mode Toggle (Simple / Advanced)
     Rectangle {
+      id: modeButton
+      activeFocusOnTab: true
+      Keys.onReturnPressed: root.modeChangeRequested(root.mode === "simple" ? "advanced" : "simple")
+      Keys.onSpacePressed: root.modeChangeRequested(root.mode === "simple" ? "advanced" : "simple")
       width: modeRow.implicitWidth + Style.space(16)
       height: Style.spacing.controlHeight
       radius: Style.cornerRadius
       color: modeMouse.containsMouse ? Style.hoverFill : Style.normalFill
-      border.color: modeMouse.activeFocus ? Style.focusBorderColor : Style.normalBorderColor
+      border.color: (modeButton.activeFocus || modeMouse.activeFocus) ? Style.focusBorderColor : Style.normalBorderColor
       border.width: Style.normalBorderWidth
 
       Row {
@@ -134,6 +152,7 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
+          modeButton.forceActiveFocus()
           var next = root.mode === "simple" ? "advanced" : "simple"
           root.modeChangeRequested(next)
         }

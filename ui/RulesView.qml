@@ -14,7 +14,7 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -88,10 +88,12 @@ Item {
           font.pixelSize: Style.font.title
         }
 
-        Row {
-          spacing: Style.space(12)
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
 
           Toggle {
+            width: parent.width
             label: root.tr("rules.priority.toggles_first")
             checked: root.selectedPriority === "toggles_first"
             onToggled: function(val) {
@@ -100,6 +102,7 @@ Item {
           }
 
           Toggle {
+            width: parent.width
             label: root.tr("rules.priority.custom_first")
             checked: root.selectedPriority === "custom_first"
             onToggled: function(val) {
@@ -140,8 +143,8 @@ Item {
       }
     }
 
-    // Action and Import/Export Row
-    Row {
+    // Actions wrap before the format selector runs out of room.
+    Flow {
       width: parent.width
       spacing: Style.space(8)
 
@@ -184,7 +187,6 @@ Item {
 
       // Format Selector
       Row {
-        anchors.verticalCenter: parent.verticalCenter
         spacing: Style.space(4)
 
         Repeater {

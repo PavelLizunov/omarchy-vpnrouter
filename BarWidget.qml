@@ -32,20 +32,11 @@ Ui.BarWidget {
   readonly property bool opened: panelItem ? panelItem.opened : false
   readonly property bool popoutSwitchClosing: panelItem ? panelItem.popoutSwitchClosing : false
 
-  // Reactive state from singleton service and locale engine
-  property int localI18nRevision: 0
-  readonly property int i18nRevision: (effectiveService ? effectiveService.i18nRevision : 0) + localI18nRevision
+  readonly property int i18nRevision: effectiveService ? effectiveService.i18nRevision : 0
 
-  property var _i18nListener: function(r) {
-    root.localI18nRevision = r
-  }
-
-  Component.onCompleted: {
-    I18n.addListener(_i18nListener)
-  }
-
-  Component.onDestruction: {
-    I18n.removeListener(_i18nListener)
+  function tr(key, args) {
+    var _ = root.i18nRevision
+    return root.effectiveService ? root.effectiveService.tr(key, args) : I18n.t(key, args)
   }
 
   readonly property string vpnState: effectiveService ? effectiveService.state : "unavailable"
@@ -75,9 +66,9 @@ Ui.BarWidget {
 
   readonly property string barTooltip: {
     var _ = i18nRevision
-    var title = "VPNRouter: " + I18n.t("state." + vpnState)
+    var title = "VPNRouter: " + root.tr("state." + vpnState)
     if (activeServerName) title += " (" + activeServerName + ")"
-    if (serverLatency !== null && serverLatency !== undefined) title += " · " + I18n.t("latency.ms", [Math.round(serverLatency)])
+    if (serverLatency !== null && serverLatency !== undefined) title += " · " + root.tr("latency.ms", [Math.round(serverLatency)])
     return title
   }
 
@@ -178,6 +169,7 @@ Ui.BarWidget {
       spacing: Style.space(5)
 
       Text {
+        id: barGlyph
         text: root.isBusy ? "󰦞" : "󰖂"
         color: root.inkColor
         font.family: Style.font.family
@@ -186,6 +178,7 @@ Ui.BarWidget {
 
         NumberAnimation on rotation {
           running: root.isBusy
+          onRunningChanged: if (!running) barGlyph.rotation = 0
           from: 0
           to: 360
           loops: Animation.Infinite
@@ -195,8 +188,9 @@ Ui.BarWidget {
 
       // Latency badge or server label on bar if enabled and connected
       Text {
+        textFormat: Text.PlainText
         visible: !root.vertical && root.showLatencySetting && root.isConnected && root.serverLatency !== null
-        text: I18n.t("latency.ms", [Math.round(root.serverLatency || 0)])
+        text: root.tr("latency.ms", [Math.round(root.serverLatency || 0)])
         color: root.inkColor
         font.family: Style.font.family
         font.pixelSize: Style.font.caption

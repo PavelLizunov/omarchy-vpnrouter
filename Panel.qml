@@ -25,7 +25,7 @@ Ui.Panel {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   // User configuration and display mode
@@ -95,18 +95,12 @@ Ui.Panel {
   }
 
   function toggleLocale() {
-    var cur = I18n.getEffectiveLocale()
-    var next = cur === "ru" ? "en" : "ru"
-    I18n.setLocale(next)
-    localI18nRevision++
-    if (service && typeof service.setLocale === "function") {
-      service.setLocale(next)
-    } else if (service) {
-      service.i18nRevision++
-    }
-    if (hostWidget && typeof hostWidget.updateSetting === "function") {
+    if (!service) return
+    // Cycle back to the shell language after the two explicit overrides.
+    var next = service.locale === "auto" ? "en" : service.locale === "en" ? "ru" : "auto"
+    service.setLocale(next)
+    if (hostWidget && typeof hostWidget.updateSetting === "function")
       hostWidget.updateSetting("locale", next)
-    }
   }
 
   Ui.KeyboardPanel {
@@ -117,7 +111,7 @@ Ui.Panel {
     open: root.opened
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(root.mode === "advanced" ? 540 : 440))
-    contentHeight: panel.fittedContentHeight(mainColumn.implicitHeight, Style.space(640))
+    contentHeight: panel.fittedContentHeight(root.mode === "advanced" ? Style.space(640) : fixedHeader.implicitHeight + Style.space(12) + mainColumn.implicitHeight, Style.space(640))
 
     Ui.PanelKeyCatcher {
       id: keyCatcher
@@ -125,9 +119,57 @@ Ui.Panel {
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
 
+      Column {
+        id: fixedHeader
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        spacing: Style.space(12)
+        // 1. Header
+        VpnUi.Header {
+          id: header
+          width: parent.width
+          service: root.service
+          i18nRevision: root.i18nRevision
+          mode: root.mode
+          onModeChangeRequested: function(m) { root.setDisplayMode(m) }
+          onLocaleToggled: root.toggleLocale()
+          onCloseRequested: root.close()
+        }
+
+        // 2. Hero Connection Card
+        VpnUi.HeroCard {
+          width: parent.width
+          service: root.service
+          i18nRevision: root.i18nRevision
+          onConnectRequested: if (root.service) root.service.connect()
+          onDisconnectRequested: if (root.service) root.service.disconnect()
+          onCancelRequested: if (root.service) root.service.cancel()
+        }
+
+        VpnUi.Navigation {
+          id: navigation
+          visible: root.mode === "advanced"
+          width: parent.width
+          service: root.service
+          i18nRevision: root.i18nRevision
+          currentTab: root.currentTab
+          onTabSelected: function(tId) {
+            root.currentTab = tId
+            flickableContent.contentY = 0
+            root.refreshTab(tId)
+          }
+        }
+
+      }
+
       Flickable {
         id: flickableContent
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: fixedHeader.bottom
+        anchors.topMargin: Style.space(12)
+        anchors.bottom: parent.bottom
         contentWidth: width
         contentHeight: mainColumn.implicitHeight + Style.space(24)
         clip: true
@@ -139,27 +181,6 @@ Ui.Panel {
           id: mainColumn
           width: flickableContent.width
           spacing: Style.space(12)
-
-          // 1. Header
-          VpnUi.Header {
-            width: parent.width
-            service: root.service
-            i18nRevision: root.i18nRevision
-            mode: root.mode
-            onModeChangeRequested: function(m) { root.setDisplayMode(m) }
-            onLocaleToggled: root.toggleLocale()
-            onCloseRequested: root.close()
-          }
-
-          // 2. Hero Connection Card
-          VpnUi.HeroCard {
-            width: parent.width
-            service: root.service
-            i18nRevision: root.i18nRevision
-            onConnectRequested: if (root.service) root.service.connect()
-            onDisconnectRequested: if (root.service) root.service.disconnect()
-            onCancelRequested: if (root.service) root.service.cancel()
-          }
 
           // 3. Simple Mode View: Server Quick Selector & Routing Mode Switch
           Column {
@@ -182,7 +203,7 @@ Ui.Panel {
                 anchors.margins: Style.space(10)
                 spacing: Style.space(8)
 
-                Row {
+                RowLayout {
                   width: parent.width
 
                   Text {
@@ -192,7 +213,7 @@ Ui.Panel {
                     font.pixelSize: Style.font.title
                   }
 
-                  Item { Layout.fillWidth: true; width: 1; height: 1 }
+                  Item { Layout.fillWidth: true }
 
                   VpnUi.Button {
                     text: root.tr("action.refresh")
@@ -225,7 +246,7 @@ Ui.Panel {
                         radius: width / 2
                         anchors.verticalCenter: parent.verticalCenter
                         color: modelData.selected ? Commons.Color.accent : "transparent"
-                        border.color: modelData.selected ? Commons.Color.accent : Commons.Color.muted
+                        border.color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
                         border.width: 1
                       }
 
@@ -241,8 +262,8 @@ Ui.Panel {
 
                       Text {
                         id: latLabel
-                        text: Model.formatLatency(modelData.latencyMs, I18n)
-                        color: Commons.Color.muted
+                        text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
+                        color: Commons.Color.foreground
                         font.family: Style.font.family
                         font.pixelSize: Style.font.caption
                         anchors.verticalCenter: parent.verticalCenter
@@ -283,10 +304,12 @@ Ui.Panel {
                   font.pixelSize: Style.font.title
                 }
 
-                Row {
-                  spacing: Style.space(12)
+                Column {
+                  width: parent.width
+                  spacing: Style.space(6)
 
                   VpnUi.Toggle {
+                    width: parent.width
                     label: root.tr("apps.routingMode.split")
                     checked: root.service && root.service.routingMode === "split"
                     onToggled: function(val) {
@@ -295,6 +318,7 @@ Ui.Panel {
                   }
 
                   VpnUi.Toggle {
+                    width: parent.width
                     label: root.tr("apps.routingMode.full")
                     checked: root.service && root.service.routingMode === "full"
                     onToggled: function(val) {
@@ -319,17 +343,6 @@ Ui.Panel {
             visible: root.mode === "advanced"
             width: parent.width
             spacing: Style.space(12)
-
-            VpnUi.Navigation {
-              width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
-              currentTab: root.currentTab
-              onTabSelected: function(tId) {
-                root.currentTab = tId
-                root.refreshTab(tId)
-              }
-            }
 
             // Section Views
             VpnUi.ServersView {

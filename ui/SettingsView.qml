@@ -13,7 +13,7 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   // Local draft values
@@ -175,36 +175,42 @@ Item {
 
         // Toggles
         Toggle {
+          width: parent.width
           label: root.tr("settings.ipv6")
           checked: root.ipv6Val
           onToggled: function(val) { root.ipv6Val = val }
         }
 
         Toggle {
+          width: parent.width
           label: root.tr("settings.strictRoute")
           checked: root.strictRouteVal
           onToggled: function(val) { root.strictRouteVal = val }
         }
 
         Toggle {
+          width: parent.width
           label: root.tr("settings.strictDns")
           checked: root.strictDnsVal
           onToggled: function(val) { root.strictDnsVal = val }
         }
 
         Toggle {
+          width: parent.width
           label: root.tr("settings.bypassRu")
           checked: root.bypassRuVal
           onToggled: function(val) { root.bypassRuVal = val }
         }
 
         Toggle {
+          width: parent.width
           label: root.tr("settings.blockAds")
           checked: root.blockAdsVal
           onToggled: function(val) { root.blockAdsVal = val }
         }
 
         Toggle {
+          width: parent.width
           label: root.tr("settings.dnsLeak")
           description: !root.hasDnsLockdownCap ? root.tr("settings.dnsLeakUnsupported") : ""
           enabled: root.hasDnsLockdownCap
@@ -224,7 +230,7 @@ Item {
           Text {
             width: parent.width
             text: root.tr("settings.dnsMode") + ": " + (root.dnsModeVal || root.tr("settings.dnsMode.resetDefault"))
-            color: Commons.Color.muted
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             wrapMode: Text.WordWrap
@@ -268,10 +274,11 @@ Item {
 
           // Descriptive caption for the selected mode when not forced
           Text {
+            textFormat: Text.PlainText
             visible: !root.isCustomMode && !root.strictDnsVal && !(root.service && root.service.routingMode === "full") && root.dnsExplanationText.length > 0
             width: parent.width
             wrapMode: Text.Wrap
-            color: Commons.Color.muted
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
             text: root.dnsExplanationText
@@ -311,9 +318,11 @@ Item {
               text: root.cidrsVal
 
               Text {
+                width: parent.width
+                wrapMode: Text.WordWrap
                 visible: cidrEdit.text.length === 0
                 text: root.tr("settings.excludeCidrPlaceholder")
-                color: Commons.Color.muted
+                color: Commons.Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
               }

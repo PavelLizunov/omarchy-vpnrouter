@@ -13,7 +13,7 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -171,7 +171,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰑤"
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -179,7 +179,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("subscriptions.empty")
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -230,7 +230,7 @@ Item {
 
             Text {
               text: root.tr("subscriptions.serversCount", [modelData.serverCount || 0])
-              color: Commons.Color.muted
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }

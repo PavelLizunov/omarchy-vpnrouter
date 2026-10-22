@@ -54,7 +54,7 @@ Item {
   }
 
   readonly property color textColor: {
-    if (!root.enabled) return Commons.Color.muted
+    if (!root.enabled) return Commons.Color.foreground
     if (variant === "primary" || variant === "danger") return Commons.Color.background
     return Commons.Color.foreground
   }

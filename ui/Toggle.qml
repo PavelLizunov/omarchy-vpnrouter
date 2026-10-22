@@ -11,7 +11,7 @@ Item {
 
   signal toggled(bool nextState)
 
-  implicitWidth: row.implicitWidth
+  implicitWidth: Style.space(36) + Style.space(10) + labels.implicitWidth
   implicitHeight: Math.max(Style.spacing.controlHeight, row.implicitHeight)
 
   activeFocusOnTab: true
@@ -30,6 +30,7 @@ Item {
 
   Row {
     id: row
+    width: parent.width
     anchors.verticalCenter: parent.verticalCenter
     spacing: Style.space(10)
 
@@ -75,21 +76,27 @@ Item {
 
     // Label column
     Column {
+      id: labels
+      width: Math.max(0, row.width - track.width - row.spacing)
       anchors.verticalCenter: parent.verticalCenter
       spacing: Style.space(2)
 
       Text {
         visible: root.label !== ""
+        width: parent.width
+        wrapMode: Text.WordWrap
         text: root.label
-        color: root.enabled ? Commons.Color.foreground : Commons.Color.muted
+        color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
       }
 
       Text {
         visible: root.description !== ""
+        width: parent.width
+        wrapMode: Text.WordWrap
         text: root.description
-        color: Commons.Color.muted
+        color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
       }

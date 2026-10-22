@@ -56,7 +56,7 @@ Item {
           echoMode: root.echoMode
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
-          color: root.enabled ? Commons.Color.foreground : Commons.Color.muted
+          color: Commons.Color.foreground
           selectionColor: Commons.Color.accent
           selectedTextColor: Commons.Color.background
           clip: true
@@ -69,7 +69,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             visible: textInput.text.length === 0 && !textInput.activeFocus
             text: root.placeholderText
-            color: Commons.Color.muted
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             elide: Text.ElideRight
@@ -88,7 +88,7 @@ Item {
         Text {
           anchors.centerIn: parent
           text: root.showPassword ? "󰈈" : "󰈉"
-          color: eyeMouseArea.containsMouse ? Commons.Color.accent : Commons.Color.muted
+          color: eyeMouseArea.containsMouse ? Commons.Color.accent : Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.iconSmall
         }

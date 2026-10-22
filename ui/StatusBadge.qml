@@ -14,7 +14,7 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   readonly property color statusColor: {
@@ -27,10 +27,10 @@ Item {
       case "error":
         return Commons.Color.urgent
       case "disconnected":
-        return Commons.Color.muted
+        return Commons.Color.foreground
       case "unavailable":
       default:
-        return Qt.darker(Commons.Color.muted, 1.4)
+        return Qt.darker(Commons.Color.foreground, 1.4)
     }
   }
 
@@ -57,6 +57,7 @@ Item {
 
       // Pulsing dot or glyph
       Text {
+        textFormat: Text.PlainText
         text: root.stateGlyph
         color: root.statusColor
         font.family: Style.font.family

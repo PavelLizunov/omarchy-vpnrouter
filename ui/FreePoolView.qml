@@ -12,7 +12,7 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -40,7 +40,7 @@ Item {
       visible: text.length > 0
       text: {
         var _ = root.i18nRevision
-        return root.service ? Model.verificationText(root.service.freeVerification, root.service.freeServers, I18n) : ""
+        return root.service ? Model.verificationText(root.service.freeVerification, root.service.freeServers, ({ t: root.tr })) : ""
       }
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
@@ -66,7 +66,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰓠"
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -74,7 +74,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("free.empty")
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -133,21 +133,21 @@ Item {
                 Text {
                   id: protoBadge
                   anchors.centerIn: parent
-                  text: Model.protocolDisplay(modelData.protocol, I18n)
-                  color: Commons.Color.muted
+                  text: Model.protocolDisplay(modelData.protocol, ({ t: root.tr }))
+                  color: Commons.Color.foreground
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                 }
               }
 
               Text {
-                text: Model.formatLatency(modelData.latencyMs, I18n)
+                text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                 color: {
                   var tier = Model.latencyTier(modelData.latencyMs)
                   if (tier === "good") return Commons.Color.accent
                   if (tier === "medium") return Commons.Color.foreground
                   if (tier === "poor") return Commons.Color.urgent
-                  return Commons.Color.muted
+                  return Commons.Color.foreground
                 }
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption

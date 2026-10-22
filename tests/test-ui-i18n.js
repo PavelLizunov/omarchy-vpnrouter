@@ -143,3 +143,58 @@ console.log("ALL I18N TESTS PASSED!\n");
   assert.strictEqual(I18n.t('rules.exported', ['JSON']), 'Правила экспортированы (JSON)');
   console.log('✓ UI lookups, fallback labels, routing badges and locale placeholders passed');
 }
+
+// Reproduce the live host's split script contexts: the UI's copy has no catalogs.
+// Execute the production QML functions instead of preloading the UI fixture.
+{
+  const serviceSource = fs.readFileSync(path.join(__dirname, '../Service.qml'), 'utf8');
+  function qmlFunction(source, name) {
+    const match = source.match(new RegExp('function ' + name + '\\(([^)]*)\\)\\s*\\{([\\s\\S]*?)\\n  \\}'));
+    assert(match, name);
+    return { args: match[1], body: match[2] };
+  }
+  const emptyModule = { exports: {} };
+  new Function('module', 'exports', i18nSrc)(emptyModule, emptyModule.exports);
+  const emptyUiI18n = emptyModule.exports;
+  assert.strictEqual(emptyUiI18n.t('app.name'), 'app.name');
+  I18n.setCatalogs(enJson, ruJson);
+  const service = { i18nRevision: 0, settings: {} };
+  const commons = { I18n: { language: 'ru' } };
+  for (const name of ['tr', 'setLocale']) {
+    const f = qmlFunction(serviceSource, name);
+    service[name] = new Function('root', 'Commons', 'I18n', `return function(${f.args}) {${f.body}}`)(service, commons, I18n);
+  }
+  const qmlFiles = ['Panel.qml', ...fs.readdirSync(path.join(__dirname, '../ui')).filter(f => f.endsWith('.qml')).map(f => 'ui/' + f)];
+  const consumers = qmlFiles.map(file => {
+    const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    if (!source.includes('function tr(')) return null;
+    const f = qmlFunction(source, 'tr');
+    return new Function('root', 'I18n', 'i18nRevision', `return function(${f.args}) {${f.body}}`)({ service }, emptyUiI18n, 0);
+  }).filter(Boolean);
+  service.setLocale('auto');
+  assert.strictEqual(service.effectiveLocale, 'ru', 'Auto follows Commons.I18n, independently of LANG');
+  for (const translate of consumers) {
+    assert.strictEqual(translate('app.name'), 'VPNRouter');
+    assert.strictEqual(translate('state.disconnected'), 'Отключено');
+    assert.strictEqual(translate('latency.ms', [12]), '12 мс');
+  }
+  service.setLocale('en');
+  commons.I18n.language = 'ru';
+  service.setLocale(service.locale); // Same callback as shell language changes.
+  assert.strictEqual(service.effectiveLocale, 'en', 'Explicit override survives shell language changes');
+  service.setLocale('auto');
+  commons.I18n.language = 'en';
+  service.setLocale(service.locale);
+  assert.strictEqual(service.effectiveLocale, 'en', 'Auto tracks subsequent shell changes');
+  const panelSource = fs.readFileSync(path.join(__dirname, '../Panel.qml'), 'utf8');
+  const toggle = qmlFunction(panelSource, 'toggleLocale');
+  const saved = [];
+  const hostWidget = { updateSetting: (key, value) => saved.push([key, value]) };
+  const cycle = new Function('root', 'service', 'hostWidget', `return function() {${toggle.body}}`)({ service }, service, hostWidget);
+  for (const expected of ['en', 'ru', 'auto']) {
+    cycle();
+    assert.strictEqual(service.locale, expected);
+    assert.deepStrictEqual(saved.at(-1), ['locale', expected]);
+  }
+  console.log('✓ Real QML translators resolve across empty UI contexts and follow shell language/overrides');
+}

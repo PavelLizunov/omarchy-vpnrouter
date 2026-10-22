@@ -14,7 +14,7 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -90,9 +90,11 @@ Item {
             selectedTextColor: Commons.Color.background
 
             Text {
+              width: parent.width
+              wrapMode: Text.WordWrap
               visible: importArea.text.length === 0
               text: root.tr("servers.importPlaceholder")
-              color: Commons.Color.muted
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }
@@ -133,7 +135,7 @@ Item {
       visible: text.length > 0
       text: {
         var _ = root.i18nRevision
-        return root.service ? Model.verificationText(root.service.serverVerification, root.service.servers, I18n) : ""
+        return root.service ? Model.verificationText(root.service.serverVerification, root.service.servers, ({ t: root.tr })) : ""
       }
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
@@ -159,7 +161,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰒋"
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -167,7 +169,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("servers.empty")
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -218,7 +220,7 @@ Item {
             radius: width / 2
             anchors.verticalCenter: parent.verticalCenter
             color: "transparent"
-            border.color: modelData.selected ? Commons.Color.accent : Commons.Color.muted
+            border.color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
             border.width: 2
 
             Rectangle {
@@ -258,21 +260,21 @@ Item {
                 Text {
                   id: protoLabel
                   anchors.centerIn: parent
-                  text: Model.protocolDisplay(modelData.protocol, I18n)
-                  color: Commons.Color.muted
+                  text: Model.protocolDisplay(modelData.protocol, ({ t: root.tr }))
+                  color: Commons.Color.foreground
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                 }
               }
 
               Text {
-                text: Model.formatLatency(modelData.latencyMs, I18n)
+                text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                 color: {
                   var tier = Model.latencyTier(modelData.latencyMs)
                   if (tier === "good") return Commons.Color.accent
                   if (tier === "medium") return Commons.Color.foreground
                   if (tier === "poor") return Commons.Color.urgent
-                  return Commons.Color.muted
+                  return Commons.Color.foreground
                 }
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption

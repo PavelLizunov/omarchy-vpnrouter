@@ -25,7 +25,7 @@ Item {
   readonly property bool pressed: mouseArea.pressed
 
   readonly property color iconColor: {
-    if (!root.enabled) return Commons.Color.muted
+    if (!root.enabled) return Commons.Color.foreground
     if (variant === "danger") return hot ? Commons.Color.urgent : Qt.darker(Commons.Color.urgent, 1.2)
     if (variant === "accent") return hot ? Commons.Color.accent : Qt.darker(Commons.Color.accent, 1.2)
     if (hot || activeFocus) return Commons.Color.foreground

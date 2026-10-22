@@ -11,7 +11,7 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -69,10 +69,12 @@ Item {
           font.pixelSize: Style.font.title
         }
 
-        Row {
-          spacing: Style.space(12)
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
 
           Toggle {
+            width: parent.width
             label: root.tr("apps.routingMode.split")
             checked: root.routingMode === "split"
             onToggled: function(val) {
@@ -81,6 +83,7 @@ Item {
           }
 
           Toggle {
+            width: parent.width
             label: root.tr("apps.routingMode.full")
             checked: root.routingMode === "full"
             onToggled: function(val) {
@@ -113,10 +116,12 @@ Item {
           font.pixelSize: Style.font.title
         }
 
-        Row {
-          spacing: Style.space(12)
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
 
           Toggle {
+            width: parent.width
             label: root.tr("apps.appsMode.include")
             checked: root.routingAppsMode === "include"
             onToggled: function(val) {
@@ -125,6 +130,7 @@ Item {
           }
 
           Toggle {
+            width: parent.width
             label: root.tr("apps.appsMode.exclude")
             checked: root.routingAppsMode === "exclude"
             onToggled: function(val) {
@@ -180,7 +186,7 @@ Item {
 
         Text {
           text: root.tr("apps.runningHeader")
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
         }
@@ -193,7 +199,7 @@ Item {
             model: root.runningApps
 
             Rectangle {
-              width: chipRow.implicitWidth + Style.space(12)
+              width: Math.min(runningCol.width, chipRow.implicitWidth + Style.space(12))
               height: Style.space(24)
               radius: height / 2
               color: chipMouse.containsMouse ? Style.pressedFill : Style.normalFill
@@ -206,6 +212,8 @@ Item {
                 spacing: Style.space(4)
 
                 Text {
+                  width: Math.min(implicitWidth, runningCol.width - Style.space(12))
+                  elide: Text.ElideRight
                   text: "+ " + modelData
                   color: Commons.Color.foreground
                   font.family: Style.font.family
@@ -228,6 +236,7 @@ Item {
 
     // Configured Applications Header
     Text {
+      textFormat: Text.PlainText
       text: root.tr("apps.configuredHeader", [root.configuredApps.length])
       color: Commons.Color.foreground
       font.family: Style.font.family
@@ -247,7 +256,7 @@ Item {
       Text {
         anchors.centerIn: parent
         text: root.tr("apps.empty")
-        color: Commons.Color.muted
+        color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
       }
@@ -282,6 +291,7 @@ Item {
           Text {
             width: parent.width - deleteAppBtn.width - Style.space(40)
             text: modelData
+            elide: Text.ElideRight
             color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall

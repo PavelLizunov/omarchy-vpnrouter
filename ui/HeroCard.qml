@@ -12,7 +12,7 @@ Rectangle {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   function availabilityText() {
@@ -72,6 +72,7 @@ Rectangle {
         Behavior on color { ColorAnimation { duration: 150 } }
 
         Text {
+          id: connectionGlyph
           anchors.centerIn: parent
           text: root.busy ? "󰦞" : (root.connected ? "󰖂" : "󱚤")
           color: root.connected ? Commons.Color.background : Commons.Color.foreground
@@ -80,6 +81,7 @@ Rectangle {
 
           NumberAnimation on rotation {
             running: root.busy
+            onRunningChanged: if (!running) connectionGlyph.rotation = 0
             from: 0
             to: 360
             loops: Animation.Infinite
@@ -108,7 +110,7 @@ Rectangle {
 
         Text {
           text: root.tr("state." + (root.service ? root.service.state : "unavailable"))
-          color: root.connected ? Commons.Color.accent : (root.busy ? Commons.Color.urgent : Commons.Color.muted)
+          color: root.connected ? Commons.Color.accent : (root.busy ? Commons.Color.urgent : Commons.Color.foreground)
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -138,7 +140,7 @@ Rectangle {
               id: modeText
               anchors.centerIn: parent
               text: root.service && root.service.routingMode === "full" ? root.tr("routing.fullBadge") : root.tr("routing.splitBadge")
-              color: Commons.Color.muted
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }
@@ -213,7 +215,7 @@ Rectangle {
           text: root.service && root.service.activeProgress
             ? "(" + root.service.activeProgress.completed + "/" + root.service.activeProgress.total + ")"
             : ""
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
         }

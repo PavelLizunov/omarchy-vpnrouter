@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons 1.0
+import qs.Commons as Commons
 import "lib/Protocol.js" as Protocol
 import "lib/Model.js" as Model
 import "lib/I18n.js" as I18n
@@ -98,8 +99,20 @@ Item {
   signal progressNotice(var progressObj)
   signal errorNotice(string code, string message)
 
+  // UI entry points can have distinct JS import contexts in the live host.
+  // Translate through this service, which owns the loaded catalogs.
+  function tr(key, args) {
+    var _ = root.i18nRevision
+    return I18n.t(key, args)
+  }
+
+  Connections {
+    target: Commons.I18n
+    function onLanguageChanged() { root.setLocale(root.locale) }
+  }
+
   function setLocale(loc) {
-    var userLang = Quickshell.env("LANG") || Quickshell.env("LC_MESSAGES") || "en"
+    var userLang = Commons.I18n.language
     I18n.setLocale(loc, userLang)
     root.locale = loc
     root.effectiveLocale = I18n.getEffectiveLocale()
@@ -110,7 +123,7 @@ Item {
   }
 
   onSettingsChanged: {
-    var userLang = Quickshell.env("LANG") || Quickshell.env("LC_MESSAGES") || "en"
+    var userLang = Commons.I18n.language
     var configuredLocale = settings && settings.locale ? settings.locale : "auto"
     I18n.setLocale(configuredLocale, userLang)
     root.locale = configuredLocale
@@ -122,26 +135,30 @@ Item {
   FileView {
     id: enFile
     path: Qt.resolvedUrl("locales/en.json").toString().replace("file://", "")
-    printErrors: false
+    printErrors: true
+    blockLoading: true
+    onLoadFailed: function(error) { console.warn("VPNRouter catalog load failed", path, error) }
     onLoaded: {
       try {
         var obj = JSON.parse(text())
         I18n.setCatalogs(obj, null)
         root.i18nRevision++
-      } catch (e) {}
+      } catch (e) { console.warn("VPNRouter invalid catalog", path, String(e)) }
     }
   }
 
   FileView {
     id: ruFile
     path: Qt.resolvedUrl("locales/ru.json").toString().replace("file://", "")
-    printErrors: false
+    printErrors: true
+    blockLoading: true
+    onLoadFailed: function(error) { console.warn("VPNRouter catalog load failed", path, error) }
     onLoaded: {
       try {
         var obj = JSON.parse(text())
         I18n.setCatalogs(null, obj)
         root.i18nRevision++
-      } catch (e) {}
+      } catch (e) { console.warn("VPNRouter invalid catalog", path, String(e)) }
     }
   }
 
@@ -151,7 +168,7 @@ Item {
   }
 
   Component.onCompleted: {
-    var userLang = Quickshell.env("LANG") || Quickshell.env("LC_MESSAGES") || "en"
+    var userLang = Commons.I18n.language
     var configuredLocale = settings && settings.locale ? settings.locale : "auto"
     I18n.setLocale(configuredLocale, userLang)
     root.locale = configuredLocale

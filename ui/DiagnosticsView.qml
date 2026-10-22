@@ -11,7 +11,7 @@ Item {
 
   function tr(key, args) {
     var _ = i18nRevision
-    return I18n.t(key, args)
+    return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -101,7 +101,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰓅"
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -109,7 +109,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("diagnostics.empty")
-          color: Commons.Color.muted
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -137,7 +137,7 @@ Item {
           // Status indicator badge
           Rectangle {
             id: statusPill
-            width: Style.space(52)
+            width: Math.max(Style.space(52), statusLabel.implicitWidth + Style.space(16))
             height: Style.space(22)
             radius: Style.cornerRadius
             anchors.verticalCenter: parent.verticalCenter
@@ -156,6 +156,7 @@ Item {
             border.width: 1
 
             Text {
+              id: statusLabel
               anchors.centerIn: parent
               text: {
                 if (statusPill.st === "PASS" || statusPill.st === "OK") return root.tr("diagnostics.statusPass")
@@ -185,7 +186,7 @@ Item {
               visible: modelData.message !== "" && modelData.message !== undefined
               width: parent.width
               text: modelData.message || ""
-              color: Commons.Color.muted
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
               wrapMode: Text.WordWrap

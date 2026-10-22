@@ -15,11 +15,18 @@ Native QML and Quickshell plugin for Omarchy Quattro, providing desktop shell in
 
 This repository provides the Omarchy Quattro shell plugin interface, packaging lifecycle, and launcher wrapper.
 
-- **Backend contract:** The plugin follows `VPNRouter.Headless` at `29dcca1a29a670f0a45cf44a72fa639231427040` in upstream [PR #616](https://github.com/PavelLizunov/VPNRouter/pull/616). Live plugin loading and traffic routing still need acceptance.
+- **Backend contract:** The plugin follows `VPNRouter.Headless` at `29dcca1a29a670f0a45cf44a72fa639231427040` in upstream [PR #616](https://github.com/PavelLizunov/VPNRouter/pull/616). The live shell UI has been checked with the installed backend; VPN connection and traffic routing still need acceptance.
 - **Availability:** Connect stays disabled unless the backend reports `capabilities.connect=true`. The hero shows its `unavailableReason` verbatim. A missing backend shows an installation hint for `vpnrouter-headless` and stops automatic retries. Other process failures retry after 2–30 seconds; only a successful snapshot response resets the delay.
 - **Verification:** Server and free-pool verification show success, latency or failure details in their respective views. Kill switch and DNS lockdown remain unavailable on Linux; a saved DNS-lockdown preference is neither shown as active nor resubmitted when unsupported.
 
 ---
+
+## Display language
+
+The panel follows the Omarchy shell language (`Commons.I18n.language`) by default.
+The header language control cycles through EN/RU overrides and AUTO to return to
+following the shell. Overrides are saved in the widget's `locale` setting.
+The plugin ships English and Russian catalogs.
 
 ## Security & Architecture Invariants
 
