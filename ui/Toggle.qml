@@ -26,9 +26,7 @@ Item {
   Keys.onEnterPressed: if (root.enabled) root.toggle()
 
   function toggle() {
-    var next = !checked
-    checked = next
-    toggled(next)
+    toggled(!root.checked)
   }
 
   readonly property bool hot: mouseArea.containsMouse

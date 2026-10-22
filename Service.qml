@@ -440,7 +440,9 @@ Item {
       var errCode = error ? error.code : "unknown_error"
       var errMsg = error ? error.message : I18n.t("error.generic")
       if (errCode === "not_removable") errMsg = root.tr("error.notRemovable")
-      root.lastError = errMsg
+      // Forms with an error callback own localized, operation-specific feedback.
+      // Keep the hero for otherwise unhandled service failures.
+      if (!cb || typeof cb.onError !== "function") root.lastError = errMsg
       if (errCode === "conflict") {
         root.flushQueuedMutations(I18n.t("error.conflict"))
         root.refreshSnapshot()
@@ -983,6 +985,7 @@ Item {
   }
 
   function exportDiagnostics(onDone, onError) {
+    root.diagnosticsExportPath = ""
     return sendRequest("diagnostics.export", {}, function(res) {
       root.diagnosticsExportPath = (res && res.path) ? res.path : ""
       if (onDone) onDone(root.diagnosticsExportPath)

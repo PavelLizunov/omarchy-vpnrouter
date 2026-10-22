@@ -78,7 +78,7 @@ Item {
         textFormat: Text.PlainText
         visible: root.showText
         text: root.stateTitle
-        color: root.statusColor
+        color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
         anchors.verticalCenter: parent.verticalCenter

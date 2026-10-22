@@ -6,13 +6,25 @@ import "../lib/Model.js" as Model
 
 Item {
   id: root
+  objectName: "vpnDiagnosticsView"
 
   property var service: null
+  property string noticeKey: ""
+  property bool noticeError: false
   property int i18nRevision: service ? service.i18nRevision : 0
 
   function tr(key, args) {
     var _ = i18nRevision
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
+  }
+
+  function exportBundle() {
+    if (!root.service || root.service.activeOperation === "diagnostics.export") return
+    root.noticeError = false; root.noticeKey = "operation.pending"
+    root.service.exportDiagnostics(function(path) {
+      root.noticeKey = path ? "" : "diagnostics.exportFailed"
+      root.noticeError = !path
+    }, function() { root.noticeError = true; root.noticeKey = "diagnostics.exportFailed" })
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -39,52 +51,17 @@ Item {
       Button {
         text: "󰑤 " + root.tr("diagnostics.exportBtn")
         variant: "normal"
-        onClicked: if (root.service) root.service.exportDiagnostics()
+        onClicked: root.exportBundle()
+        enabled: !root.service || root.service.activeOperation !== "diagnostics.export"
       }
     }
 
-    // Exported Path Notification
-    Rectangle {
-      visible: root.service && root.service.diagnosticsExportPath !== ""
+    Notice {
       width: parent.width
-      height: exportRow.implicitHeight + Style.space(12)
-      radius: Style.cornerRadius
-      color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
-      border.color: Commons.Color.accent
-      border.width: 1
-
-      Row {
-        id: exportRow
-        anchors.fill: parent
-        anchors.margins: Style.space(6)
-        spacing: Style.space(8)
-
-        Text {
-          textFormat: Text.PlainText
-          text: "󰄬"
-          color: Commons.Color.accent
-          font.family: Style.font.family
-          font.pixelSize: Style.font.bodySmall
-          anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Text {
-          textFormat: Text.PlainText
-          width: parent.width - Style.space(40)
-          text: root.tr("diagnostics.exportedPath", [root.service ? root.service.diagnosticsExportPath : ""])
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
-          anchors.verticalCenter: parent.verticalCenter
-          elide: Text.ElideMiddle
-        }
-
-        IconButton {
-          icon: "󰅖"
-          anchors.verticalCenter: parent.verticalCenter
-          onClicked: if (root.service) root.service.diagnosticsExportPath = ""
-        }
-      }
+      text: root.noticeKey ? root.tr(root.noticeKey) : root.service && root.service.diagnosticsExportPath ? root.tr("diagnostics.exportedPath", [root.service.diagnosticsExportPath]) : ""
+      error: root.noticeError
+      dismissLabel: root.tr("action.dismiss")
+      onDismissed: { root.noticeKey = ""; if (root.service) root.service.diagnosticsExportPath = "" }
     }
 
     // Empty state

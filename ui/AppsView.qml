@@ -11,6 +11,7 @@ import "../lib/Model.js" as Model
 
 Item {
   id: root
+  objectName: "vpnAppsView"
   property var service: null
   property var appLibrary: null
   property int i18nRevision: service ? service.i18nRevision : 0
@@ -60,6 +61,12 @@ Item {
     id: column
     width: parent.width
     spacing: Style.space(10)
+
+    RoutingControls {
+      width: parent.width
+      service: root.service
+      i18nRevision: root.i18nRevision
+    }
 
     Text {
       textFormat: Text.PlainText
@@ -234,26 +241,5 @@ Item {
       delegate: applicationRow
     }
 
-    Text {
-      textFormat: Text.PlainText
-      text: root.tr("apps.routingMode")
-      color: Commons.Color.foreground
-      font.family: Style.font.family
-      font.pixelSize: Style.font.title
-    }
-    Toggle {
-      width: parent.width
-      label: root.tr("apps.routingMode.full")
-      description: root.routingMode === "split" ? root.tr("apps.routingMode.split") : ""
-      checked: root.routingMode === "full"
-      onToggled: function(value) { if (root.service) root.service.setRouting(value ? "full" : "split", root.routingAppsMode) }
-    }
-    Toggle {
-      width: parent.width
-      label: root.tr("apps.appsMode.exclude")
-      description: root.routingAppsMode === "include" ? root.tr("apps.appsMode.include") : ""
-      checked: root.routingAppsMode === "exclude"
-      onToggled: function(value) { if (root.service) root.service.setRouting(root.routingMode, value ? "exclude" : "include") }
-    }
   }
 }

@@ -6,6 +6,7 @@ import "../lib/I18n.js" as I18n
 
 Item {
   id: root
+  objectName: "vpnFreePoolView"
 
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
@@ -44,7 +45,7 @@ Item {
       }
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
-      color: root.service && root.service.freeVerification && root.service.freeVerification.ok === true ? Commons.Color.accent : Commons.Color.urgent
+      color: Commons.Color.foreground
       font.family: Style.font.family
       font.pixelSize: Style.font.bodySmall
     }
@@ -148,13 +149,7 @@ Item {
               Text {
                 textFormat: Text.PlainText
                 text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
-                color: {
-                  var tier = Model.latencyTier(modelData.latencyMs)
-                  if (tier === "good") return Commons.Color.accent
-                  if (tier === "medium") return Commons.Color.foreground
-                  if (tier === "poor") return Commons.Color.urgent
-                  return Commons.Color.foreground
-                }
+                color: Commons.Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 anchors.verticalCenter: parent.verticalCenter

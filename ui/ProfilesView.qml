@@ -5,6 +5,7 @@ import "../lib/I18n.js" as I18n
 
 Item {
   id: root
+  objectName: "vpnProfilesView"
 
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0

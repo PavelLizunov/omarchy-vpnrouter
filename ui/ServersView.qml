@@ -6,24 +6,43 @@ import "../lib/I18n.js" as I18n
 
 Item {
   id: root
+  objectName: "vpnServersView"
 
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
   property string searchQuery: ""
   signal addSubscriptionRequested()
   property bool showImportBox: false
+  property bool pending: false
+  property string noticeKey: ""
+  property bool noticeError: false
 
   function tr(key, args) {
     var _ = i18nRevision
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
-  function submit() {
-    var text = importArea.text.trim()
-    if (!root.service || !text) return
-    root.service.importServers(text)
+  function cancelForm() {
+    if (root.pending) return
     importArea.text = ""
+    root.noticeKey = ""
     root.showImportBox = false
+    importToggleBtn.forceActiveFocus()
+  }
+
+  function submit() {
+    if (!root.service || root.pending) return
+    feedback.reveal()
+    if (!importArea.text.trim()) { root.noticeError = true; root.noticeKey = "form.required"; return }
+    root.pending = true; root.noticeError = false; root.noticeKey = "operation.pending"
+    root.service.importServers(importArea.text.trim(), function() {
+      root.pending = false; root.noticeKey = "servers.imported"
+      importArea.text = ""; root.showImportBox = false
+      importToggleBtn.forceActiveFocus()
+    }, function(err) {
+      root.pending = false; root.noticeError = true
+      root.noticeKey = err && err.code === "invalid_argument" ? "servers.invalidImport" : "form.failed"
+    })
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -52,8 +71,21 @@ Item {
         id: importToggleBtn
         text: root.showImportBox ? root.tr("action.cancel") : "+ " + root.tr("action.import")
         variant: root.showImportBox ? "subtle" : "normal"
-        onClicked: root.showImportBox = !root.showImportBox
+        enabled: !root.pending
+        onClicked: {
+          if (root.showImportBox) root.cancelForm()
+          else { root.noticeKey = ""; root.showImportBox = true; Qt.callLater(function() { importArea.forceActiveFocus() }) }
+        }
       }
+    }
+
+    Notice {
+      id: feedback
+      width: parent.width
+      text: root.noticeKey ? root.tr(root.noticeKey) : ""
+      error: root.noticeError
+      dismissLabel: root.tr("action.dismiss")
+      onDismissed: root.noticeKey = ""
     }
 
     // Collapsible Import Form
@@ -80,41 +112,15 @@ Item {
           font.pixelSize: Style.font.title
         }
 
-        Rectangle {
+        Editor {
+          id: importArea
+          objectName: "vpnServerImport"
           width: parent.width
-          height: Style.space(70)
-          radius: Style.cornerRadius
-          color: Style.normalFill
-          border.color: importArea.activeFocus ? Style.focusBorderColor : Style.normalBorderColor
-          border.width: importArea.activeFocus ? Style.focusBorderWidth : 1
-
-          TextEdit {
-            id: importArea
-            activeFocusOnTab: true
-            textFormat: TextEdit.PlainText
-            Keys.onPressed: function(event) {
-              if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ControlModifier)) { root.submit(); event.accepted = true }
-            }
-            anchors.fill: parent
-            anchors.margins: Style.space(6)
-            wrapMode: TextEdit.Wrap
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
-            color: Commons.Color.foreground
-            selectionColor: Commons.Color.accent
-            selectedTextColor: Commons.Color.background
-
-            Text {
-              textFormat: Text.PlainText
-              width: parent.width
-              wrapMode: Text.WordWrap
-              visible: importArea.text.length === 0
-              text: root.tr("servers.importPlaceholder")
-              color: Commons.Color.foreground
-              font.family: Style.font.family
-              font.pixelSize: Style.font.caption
-            }
-          }
+          height: Style.space(90)
+          enabled: !root.pending
+          label: root.tr("servers.importTitle")
+          placeholderText: root.tr("servers.importPlaceholder")
+          onSubmitted: root.submit()
         }
 
         Row {
@@ -123,17 +129,15 @@ Item {
           Button {
             text: root.tr("servers.importBtn")
             variant: "primary"
-            enabled: importArea.text.trim().length > 0
+            enabled: !root.pending
             onClicked: root.submit()
           }
 
           Button {
             text: root.tr("action.cancel")
             variant: "subtle"
-            onClicked: {
-              importArea.text = ""
-              root.showImportBox = false
-            }
+            enabled: !root.pending
+            onClicked: root.cancelForm()
           }
         }
       }
@@ -148,7 +152,7 @@ Item {
       }
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
-      color: root.service && root.service.serverVerification && root.service.serverVerification.ok === true ? Commons.Color.accent : Commons.Color.urgent
+      color: Commons.Color.foreground
       font.family: Style.font.family
       font.pixelSize: Style.font.bodySmall
     }
@@ -218,8 +222,10 @@ Item {
         }
         Rectangle {
           id: serverRowRect
+          objectName: "vpnServerRow-" + modelData.id
           activeFocusOnTab: true
           Keys.onReturnPressed: if (root.service) root.service.selectServer(modelData.id)
+          Keys.onEnterPressed: if (root.service) root.service.selectServer(modelData.id)
           Keys.onSpacePressed: if (root.service) root.service.selectServer(modelData.id)
           Accessible.role: Accessible.RadioButton
           Accessible.name: modelData.name || root.tr("servers.unnamed")
@@ -262,7 +268,7 @@ Item {
               radius: width / 2
               anchors.verticalCenter: parent.verticalCenter
               color: "transparent"
-              border.color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
+              border.color: Commons.Color.foreground
               border.width: 2
 
               Rectangle {
@@ -285,7 +291,7 @@ Item {
                 textFormat: Text.PlainText
                 width: parent.width
                 text: modelData.name || root.tr("servers.unnamed")
-                color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
+                color: Commons.Color.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.bodySmall
                 elide: Text.ElideRight
@@ -314,13 +320,7 @@ Item {
                 Text {
                   textFormat: Text.PlainText
                   text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
-                  color: {
-                    var tier = Model.latencyTier(modelData.latencyMs)
-                    if (tier === "good") return Commons.Color.accent
-                    if (tier === "medium") return Commons.Color.foreground
-                    if (tier === "poor") return Commons.Color.urgent
-                    return Commons.Color.foreground
-                  }
+                  color: Commons.Color.foreground
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                   anchors.verticalCenter: parent.verticalCenter

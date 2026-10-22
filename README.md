@@ -26,8 +26,9 @@ This repository provides the Omarchy Quattro shell plugin interface, packaging l
 When the server and subscription lists are both empty, **Add a subscription** in
 the hero or Servers tab opens the Subscriptions form. Opening the form does not
 fetch anything. The advanced panel keeps one fitted frame and internal scrolling.
-The hero fits its content up to a fixed maximum, leaving more room for the page
-when messages are short. Navigation stays in place when switching tabs. Tab
+The hero reserves a fixed height, and a native divider separates the fixed
+header/tabs from the scrolling page. Navigation stays in place during errors and
+when switching tabs. Tab
 traverses controls; Escape closes the panel. Enter submits
 single-line forms; multiline server/configuration editors use Ctrl+Enter.
 
@@ -47,6 +48,22 @@ group without Delete. The backend remains authoritative for removal. Diagnostic
 severity labels and first-launch setup notices are localized; other backend prose
 is displayed verbatim. Kill switch is disabled with a Linux explanation; DNS
 lockdown follows the backend capability and is omitted from writes when absent.
+
+Routing uses explicit native choices: **Selected apps only / All traffic**.
+In split mode, **Only selected apps use VPN / All except selected** chooses the
+app list's meaning. The simple panel exposes the same choices.
+
+Subscription URLs are masked by default. Import forms keep input on failure and
+clear it after success or Cancel; empty/invalid input produces inline feedback.
+Settings provide **Revert changes**, which restores the last values returned by
+the service. Invalid CIDRs are sent intact for service validation rather than
+silently removed. Multiline editors scroll internally; Enter adds a line,
+Ctrl+Enter submits, and Tab leaves the editor.
+
+Rules export returns saved rules as selectable text in a separate read-only area;
+it preserves unsaved edits and does not create a file. Diagnostics export shows
+the service's full selectable, wrapping output path and clears stale feedback
+before a retry.
 
 ## Display language
 

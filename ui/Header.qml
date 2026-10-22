@@ -91,6 +91,7 @@ Item {
       Accessible.name: root.tr("language.change")
       activeFocusOnTab: true
       Keys.onReturnPressed: root.localeToggled()
+      Keys.onEnterPressed: root.localeToggled()
       Keys.onSpacePressed: root.localeToggled()
       width: Style.space(48)
       height: Style.spacing.controlHeight
@@ -124,6 +125,7 @@ Item {
       Accessible.name: root.tr(root.mode === "simple" ? "mode.advanced" : "mode.simple")
       activeFocusOnTab: true
       Keys.onReturnPressed: root.modeChangeRequested(root.mode === "simple" ? "advanced" : "simple")
+      Keys.onEnterPressed: root.modeChangeRequested(root.mode === "simple" ? "advanced" : "simple")
       Keys.onSpacePressed: root.modeChangeRequested(root.mode === "simple" ? "advanced" : "simple")
       width: modeRow.implicitWidth + Style.space(16)
       height: Style.spacing.controlHeight

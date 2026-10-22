@@ -46,6 +46,7 @@ Item {
 
       Item {
         id: tabItem
+        objectName: "vpnTab-" + modelData.id
         Accessible.role: Accessible.PageTab
         Accessible.name: modelData.label
         Accessible.selected: active

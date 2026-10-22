@@ -43,7 +43,7 @@ Rectangle {
         {name:"com.discordapp.Discord",displayName:"Discord",icon:"com.discordapp.Discord",desktopId:"com.discordapp.Discord.desktop"},
         {name:"dropbox",displayName:"Dropbox",icon:"dropbox",desktopId:"dropbox.desktop"},
         {name:"nvim",displayName:"Neovim",icon:"nvim",desktopId:"nvim.desktop"},
-        {name:"org.mozilla.Thunderbird",displayName:"Thunderbird",icon:"org.mozilla.Thunderbird",desktopId:"org.mozilla.Thunderbird.desktop"},
+        {name:"thunderbird",displayName:"Thunderbird",icon:"org.mozilla.Thunderbird",desktopId:"org.mozilla.Thunderbird.desktop"},
         {name:"bash"},{name:"cat"},{name:"at-spi-bus-launcher"},{name:"codex"},{name:"bwrap"}
       ]
       break
@@ -109,7 +109,7 @@ Rectangle {
       verify(!apps.otherProcessesExpanded)
       verify(fixture.find(apps,function(x) { return x.objectName === "vpnAppIcon-codex" }) === null,"Collapsed processes have no row")
       var disclosure = fixture.find(apps,function(x) { return x.objectName === "vpnOtherProcessesToggle" })
-      var lastApp = fixture.find(apps,function(x) { return x.objectName === "vpnAppRow-org.mozilla.Thunderbird" })
+      var lastApp = fixture.find(apps,function(x) { return x.objectName === "vpnAppRow-thunderbird" })
       console.log("R5_ROW_GEOMETRY",lastApp.y,lastApp.height,disclosure.y)
       verify(disclosure.y >= lastApp.y + lastApp.height,"Process disclosure must follow the last app without overlap")
       disclosure.forceActiveFocus(); wait(30); keyClick(Qt.Key_Return); wait(30)
@@ -126,7 +126,7 @@ Rectangle {
       compare(apps.runningApps.length,0)
       compare(apps.otherProcesses.length,1)
       verify(apps.otherProcessesExpanded,"Search reveals a previously collapsed process")
-      var add = fixture.find(apps,function(x) { return x.selected === false && x.clicked !== undefined })
+      var add = fixture.find(apps,function(x) { return x.selected === false && x.clicked !== undefined && x.variant !== undefined })
       verify(add !== null)
       add.forceActiveFocus(); wait(30); keyClick(Qt.Key_Return); wait(70)
       verify(backendService.apps.include.indexOf("codex") !== -1,"A process search result can be selected")

@@ -10,6 +10,7 @@ FocusScope {
   property string placeholderText: ""
   property bool isPassword: false
   property string passwordToggleLabel: ""
+  property string passwordHideLabel: passwordToggleLabel
   property int echoMode: isPassword ? (showPassword ? TextInput.Normal : TextInput.Password) : TextInput.Normal
   property bool showPassword: false
 
@@ -89,14 +90,21 @@ FocusScope {
         activeFocusOnTab: root.isPassword
         Keys.onSpacePressed: root.showPassword = !root.showPassword
         Keys.onReturnPressed: root.showPassword = !root.showPassword
+        Keys.onEnterPressed: root.showPassword = !root.showPassword
         Accessible.role: Accessible.CheckBox
-        Accessible.name: root.passwordToggleLabel
+        Accessible.name: root.showPassword ? root.passwordHideLabel : root.passwordToggleLabel
         Accessible.checked: root.showPassword
         visible: root.isPassword
         width: Style.space(18)
         height: parent.height
         anchors.verticalCenter: parent.verticalCenter
 
+        Rectangle {
+          anchors.fill: parent
+          color: "transparent"
+          border.color: eyeBtn.activeFocus ? Style.focusBorderColor : "transparent"
+          border.width: eyeBtn.activeFocus ? Math.max(1, Style.focusBorderWidth) : 0
+        }
         Text {
           textFormat: Text.PlainText
           anchors.centerIn: parent

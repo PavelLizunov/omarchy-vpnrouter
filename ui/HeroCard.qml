@@ -38,8 +38,8 @@ Rectangle {
   border.width: Style.normalBorderWidth
 
   implicitWidth: parent ? parent.width : Style.space(480)
-  // The panel owns a stable frame; shorter status text gives space to the tab.
-  implicitHeight: Math.min(Style.space(176), cardColumn.implicitHeight + Style.space(24))
+  // Reserve the same header space for pending/error and every tab.
+  implicitHeight: Style.space(176)
 
   readonly property bool needsSetup: !!(service && service.serversLoaded && service.subscriptionsLoaded && service.servers.length === 0 && service.subscriptions.length === 0 && !connected && !busy && service.configMode !== "custom")
   readonly property bool canConnect: service && service.capabilities && service.capabilities.connect === true
@@ -126,7 +126,7 @@ Rectangle {
           Text {
             textFormat: Text.PlainText
             text: root.tr("state." + (root.service ? root.service.state : "unavailable"))
-            color: root.connected ? Commons.Color.accent : (root.busy ? Commons.Color.urgent : Commons.Color.foreground)
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
           }

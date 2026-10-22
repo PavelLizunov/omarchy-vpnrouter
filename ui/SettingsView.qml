@@ -6,10 +6,13 @@ import "../lib/I18n.js" as I18n
 
 Item {
   id: root
+  objectName: "vpnSettingsView"
 
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
   property string saveNotice: ""
+  property bool noticeError: false
+  property bool pending: false
 
   function tr(key, args) {
     var _ = i18nRevision
@@ -65,7 +68,7 @@ Item {
 
   function buildSettingsPayload() {
     var rawCidr = (typeof cidrEdit !== "undefined" && cidrEdit) ? cidrEdit.text : root.cidrsVal
-    var cidrArray = Model.cleanCidrList(rawCidr)
+    var cidrArray = rawCidr.split(/[\n,]+/).map(function(s) { return s.trim() }).filter(function(s) { return s.length > 0 })
     var payload = {
       mtu: Model.validateMtu(root.mtuVal),
       ipv6Enabled: root.ipv6Val,
@@ -82,9 +85,41 @@ Item {
     return payload
   }
 
+  function resetDraft() {
+    var data = root.service ? root.service.settingsData : null
+    if (!data) return
+    root.mtuVal = data.mtu
+    mtuInput.text = String(data.mtu)
+    root.ipv6Val = data.ipv6Enabled
+    root.strictRouteVal = data.strictRoute
+    root.strictDnsVal = data.strictDns
+    root.bypassRuVal = data.bypassRussianTraffic
+    root.blockAdsVal = data.blockAds
+    root.dnsLeakVal = data.dnsLeakLockdown
+    root.dnsModeVal = root.savedDnsMode()
+    root.cidrsVal = Model.formatCidrList(data.routeExcludeAddress)
+    cidrEdit.text = root.cidrsVal
+  }
+
+  Connections {
+    target: root.service
+    function onSettingsDataChanged() { root.resetDraft() }
+  }
+
   function submit() {
-    if (root.service) root.service.setSettings(root.buildSettingsPayload(), function() {
-      root.saveNotice = root.tr("settings.saved")
+    if (!root.service || root.pending) return
+    feedback.reveal()
+    var mtu = Number(mtuInput.text)
+    if (!/^\d+$/.test(mtuInput.text) || mtu < 576 || mtu > 9000) {
+      root.noticeError = true; root.saveNotice = "settings.invalidMtu"; return
+    }
+    root.mtuVal = mtu
+    root.pending = true; root.noticeError = false; root.saveNotice = "operation.pending"
+    root.service.setSettings(root.buildSettingsPayload(), function() {
+      root.pending = false; root.saveNotice = "settings.saved"
+    }, function(err) {
+      root.pending = false; root.noticeError = true
+      root.saveNotice = err && err.code === "invalid_argument" ? "settings.invalid" : "form.failed"
     })
   }
 
@@ -96,47 +131,13 @@ Item {
     width: parent.width
     spacing: Style.space(12)
 
-    // Save Notice
-    Rectangle {
-      visible: root.saveNotice !== ""
+    Notice {
+      id: feedback
       width: parent.width
-      height: noticeRow.implicitHeight + Style.space(12)
-      radius: Style.cornerRadius
-      color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
-      border.color: Commons.Color.accent
-      border.width: 1
-
-      Row {
-        id: noticeRow
-        anchors.fill: parent
-        anchors.margins: Style.space(6)
-        spacing: Style.space(8)
-
-        Text {
-          textFormat: Text.PlainText
-          text: "󰄬"
-          color: Commons.Color.accent
-          font.family: Style.font.family
-          font.pixelSize: Style.font.bodySmall
-          anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Text {
-          textFormat: Text.PlainText
-          width: parent.width - Style.space(40)
-          text: root.saveNotice
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
-          anchors.verticalCenter: parent.verticalCenter
-        }
-
-        IconButton {
-          icon: "󰅖"
-          anchors.verticalCenter: parent.verticalCenter
-          onClicked: root.saveNotice = ""
-        }
-      }
+      text: root.saveNotice ? root.tr(root.saveNotice) : ""
+      error: root.noticeError
+      dismissLabel: root.tr("action.dismiss")
+      onDismissed: root.saveNotice = ""
     }
 
     // Network & Engine Settings Card
@@ -150,6 +151,7 @@ Item {
 
       Column {
         id: settingsGrid
+        enabled: !root.pending
         anchors.fill: parent
         anchors.margins: Style.space(12)
         spacing: Style.space(10)
@@ -182,7 +184,6 @@ Item {
             width: Style.space(100)
             text: String(root.mtuVal)
             placeholderText: "1420"
-            onTextChanged: root.mtuVal = Model.validateMtu(text)
             onAccepted: root.submit()
           }
         }
@@ -323,50 +324,31 @@ Item {
             font.pixelSize: Style.font.bodySmall
           }
 
-          Rectangle {
+          Editor {
+            id: cidrEdit
+            objectName: "vpnSettingsCidrs"
             width: parent.width
-            height: Style.space(70)
-            radius: Style.cornerRadius
-            color: Style.normalFill
-            border.color: cidrEdit.activeFocus ? Style.focusBorderColor : Style.normalBorderColor
-            border.width: cidrEdit.activeFocus ? Style.focusBorderWidth : 1
-
-            TextEdit {
-              id: cidrEdit
-              activeFocusOnTab: true
-              textFormat: TextEdit.PlainText
-              Keys.onPressed: function(event) {
-                if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ControlModifier)) { root.submit(); event.accepted = true }
-              }
-              anchors.fill: parent
-              anchors.margins: Style.space(6)
-              wrapMode: TextEdit.Wrap
-              font.family: Style.font.family
-              font.pixelSize: Style.font.bodySmall
-              color: Commons.Color.foreground
-              selectionColor: Commons.Color.accent
-              selectedTextColor: Commons.Color.background
-              text: root.cidrsVal
-
-              Text {
-                textFormat: Text.PlainText
-                width: parent.width
-                wrapMode: Text.WordWrap
-                visible: cidrEdit.text.length === 0
-                text: root.tr("settings.excludeCidrPlaceholder")
-                color: Commons.Color.foreground
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-              }
-            }
+            height: Style.space(90)
+            text: root.cidrsVal
+            label: root.tr("settings.excludeCidr")
+            placeholderText: root.tr("settings.excludeCidrPlaceholder")
+            onSubmitted: root.submit()
           }
+
         }
 
-        // Save Button
-        Button {
-          text: root.tr("settings.save")
-          variant: "primary"
-          onClicked: root.submit()
+        Flow {
+          width: parent.width
+          spacing: Style.space(8)
+          Button {
+            text: root.tr("settings.save")
+            variant: "primary"
+            onClicked: root.submit()
+          }
+          Button {
+            text: root.tr("settings.revert")
+            onClicked: { root.resetDraft(); root.saveNotice = "settings.reverted"; root.noticeError = false }
+          }
         }
       }
     }

@@ -1,20 +1,71 @@
 import QtQuick
 import qs.Commons 1.0
 import qs.Commons 1.0 as Commons
+import qs.Ui 1.0 as Ui
+import "../lib/Focus.js" as Focus
 import "../lib/I18n.js" as I18n
 
 Item {
   id: root
-
+  objectName: "vpnRulesView"
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
-  property string selectedPriority: (service && service.rules && service.rules.priority) ? service.rules.priority : "toggles_first"
+  property string selectedPriority: service && service.rules ? service.rules.priority : "toggles_first"
   property string importExportFormat: "json"
   property string statusNotice: ""
+  property var noticeArgs: []
+  property bool noticeError: false
+  property bool pending: false
+  property string exportedText: ""
 
   function tr(key, args) {
     var _ = i18nRevision
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
+  }
+
+  Connections {
+    target: root.service
+    function onRulesChanged() {
+      rulesTextEdit.text = root.service.rules.text
+      root.selectedPriority = root.service.rules.priority
+    }
+  }
+
+  function failure(err) {
+    root.pending = false
+    root.noticeError = true
+    root.statusNotice = err && err.code === "invalid_argument" ? "rules.invalid" : "form.failed"
+  }
+
+  function save() {
+    if (!root.service || root.pending) return
+    feedback.reveal()
+    root.pending = true; root.noticeError = false; root.statusNotice = "operation.pending"
+    root.service.setRules(rulesTextEdit.text, root.selectedPriority, function() {
+      root.pending = false; root.statusNotice = "rules.saved"
+    }, root.failure)
+  }
+
+  function importText() {
+    if (!root.service || root.pending) return
+    feedback.reveal()
+    if (!rulesTextEdit.text.trim()) { root.noticeError = true; root.statusNotice = "form.required"; return }
+    root.pending = true; root.noticeError = false; root.statusNotice = "operation.pending"
+    root.service.importRules(rulesTextEdit.text, root.importExportFormat, function() {
+      root.pending = false; root.statusNotice = "rules.importedSuccess"
+    }, root.failure)
+  }
+
+  function exportText() {
+    if (!root.service || root.pending) return
+    feedback.reveal()
+    root.exportedText = ""
+    root.pending = true; root.noticeError = false; root.statusNotice = "operation.pending"
+    var format = root.importExportFormat
+    root.service.exportRules(format, function(text) {
+      root.pending = false; root.exportedText = text
+      root.noticeArgs = [format.toUpperCase()]; root.statusNotice = "rules.exportReady"
+    }, root.failure)
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -23,211 +74,89 @@ Item {
   Column {
     id: column
     width: parent.width
-    spacing: Style.space(12)
-
-    // Notice banner
-    Rectangle {
-      visible: root.statusNotice !== ""
+    spacing: Style.space(10)
+    Notice {
+      id: feedback
       width: parent.width
-      height: noticeRow.implicitHeight + Style.space(12)
-      radius: Style.cornerRadius
-      color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
-      border.color: Commons.Color.accent
-      border.width: 1
-
-      Row {
-        id: noticeRow
-        anchors.fill: parent
-        anchors.margins: Style.space(6)
-        spacing: Style.space(8)
-
-        Text {
-          textFormat: Text.PlainText
-          text: "󰄬"
-          color: Commons.Color.accent
-          font.family: Style.font.family
-          font.pixelSize: Style.font.bodySmall
-          anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Text {
-          textFormat: Text.PlainText
-          width: parent.width - Style.space(40)
-          text: root.statusNotice
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
-          anchors.verticalCenter: parent.verticalCenter
-        }
-
-        IconButton {
-          icon: "󰅖"
-          anchors.verticalCenter: parent.verticalCenter
-          onClicked: root.statusNotice = ""
-        }
-      }
+      text: root.statusNotice ? root.tr(root.statusNotice, root.noticeArgs) : ""
+      error: root.noticeError
+      dismissLabel: root.tr("action.dismiss")
+      onDismissed: root.statusNotice = ""
     }
-
-    // Priority Order Card
-    Rectangle {
+    Text {
       width: parent.width
-      height: prioCol.implicitHeight + Style.space(16)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: Style.normalBorderColor
-      border.width: Style.normalBorderWidth
-
-      Column {
-        id: prioCol
-        anchors.fill: parent
-        anchors.margins: Style.space(10)
-        spacing: Style.space(8)
-
-        Text {
-          textFormat: Text.PlainText
-          text: root.tr("rules.priority")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.title
-        }
-
-        Column {
-          width: parent.width
-          spacing: Style.space(6)
-
-          Toggle {
-            width: parent.width
-            label: root.tr("rules.priority.toggles_first")
-            checked: root.selectedPriority === "toggles_first"
-            onToggled: function(val) {
-              root.selectedPriority = val ? "toggles_first" : "custom_first"
-            }
-          }
-
-          Toggle {
-            width: parent.width
-            label: root.tr("rules.priority.custom_first")
-            checked: root.selectedPriority === "custom_first"
-            onToggled: function(val) {
-              root.selectedPriority = val ? "custom_first" : "toggles_first"
-            }
-          }
-        }
-      }
+      textFormat: Text.PlainText
+      text: root.tr("rules.priority")
+      color: Commons.Color.foreground
+      font.family: Style.font.family
+      font.pixelSize: Style.font.title
     }
-
-    // Rules Text Area
-    Rectangle {
+    Ui.ButtonGroup {
+      id: priorityChoice
+      objectName: "vpnRulesPriority"
+      fontSize: Style.font.bodySmall
+      enabled: !root.pending
+      value: root.selectedPriority
+      options: [{value:"toggles_first",label:root.tr("rules.priority.toggles_first")},
+                {value:"custom_first",label:root.tr("rules.priority.custom_first")}]
+      onChanged: function(value) { root.selectedPriority = value }
+      onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(priorityChoice) })
+    }
+    Text {
+      textFormat: Text.PlainText
+      text: root.tr("rules.textLabel")
+      color: Commons.Color.foreground
+      font.family: Style.font.family
+      font.pixelSize: Style.font.bodySmall
+    }
+    Editor {
+      id: rulesTextEdit
+      objectName: "vpnRulesEditor"
       width: parent.width
-      height: Style.space(160)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: rulesTextEdit.activeFocus ? Style.focusBorderColor : Style.normalBorderColor
-      border.width: rulesTextEdit.activeFocus ? Style.focusBorderWidth : 1
-
-      Flickable {
-        anchors.fill: parent
-        anchors.margins: Style.space(8)
-        contentWidth: rulesTextEdit.implicitWidth
-        contentHeight: rulesTextEdit.implicitHeight
-        clip: true
-
-        TextEdit {
-          id: rulesTextEdit
-          activeFocusOnTab: true
-          textFormat: TextEdit.PlainText
-          width: parent.width
-          wrapMode: TextEdit.Wrap
-          font.family: Style.font.family
-          font.pixelSize: Style.font.bodySmall
-          color: Commons.Color.foreground
-          selectionColor: Commons.Color.accent
-          selectedTextColor: Commons.Color.background
-          text: (root.service && root.service.rules) ? (root.service.rules.text || "") : ""
-        }
-      }
+      height: Style.space(140)
+      enabled: !root.pending
+      label: root.tr("rules.textLabel")
+      text: root.service && root.service.rules ? root.service.rules.text : ""
+      onSubmitted: root.save()
     }
-
-    // Actions wrap before the format selector runs out of room.
     Flow {
       width: parent.width
       spacing: Style.space(8)
-
       Button {
         text: root.tr("rules.saveBtn")
         variant: "primary"
-        onClicked: {
-          if (root.service) {
-            root.service.setRules(rulesTextEdit.text, root.selectedPriority, function() {
-              root.statusNotice = root.tr("rules.saved")
-            })
-          }
-        }
+        enabled: !root.pending
+        onClicked: root.save()
       }
-
       Button {
         text: root.tr("rules.importBtn")
-        variant: "normal"
-        onClicked: {
-          if (root.service) {
-            root.service.importRules(rulesTextEdit.text, root.importExportFormat, function() {
-              root.statusNotice = root.tr("rules.importedSuccess")
-            })
-          }
-        }
+        enabled: !root.pending
+        onClicked: root.importText()
       }
-
       Button {
         text: root.tr("rules.exportBtn")
-        variant: "normal"
-        onClicked: {
-          if (root.service) {
-            root.service.exportRules(root.importExportFormat, function(exported) {
-              rulesTextEdit.text = exported
-              root.statusNotice = root.tr("rules.exported", [root.importExportFormat.toUpperCase()])
-            })
-          }
-        }
+        enabled: !root.pending
+        onClicked: root.exportText()
       }
-
-      // Format Selector
-      Row {
-        spacing: Style.space(4)
-
-        Repeater {
-          model: ["json", "csv", "singbox"]
-
-          Rectangle {
-            activeFocusOnTab: true
-            Keys.onReturnPressed: root.importExportFormat = modelData
-            Keys.onSpacePressed: root.importExportFormat = modelData
-            width: fmtText.implicitWidth + Style.space(12)
-            height: Style.spacing.controlHeight
-            radius: Style.cornerRadius
-            color: root.importExportFormat === modelData ? Style.selectedFill : (fmtMouse.containsMouse ? Style.hoverFill : Style.normalFill)
-            border.color: activeFocus ? Style.focusBorderColor : root.importExportFormat === modelData ? Commons.Color.accent : Style.normalBorderColor
-            border.width: 1
-
-            Text {
-              textFormat: Text.PlainText
-              id: fmtText
-              anchors.centerIn: parent
-              text: modelData.toUpperCase()
-              color: Commons.Color.foreground
-              font.family: Style.font.family
-              font.pixelSize: Style.font.caption
-            }
-
-            MouseArea {
-              id: fmtMouse
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.importExportFormat = modelData
-            }
-          }
-        }
+      Ui.ButtonGroup {
+        id: formatChoice
+        objectName: "vpnRulesFormat"
+        fontSize: Style.font.bodySmall
+        enabled: !root.pending
+        value: root.importExportFormat
+        options: [{value:"json",label:"JSON"},{value:"csv",label:"CSV"},{value:"singbox",label:"SINGBOX"}]
+        onChanged: function(value) { root.importExportFormat = value }
+        onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(formatChoice) })
       }
+    }
+    Editor {
+      objectName: "vpnRulesExport"
+      visible: root.exportedText !== ""
+      width: parent.width
+      height: Style.space(110)
+      text: root.exportedText
+      readOnly: true
+      label: root.tr("rules.exportBtn")
     }
   }
 }

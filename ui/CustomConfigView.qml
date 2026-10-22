@@ -5,22 +5,46 @@ import "../lib/I18n.js" as I18n
 
 Item {
   id: root
+  objectName: "vpnCustomConfigView"
 
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
   property bool showImportForm: false
+  property bool pending: false
+  property string noticeKey: ""
+  property bool noticeError: false
 
   function tr(key, args) {
     var _ = i18nRevision
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
-  function submit() {
-    var text = customTextArea.text.trim()
-    if (!root.service || !text || !customNameInput.text.trim()) return
-    root.service.importCustom(customNameInput.text.trim(), text)
+  function cancelForm() {
+    if (root.pending) return
     customNameInput.clear(); customTextArea.text = ""
-    root.showImportForm = false
+    root.noticeKey = ""; root.showImportForm = false
+    importToggle.forceActiveFocus()
+  }
+
+  function submit() {
+    if (!root.service || root.pending) return
+    feedback.reveal()
+    root.noticeError = true
+    var text = customTextArea.text.trim()
+    if (!text || !customNameInput.text.trim()) { root.noticeKey = "form.required"; return }
+    try {
+      var config = JSON.parse(text)
+      if (!config || typeof config !== "object" || Array.isArray(config)) throw new Error("object required")
+    } catch (e) { root.noticeKey = "custom.invalidJson"; return }
+    root.pending = true; root.noticeError = false; root.noticeKey = "operation.pending"
+    root.service.importCustom(customNameInput.text.trim(), text, function() {
+      root.pending = false; root.noticeKey = "custom.imported"
+      customNameInput.clear(); customTextArea.text = ""; root.showImportForm = false
+      importToggle.forceActiveFocus()
+    }, function(err) {
+      root.pending = false; root.noticeError = true
+      root.noticeKey = err && err.code === "invalid_argument" ? "custom.invalidConfig" : "form.failed"
+    })
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -36,10 +60,24 @@ Item {
       spacing: Style.space(8)
 
       Button {
-        text: "+ " + root.tr("custom.addTitle")
+        id: importToggle
+        enabled: !root.pending
+        text: root.showImportForm ? root.tr("action.cancel") : "+ " + root.tr("custom.addTitle")
         variant: root.showImportForm ? "subtle" : "primary"
-        onClicked: root.showImportForm = !root.showImportForm
+        onClicked: {
+          if (root.showImportForm) root.cancelForm()
+          else { root.noticeKey = ""; root.showImportForm = true; Qt.callLater(function() { customNameInput.forceActiveFocus() }) }
+        }
       }
+    }
+
+    Notice {
+      id: feedback
+      width: parent.width
+      text: root.noticeKey ? root.tr(root.noticeKey) : ""
+      error: root.noticeError
+      dismissLabel: root.tr("action.dismiss")
+      onDismissed: root.noticeKey = ""
     }
 
     // Collapsible Import Form
@@ -66,48 +104,40 @@ Item {
           font.pixelSize: Style.font.title
         }
 
+        Text {
+          width: parent.width
+          textFormat: Text.PlainText
+          text: root.tr("custom.nameLabel")
+          wrapMode: Text.WordWrap
+          color: Commons.Color.foreground
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+        }
         TextField {
           id: customNameInput
+          enabled: !root.pending
           width: parent.width
           placeholderText: root.tr("custom.nameLabel")
           onAccepted: customTextArea.forceActiveFocus()
         }
 
-        Rectangle {
+        Text {
           width: parent.width
-          height: Style.space(90)
-          radius: Style.cornerRadius
-          color: Style.normalFill
-          border.color: customTextArea.activeFocus ? Style.focusBorderColor : Style.normalBorderColor
-          border.width: customTextArea.activeFocus ? Style.focusBorderWidth : 1
-
-          TextEdit {
-            id: customTextArea
-            activeFocusOnTab: true
-            textFormat: TextEdit.PlainText
-            Keys.onPressed: function(event) {
-              if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ControlModifier)) { root.submit(); event.accepted = true }
-            }
-            anchors.fill: parent
-            anchors.margins: Style.space(6)
-            wrapMode: TextEdit.Wrap
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
-            color: Commons.Color.foreground
-            selectionColor: Commons.Color.accent
-            selectedTextColor: Commons.Color.background
-
-            Text {
-              textFormat: Text.PlainText
-              width: parent.width
-              wrapMode: Text.WordWrap
-              visible: customTextArea.text.length === 0
-              text: root.tr("custom.jsonLabel") + "…"
-              color: Commons.Color.foreground
-              font.family: Style.font.family
-              font.pixelSize: Style.font.caption
-            }
-          }
+          textFormat: Text.PlainText
+          text: root.tr("custom.jsonLabel")
+          color: Commons.Color.foreground
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+        }
+        Editor {
+          id: customTextArea
+          objectName: "vpnCustomJson"
+          width: parent.width
+          height: Style.space(110)
+          enabled: !root.pending
+          label: root.tr("custom.jsonLabel")
+          placeholderText: root.tr("custom.jsonLabel")
+          onSubmitted: root.submit()
         }
 
         Row {
@@ -116,18 +146,15 @@ Item {
           Button {
             text: root.tr("action.import")
             variant: "primary"
-            enabled: customNameInput.text.trim().length > 0 && customTextArea.text.trim().length > 0
+            enabled: !root.pending
             onClicked: root.submit()
           }
 
           Button {
             text: root.tr("action.cancel")
             variant: "subtle"
-            onClicked: {
-              customNameInput.clear()
-              customTextArea.text = ""
-              root.showImportForm = false
-            }
+            enabled: !root.pending
+            onClicked: root.cancelForm()
           }
         }
       }

@@ -5,11 +5,14 @@ import "../lib/I18n.js" as I18n
 
 Item {
   id: root
+  objectName: "vpnSubscriptionsView"
 
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
   property bool showAddForm: false
   property string successNotice: ""
+  property string errorKey: ""
+  property bool pending: false
 
   function tr(key, args) {
     var _ = i18nRevision
@@ -17,21 +20,38 @@ Item {
   }
 
   function openForm() {
+    if (root.pending) return
+    root.errorKey = ""; root.successNotice = ""
     root.showAddForm = true
     Qt.callLater(function() { subNameInput.forceActiveFocus() })
   }
 
+  function cancelForm() {
+    if (root.pending) return
+    subUrlInput.clear(); subNameInput.clear()
+    root.errorKey = ""
+    root.showAddForm = false
+    addToggle.forceActiveFocus()
+  }
+
   function submit() {
-    if (!root.service || !subNameInput.text.trim() || !subUrlInput.text.trim()) return
+    if (!root.service || root.pending) return
+    feedback.reveal()
+    root.successNotice = ""
+    if (!subNameInput.text.trim() || !subUrlInput.text.trim()) { root.errorKey = "form.required"; return }
     var name = subNameInput.text.trim()
     var url = subUrlInput.text.trim()
-    subUrlInput.clear()
-    subNameInput.clear()
-    root.showAddForm = false
-    root.successNotice = ""
+    if (name.length > 256) { root.errorKey = "form.nameTooLong"; return }
+    if (url.length > 2048 || !/^https?:\/\/[^\s/?#]+(?:[/?#][^\s]*)?$/i.test(url)) { root.errorKey = "subscriptions.invalidUrl"; return }
+    root.errorKey = ""
+    root.pending = true
     root.service.addSubscription(name, url, function() {
-      root.successNotice = root.tr("subscriptions.added")
-    })
+      root.pending = false
+      subUrlInput.clear(); subNameInput.clear()
+      root.showAddForm = false
+      root.successNotice = "subscriptions.added"
+      addToggle.forceActiveFocus()
+    }, function() { root.pending = false; root.errorKey = "subscriptions.addFailed" })
   }
 
   implicitWidth: parent ? parent.width : Style.space(480)
@@ -48,9 +68,11 @@ Item {
       spacing: Style.space(8)
 
       Button {
-        text: "+ " + root.tr("subscriptions.addTitle")
+        id: addToggle
+        enabled: !root.pending
+        text: root.showAddForm ? root.tr("action.cancel") : "+ " + root.tr("subscriptions.addTitle")
         variant: root.showAddForm ? "subtle" : "primary"
-        onClicked: { if (root.showAddForm) { subUrlInput.clear(); root.showAddForm = false } else root.openForm() }
+        onClicked: { if (root.showAddForm) root.cancelForm(); else root.openForm() }
       }
 
       Button {
@@ -60,47 +82,13 @@ Item {
       }
     }
 
-    // Success notice banner
-    Rectangle {
-      visible: root.successNotice !== ""
+    Notice {
+      id: feedback
       width: parent.width
-      height: noticeRow.implicitHeight + Style.space(12)
-      radius: Style.cornerRadius
-      color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
-      border.color: Commons.Color.accent
-      border.width: 1
-
-      Row {
-        id: noticeRow
-        anchors.fill: parent
-        anchors.margins: Style.space(6)
-        spacing: Style.space(8)
-
-        Text {
-          textFormat: Text.PlainText
-          text: "󰄬"
-          color: Commons.Color.accent
-          font.family: Style.font.family
-          font.pixelSize: Style.font.bodySmall
-          anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Text {
-          textFormat: Text.PlainText
-          width: parent.width - Style.space(40)
-          text: root.successNotice
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
-          anchors.verticalCenter: parent.verticalCenter
-        }
-
-        IconButton {
-          icon: "󰅖"
-          anchors.verticalCenter: parent.verticalCenter
-          onClicked: root.successNotice = ""
-        }
-      }
+      text: root.errorKey ? root.tr(root.errorKey) : root.pending ? root.tr("operation.pending") : root.successNotice ? root.tr(root.successNotice) : ""
+      error: root.errorKey !== ""
+      dismissLabel: root.tr("action.dismiss")
+      onDismissed: { root.errorKey = ""; root.successNotice = "" }
     }
 
     // Add Subscription Form
@@ -139,6 +127,7 @@ Item {
 
         TextField {
           id: subNameInput
+          enabled: !root.pending
           width: parent.width
           placeholderText: root.tr("subscriptions.namePlaceholder")
           onAccepted: subUrlInput.forceActiveFocus()
@@ -157,9 +146,11 @@ Item {
 
         TextField {
           id: subUrlInput
+          enabled: !root.pending
           width: parent.width
           isPassword: true
           passwordToggleLabel: root.tr("subscriptions.showUrl")
+          passwordHideLabel: root.tr("subscriptions.hideUrl")
           placeholderText: root.tr("subscriptions.urlPlaceholder")
           onAccepted: root.submit()
         }
@@ -170,18 +161,15 @@ Item {
           Button {
             text: root.tr("action.add")
             variant: "primary"
-            enabled: subNameInput.text.trim().length > 0 && subUrlInput.text.trim().length > 0
+            enabled: !root.pending
             onClicked: root.submit()
           }
 
           Button {
             text: root.tr("action.cancel")
             variant: "subtle"
-            onClicked: {
-              subUrlInput.clear()
-              subNameInput.clear()
-              root.showAddForm = false
-            }
+            enabled: !root.pending
+            onClicked: root.cancelForm()
           }
         }
       }

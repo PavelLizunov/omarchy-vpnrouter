@@ -93,6 +93,8 @@ Ui.Panel {
     }
     if (nextMode === "advanced") {
       refreshTab(currentTab)
+    } else if (root.service) {
+      root.service.listServers(0, 50)
     }
   }
 
@@ -173,13 +175,22 @@ Ui.Panel {
 
       }
 
+      Ui.PanelSeparator {
+        id: pageSeparator
+        objectName: "vpnPageSeparator"
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: fixedHeader.bottom
+        anchors.topMargin: Style.space(6)
+      }
+
       Flickable {
         id: flickableContent
         objectName: "vpnContentViewport"
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.top: fixedHeader.bottom
-        anchors.topMargin: Style.space(12)
+        anchors.top: pageSeparator.bottom
+        anchors.topMargin: Style.space(6)
         anchors.bottom: parent.bottom
         contentWidth: width
         contentHeight: mainColumn.implicitHeight + Style.space(24)
@@ -240,12 +251,20 @@ Ui.Panel {
 
                   Rectangle {
                     required property var modelData
+                    objectName: "vpnSimpleServer-" + modelData.id
+                    activeFocusOnTab: true
+                    Accessible.role: Accessible.RadioButton
+                    Accessible.name: modelData.name || root.tr("servers.fallbackName")
+                    Accessible.checked: modelData.selected === true
+                    Keys.onReturnPressed: if (root.service) root.service.selectServer(modelData.id)
+                    Keys.onEnterPressed: if (root.service) root.service.selectServer(modelData.id)
+                    Keys.onSpacePressed: if (root.service) root.service.selectServer(modelData.id)
                     width: simpleServerCol.width
                     height: Style.space(32)
                     radius: Style.cornerRadius
                     color: modelData.selected ? Style.selectedFill : (sMouse.containsMouse ? Style.hoverFill : "transparent")
-                    border.color: modelData.selected ? Commons.Color.accent : "transparent"
-                    border.width: modelData.selected ? 1 : 0
+                    border.color: activeFocus ? Style.focusBorderColor : modelData.selected ? Commons.Color.accent : "transparent"
+                    border.width: activeFocus || modelData.selected ? Math.max(1, Style.focusBorderWidth) : 0
 
                     Row {
                       anchors.fill: parent
@@ -258,7 +277,7 @@ Ui.Panel {
                         radius: width / 2
                         anchors.verticalCenter: parent.verticalCenter
                         color: modelData.selected ? Commons.Color.accent : "transparent"
-                        border.color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
+                        border.color: Commons.Color.foreground
                         border.width: 1
                       }
 
@@ -266,7 +285,7 @@ Ui.Panel {
                         textFormat: Text.PlainText
                         width: parent.width - latLabel.width - Style.space(36)
                         text: modelData.name || root.tr("servers.fallbackName")
-                        color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
+                        color: Commons.Color.foreground
                         font.family: Style.font.family
                         font.pixelSize: Style.font.bodySmall
                         anchors.verticalCenter: parent.verticalCenter
@@ -311,36 +330,12 @@ Ui.Panel {
                 anchors.margins: Style.space(10)
                 spacing: Style.space(8)
 
-                Text {
-                  textFormat: Text.PlainText
-                  text: root.tr("apps.routingMode")
-                  color: Commons.Color.foreground
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.title
-                }
-
-                Column {
+                VpnUi.RoutingControls {
                   width: parent.width
-                  spacing: Style.space(6)
-
-                  VpnUi.Toggle {
-                    width: parent.width
-                    label: root.tr("apps.routingMode.split")
-                    checked: root.service && root.service.routingMode === "split"
-                    onToggled: function(val) {
-                      if (root.service) root.service.setRouting(val ? "split" : "full", root.service.routingAppsMode)
-                    }
-                  }
-
-                  VpnUi.Toggle {
-                    width: parent.width
-                    label: root.tr("apps.routingMode.full")
-                    checked: root.service && root.service.routingMode === "full"
-                    onToggled: function(val) {
-                      if (root.service) root.service.setRouting(val ? "full" : "split", root.service.routingAppsMode)
-                    }
-                  }
+                  service: root.service
+                  i18nRevision: root.i18nRevision
                 }
+
               }
             }
 
