@@ -15,11 +15,32 @@ Native QML and Quickshell plugin for Omarchy Quattro, providing desktop shell in
 
 This repository provides the Omarchy Quattro shell plugin interface, packaging lifecycle, and launcher wrapper.
 
-- **Backend contract:** The plugin follows `VPNRouter.Headless` at `29dcca1a29a670f0a45cf44a72fa639231427040` in upstream [PR #616](https://github.com/PavelLizunov/VPNRouter/pull/616). The live shell UI has been checked with the installed backend; VPN connection and traffic routing still need acceptance.
-- **Availability:** Connect stays disabled unless the backend reports `capabilities.connect=true`. The hero shows its `unavailableReason` verbatim. A missing backend shows an installation hint for `vpnrouter-headless` and stops automatic retries. Other process failures retry after 2–30 seconds; only a successful snapshot response resets the delay.
+- **Backend contract:** The plugin follows `VPNRouter.Headless` at `29dcca1a29a670f0a45cf44a72fa639231427040` in upstream [PR #616](https://github.com/PavelLizunov/VPNRouter/pull/616). Optional round-four metadata is documented below. The current UI is verified offscreen; the running shell retained some older QML components during the bounded live check. Full current-version live loading, VPN connection and traffic routing still need acceptance.
+- **Availability:** Connect stays disabled unless the backend reports `capabilities.connect=true`. The hero translates optional `unavailableReasonCode` values and falls back to `unavailableReason` for older peers. A missing backend shows an installation hint for `vpnrouter-headless` and stops automatic retries. Other process failures retry after 2–30 seconds; only a successful snapshot response resets the delay.
 - **Verification:** Server and free-pool verification show success, latency or failure details in their respective views. Kill switch and DNS lockdown remain unavailable on Linux; a saved DNS-lockdown preference is neither shown as active nor resubmitted when unsupported.
 
 ---
+
+## Apps, first run and server sources
+
+When the server and subscription lists are both empty, **Add a subscription** in
+the hero or Servers tab opens the Subscriptions form. Opening the form does not
+fetch anything. The advanced panel keeps one fitted frame, fixed navigation and
+internal scrolling. Tab traverses controls; Escape closes the panel. Enter submits
+single-line forms; multiline server/configuration editors use Ctrl+Enter.
+
+The Apps tab uses optional `apps.list.runningApps` metadata for display names,
+freedesktop icons and exact, case-sensitive process match names. Desktop apps come
+first. Suggestions are capped at 200; search matches display and process names.
+Older backends without this metadata show manual entry and the selected list,
+with an explanation instead of unclassified process suggestions.
+
+Servers group by manual source or subscription name. Delete is offered only when
+`removable=true`; older peers without source/removal metadata use an unknown-source
+group without Delete. The backend remains authoritative for removal. Diagnostic
+severity labels and first-launch setup notices are localized; other backend prose
+is displayed verbatim. Kill switch is disabled with a Linux explanation; DNS
+lockdown follows the backend capability and is omitted from writes when absent.
 
 ## Display language
 
@@ -180,6 +201,16 @@ Run the packaging test suite using Python standard library (no external dependen
 python3 tests/test-packaging.py
 ```
 The test suite validates missing backend notices, directory-copied benign mock backends without environment backdoors, verification of zero symlinks after install, post-install manifest/host validation with automatic rollback, safe private temporary `--data-dir` handshake without touching user config, active backend update refusal without signaling, fail-closed lock verification, configuration preservation in `~/.config/vpnrouter`, and wrapper argument filtering.
+
+### UI logic and native offscreen review
+
+Run each `tests/test-ui-*.js` file with Node. `tests/test-ui-r4.js` exercises the
+production model and QML functions for metadata, legacy fallback, sources,
+availability reasons, first-run navigation and form validation.
+`tests/qml-r4-consumer.qml` loads the real Panel, Service and locale files with
+`processDisabled=true` and inert protocol responses. With the external `qml-render`
+tool and a layer-shell-to-Item adapter, it checks actual Qt mouse/key events and
+captures each tab. It does not test the compositor, VPN or network operations.
 
 ### Isolated QML Component Tests (Offscreen Shim)
 The automated QML test runner executes isolated syntax, component loading, and UI model tests offscreen:
