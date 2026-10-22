@@ -112,3 +112,34 @@ const ruJson = JSON.parse(fs.readFileSync(ruPath, "utf8"));
 }
 
 console.log("ALL I18N TESTS PASSED!\n");
+
+// Every literal UI lookup must resolve, including the formerly hardcoded labels.
+{
+  I18n.setCatalogs(enJson, ruJson);
+  const qmlFiles = ['BarWidget.qml', 'Panel.qml', 'Service.qml',
+    ...fs.readdirSync(path.join(__dirname, '../ui')).filter(f => f.endsWith('.qml')).map(f => 'ui/' + f)];
+  for (const file of qmlFiles) {
+    const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    for (const match of source.matchAll(/(?:\btr|I18n\.t)\("([^"]+)"/g)) {
+      if (match[1].endsWith('.')) continue; // dynamic state prefix
+      assert(enJson[match[1]], `${file}: missing en key ${match[1]}`);
+      assert(ruJson[match[1]], `${file}: missing ru key ${match[1]}`);
+    }
+    assert(!/\|\| "(?:Server|Unnamed Server|Subscription|Free Server|Check)"/.test(source), file);
+    assert(!/"Rules exported \("|\? "FULL VPN" : "SPLIT"/.test(source), file);
+  }
+  for (const key of Object.keys(enJson)) {
+    const placeholders = text => (text.match(/\{[^}]+\}/g) || []).sort();
+    assert.deepStrictEqual(placeholders(enJson[key]), placeholders(ruJson[key]), key);
+  }
+  for (const locale of ['en', 'ru']) {
+    I18n.setLocale(locale);
+    for (const key of ['servers.fallbackName', 'servers.unnamed', 'subscriptions.fallbackName',
+      'free.fallbackName', 'diagnostics.fallbackName', 'rules.exported', 'routing.fullBadge',
+      'routing.splitBadge', 'backend.notInstalled', 'backend.installHint']) {
+      assert.notStrictEqual(I18n.t(key), key);
+    }
+  }
+  assert.strictEqual(I18n.t('rules.exported', ['JSON']), 'Правила экспортированы (JSON)');
+  console.log('✓ UI lookups, fallback labels, routing badges and locale placeholders passed');
+}

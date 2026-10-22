@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -64,7 +65,7 @@ Item {
 
         Text {
           text: root.tr("servers.importTitle")
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
         }
@@ -84,14 +85,14 @@ Item {
             wrapMode: TextEdit.Wrap
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
-            color: Color.foreground
-            selectionColor: Color.accent
-            selectedTextColor: Color.background
+            color: Commons.Color.foreground
+            selectionColor: Commons.Color.accent
+            selectedTextColor: Commons.Color.background
 
             Text {
               visible: importArea.text.length === 0
               text: root.tr("servers.importPlaceholder")
-              color: Color.muted
+              color: Commons.Color.muted
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }
@@ -127,6 +128,20 @@ Item {
       }
     }
 
+    Text {
+      width: parent.width
+      visible: text.length > 0
+      text: {
+        var _ = root.i18nRevision
+        return root.service ? Model.verificationText(root.service.serverVerification, root.service.servers, I18n) : ""
+      }
+      textFormat: Text.PlainText
+      wrapMode: Text.WordWrap
+      color: root.service && root.service.serverVerification && root.service.serverVerification.ok === true ? Commons.Color.accent : Commons.Color.urgent
+      font.family: Style.font.family
+      font.pixelSize: Style.font.bodySmall
+    }
+
     // Empty state
     Rectangle {
       visible: root.filteredServers.length === 0
@@ -144,7 +159,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰒋"
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -152,7 +167,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("servers.empty")
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -169,7 +184,7 @@ Item {
         height: rowContent.implicitHeight + Style.space(14)
         radius: Style.cornerRadius
         color: modelData.selected ? Style.selectedFill : (rowMouse.containsMouse ? Style.hoverFill : Style.normalFill)
-        border.color: modelData.selected ? Color.accent : Style.normalBorderColor
+        border.color: modelData.selected ? Commons.Color.accent : Style.normalBorderColor
         border.width: modelData.selected ? 1 : Style.normalBorderWidth
 
         // Row selection MouseArea in its own background/selection domain (z: 0)
@@ -203,7 +218,7 @@ Item {
             radius: width / 2
             anchors.verticalCenter: parent.verticalCenter
             color: "transparent"
-            border.color: modelData.selected ? Color.accent : Color.muted
+            border.color: modelData.selected ? Commons.Color.accent : Commons.Color.muted
             border.width: 2
 
             Rectangle {
@@ -212,7 +227,7 @@ Item {
               height: width
               radius: width / 2
               anchors.centerIn: parent
-              color: Color.accent
+              color: Commons.Color.accent
             }
           }
 
@@ -224,8 +239,8 @@ Item {
 
             Text {
               width: parent.width
-              text: modelData.name || "Unnamed Server"
-              color: modelData.selected ? Color.accent : Color.foreground
+              text: modelData.name || root.tr("servers.unnamed")
+              color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.bodySmall
               elide: Text.ElideRight
@@ -243,21 +258,21 @@ Item {
                 Text {
                   id: protoLabel
                   anchors.centerIn: parent
-                  text: Model.protocolDisplay(modelData.protocol)
-                  color: Color.muted
+                  text: Model.protocolDisplay(modelData.protocol, I18n)
+                  color: Commons.Color.muted
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                 }
               }
 
               Text {
-                text: Model.formatLatency(modelData.latencyMs)
+                text: Model.formatLatency(modelData.latencyMs, I18n)
                 color: {
                   var tier = Model.latencyTier(modelData.latencyMs)
-                  if (tier === "good") return Color.accent
-                  if (tier === "medium") return Color.foreground
-                  if (tier === "poor") return Color.urgent
-                  return Color.muted
+                  if (tier === "good") return Commons.Color.accent
+                  if (tier === "medium") return Commons.Color.foreground
+                  if (tier === "poor") return Commons.Color.urgent
+                  return Commons.Color.muted
                 }
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption

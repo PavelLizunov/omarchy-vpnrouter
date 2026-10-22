@@ -44,8 +44,8 @@ else
   printf '%s\n' "  1) Packaged backend: $packaged_bin" >&2
   printf '%s\n' "  2) System installed binary: $system_bin" >&2
   printf '%s\n' "The upstream backend is in active development in https://github.com/PavelLizunov/VPNRouter." >&2
-  printf '%s\n' "Please run ./setup --backend-dir <PATH> with a built backend directory." >&2
-  exit 1
+  printf '%s\n' "Install package vpnrouter-headless, or run ./setup --backend-dir <PATH> with a built backend directory." >&2
+  exit 127
 fi
 
 show_help() {

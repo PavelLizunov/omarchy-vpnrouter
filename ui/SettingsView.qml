@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -25,7 +26,7 @@ Item {
   function savedDnsMode() {
     var data = service ? service.settingsData : null
     if (!data) return "vpn_only"
-    if (data.dnsModeOverride !== undefined) return data.dnsModeOverride
+    if (data.dnsModeOverride !== undefined && data.dnsModeOverride !== null) return data.dnsModeOverride
     return data.dnsMode !== undefined ? data.dnsMode : "vpn_only"
   }
   property bool bypassRuVal: (service && service.settingsData) ? service.settingsData.bypassRussianTraffic : true
@@ -93,8 +94,8 @@ Item {
       width: parent.width
       height: noticeRow.implicitHeight + Style.space(12)
       radius: Style.cornerRadius
-      color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
-      border.color: Color.accent
+      color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
+      border.color: Commons.Color.accent
       border.width: 1
 
       Row {
@@ -105,7 +106,7 @@ Item {
 
         Text {
           text: "󰄬"
-          color: Color.accent
+          color: Commons.Color.accent
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
           anchors.verticalCenter: parent.verticalCenter
@@ -114,7 +115,7 @@ Item {
         Text {
           width: parent.width - Style.space(40)
           text: root.saveNotice
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
           anchors.verticalCenter: parent.verticalCenter
@@ -145,7 +146,7 @@ Item {
 
         Text {
           text: root.tr("settings.title")
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
         }
@@ -157,7 +158,7 @@ Item {
           Text {
             width: Style.space(160)
             text: root.tr("settings.mtu")
-            color: Color.foreground
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
@@ -207,7 +208,7 @@ Item {
           label: root.tr("settings.dnsLeak")
           description: !root.hasDnsLockdownCap ? root.tr("settings.dnsLeakUnsupported") : ""
           enabled: root.hasDnsLockdownCap
-          checked: root.dnsLeakVal
+          checked: root.hasDnsLockdownCap && root.dnsLeakVal
           onToggled: function(val) {
             if (root.hasDnsLockdownCap) {
               root.dnsLeakVal = val
@@ -223,7 +224,7 @@ Item {
           Text {
             width: parent.width
             text: root.tr("settings.dnsMode") + ": " + (root.dnsModeVal || root.tr("settings.dnsMode.resetDefault"))
-            color: Color.muted
+            color: Commons.Color.muted
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             wrapMode: Text.WordWrap
@@ -235,8 +236,8 @@ Item {
             width: parent.width
             height: explanationRow.implicitHeight + Style.space(12)
             radius: Style.cornerRadius
-            color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.08)
-            border.color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.3)
+            color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.08)
+            border.color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.3)
             border.width: 1
 
             Row {
@@ -247,7 +248,7 @@ Item {
 
               Text {
                 text: "󰌵"
-                color: Color.accent
+                color: Commons.Color.accent
                 font.family: Style.font.family
                 font.pixelSize: Style.font.bodySmall
                 anchors.verticalCenter: parent.verticalCenter
@@ -256,7 +257,7 @@ Item {
               Text {
                 width: parent.width - Style.space(28)
                 text: root.dnsExplanationText
-                color: Color.foreground
+                color: Commons.Color.foreground
                 wrapMode: Text.Wrap
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
@@ -270,7 +271,7 @@ Item {
             visible: !root.isCustomMode && !root.strictDnsVal && !(root.service && root.service.routingMode === "full") && root.dnsExplanationText.length > 0
             width: parent.width
             wrapMode: Text.Wrap
-            color: Color.muted
+            color: Commons.Color.muted
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
             text: root.dnsExplanationText
@@ -284,7 +285,7 @@ Item {
 
           Text {
             text: root.tr("settings.excludeCidr")
-            color: Color.foreground
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
           }
@@ -304,15 +305,15 @@ Item {
               wrapMode: TextEdit.Wrap
               font.family: Style.font.family
               font.pixelSize: Style.font.bodySmall
-              color: Color.foreground
-              selectionColor: Color.accent
-              selectedTextColor: Color.background
+              color: Commons.Color.foreground
+              selectionColor: Commons.Color.accent
+              selectedTextColor: Commons.Color.background
               text: root.cidrsVal
 
               Text {
                 visible: cidrEdit.text.length === 0
                 text: root.tr("settings.excludeCidrPlaceholder")
-                color: Color.muted
+                color: Commons.Color.muted
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
               }

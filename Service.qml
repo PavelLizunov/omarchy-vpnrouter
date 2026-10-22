@@ -18,6 +18,8 @@ Item {
   }
 
   property bool helperPresent: false
+  property bool backendMissing: false
+  property string unavailableReason: ""
   property bool starting: false
   property int retryCount: 0
   property int retryBackoffMs: 2000
@@ -63,6 +65,8 @@ Item {
   property int serversTotal: 0
   property var subscriptions: []
   property int subscriptionsTotal: 0
+  property var serverVerification: null
+  property var freeVerification: null
   property var freeServers: []
   property int freeTotal: 0
   property var apps: ({ include: [], exclude: [], running: [] })
@@ -168,10 +172,10 @@ Item {
         handleIncomingFrame(frame)
       },
       function(err) {
-        lastError = err.message || err.code
-        errorNotice(err.code || "protocol_error", err.message || "Protocol error")
+        lastError = I18n.t("error.protocol")
+        errorNotice(err.code || "protocol_error", lastError)
         if (err.code === "buffer_overflow") {
-          root.flushAllQueued("transport_error", "Protocol frame buffer overflow")
+          root.flushAllQueued("transport_error", I18n.t("error.protocol"))
         }
       }
     )
@@ -182,7 +186,7 @@ Item {
     for (var i = 0; i < flushed.length; i++) {
       var it = flushed[i]
       if (it && typeof it.onError === "function") {
-        it.onError({ code: code || "transport_error", message: message || "Transport error" })
+        it.onError({ code: code || "transport_error", message: message || I18n.t("error.transport") })
       }
     }
   }
@@ -199,7 +203,7 @@ Item {
     for (var i = 0; i < flushed.length; i++) {
       var it = flushed[i]
       if (it && typeof it.onError === "function") {
-        it.onError({ code: "cancelled", message: reasonMsg || "Operation cancelled" })
+        it.onError({ code: "cancelled", message: reasonMsg || I18n.t("error.cancelled") })
       }
     }
   }
@@ -234,7 +238,7 @@ Item {
         root._requestQueue.clearActive()
       }
 
-      var errObj = { code: "timeout", message: "Request deadline exceeded" }
+      var errObj = { code: "timeout", message: I18n.t("error.timeout") }
       root.lastError = errObj.message
       root.errorNotice("timeout", errObj.message)
       if (timedOutCb.onError && typeof timedOutCb.onError === "function") {
@@ -296,50 +300,53 @@ Item {
       }
     }
 
-    onStarted: {
-      root.helperPresent = true
-      root.starting = false
-      root.retryCount = 0
-      root.retryBackoffMs = 2000
+    onStarted: root.backendStarted()
+    onExited: function(exitCode) { root.backendExited(exitCode) }
+  }
+
+  function backendStarted() {
+    root.helperPresent = true
+    root.backendMissing = false
+    root.starting = false
+    // Starting a wrapper is not a successful handshake.
+    Qt.callLater(function() { if (backendProc.running) root.refreshSnapshot() })
+  }
+
+  function backendExited(exitCode) {
+    root.starting = false
+    root.helperPresent = false
+    root.backendMissing = exitCode === 127
+    root.state = "unavailable"
+    root.capabilities = ({ connect: false, killSwitch: false, dnsLockdown: false })
+    root.unavailableReason = ""
+    root.busy = false
+    root.activeOperation = ""
+    root.activeRequestId = ""
+    root.activeProgress = null
+    if (root._accumulator) root._accumulator.reset()
+
+    var message = I18n.t("backend.exited", [exitCode])
+    for (var id in root._pendingCallbacks) {
+      var cb = root._pendingCallbacks[id]
+      if (cb && typeof cb.onError === "function") {
+        cb.onError({ code: "process_exited", message: message })
+      }
+    }
+    root._pendingCallbacks = ({})
+    root._pendingUrgentCount = 0
+    root.flushAllQueued("process_exited", message)
+
+    if (root._shuttingDown) return
+    if (root.backendMissing) {
       root.lastError = ""
-      // Request initial snapshot upon connect
-      Qt.callLater(function() {
-        root.refreshSnapshot()
-      })
+      retryTimer.stop()
+      return
     }
-
-    onExited: function(exitCode) {
-      root.starting = false
-      root.state = "unavailable"
-      root.busy = false
-      root.activeOperation = ""
-      root.activeRequestId = ""
-      root.activeProgress = null
-      if (root._accumulator) root._accumulator.reset()
-
-      // Reject any pending callbacks
-      for (var id in root._pendingCallbacks) {
-        var cb = root._pendingCallbacks[id]
-        if (cb && typeof cb.onError === "function") {
-          cb.onError({ code: "process_exited", message: "Backend process exited with code " + exitCode })
-        }
-      }
-      root._pendingCallbacks = ({})
-      root._pendingUrgentCount = 0
-      root.flushAllQueued("process_exited", "Backend process exited with code " + exitCode)
-
-      // Schedule exponential backoff reconnect unless intentionally shut down
-      if (!root._shuttingDown) {
-        root.lastError = exitCode !== 0
-          ? "Backend exited (code " + exitCode + "). Retrying…"
-          : "Backend connection closed unexpectedly. Reconnecting…"
-        var nextDelay = Math.min(30000, root.retryBackoffMs * (root.retryCount > 0 ? 1.5 : 1.0))
-        root.retryBackoffMs = Math.round(nextDelay)
-        root.retryCount++
-        retryTimer.interval = root.retryBackoffMs
-        retryTimer.restart()
-      }
-    }
+    root.lastError = I18n.t("backend.retrying", [exitCode])
+    root.retryBackoffMs = Math.min(30000, Math.round(root.retryBackoffMs * (root.retryCount > 0 ? 1.5 : 1)))
+    root.retryCount++
+    retryTimer.interval = root.retryBackoffMs
+    retryTimer.restart()
   }
 
   Timer {
@@ -372,6 +379,7 @@ Item {
     } else if (eventName === "progress") {
       if (eventData) {
         root.activeProgress = {
+          // Feature events carry a resource ID or no ID, not a request ID.
           id: String(eventData.id || ""),
           stage: String(eventData.stage || ""),
           completed: Number(eventData.completed) || 0,
@@ -405,10 +413,10 @@ Item {
 
     if (isError) {
       var errCode = error ? error.code : "unknown_error"
-      var errMsg = error ? error.message : "Error"
+      var errMsg = error ? error.message : I18n.t("error.generic")
       root.lastError = errMsg
       if (errCode === "conflict") {
-        root.flushQueuedMutations("Operation cancelled due to configuration revision conflict; refresh required.")
+        root.flushQueuedMutations(I18n.t("error.conflict"))
         root.refreshSnapshot()
       }
       root.errorNotice(errCode, errMsg)
@@ -423,6 +431,9 @@ Item {
 
     // Only pump queue if ordinary active operation completed
     if (isOrdinaryActive) {
+      // Mutation results are captured while backend busy=true; their terminal
+      // response means that this serialized operation has finished.
+      if (!isError) root.busy = false
       root.pumpQueue()
     }
   }
@@ -439,6 +450,7 @@ Item {
     root.busy = norm.busy
     root.errorCode = norm.errorCode || ""
     root.capabilities = norm.capabilities
+    root.unavailableReason = norm.unavailableReason
   }
 
   // ---- Dispatch and Queue ---------------------------------------------------
@@ -461,7 +473,7 @@ Item {
     if (isUrgent) {
       // Bound urgent callback count
       if (root._pendingUrgentCount >= root.maxUrgentPending) {
-        var queueFullErr = { code: "queue_full", message: "Urgent request limit exceeded" }
+        var queueFullErr = { code: "queue_full", message: I18n.t("error.queueFull") }
         root.lastError = queueFullErr.message
         if (onError) onError(queueFullErr)
         return null
@@ -469,7 +481,7 @@ Item {
 
       var urgentFormatted = Protocol.formatRequest(method, originalParams, reqId)
       if (!urgentFormatted.ok) {
-        if (onError) onError({ code: "format_error", message: urgentFormatted.error })
+        if (onError) onError({ code: "format_error", message: I18n.t("error.format") })
         return null
       }
 
@@ -492,7 +504,7 @@ Item {
       } else {
         root._pendingUrgentCount--
         delete root._pendingCallbacks[reqId]
-        if (onError) onError({ code: "not_running", message: "Backend is not running" })
+        if (onError) onError({ code: "not_running", message: I18n.t("backend.notRunning") })
         return null
       }
     }
@@ -510,7 +522,7 @@ Item {
 
     var qRes = root._requestQueue.enqueue(item)
     if (!qRes.ok) {
-      if (onError) onError({ code: qRes.error, message: qRes.message })
+      if (onError) onError({ code: qRes.error, message: I18n.t("error.queueFull") })
       return null
     }
 
@@ -541,7 +553,7 @@ Item {
       root.activeRequestId = ""
       root.activeOperation = ""
       root._requestQueue.clearActive()
-      if (next.onError) next.onError({ code: "format_error", message: reqResult.error })
+      if (next.onError) next.onError({ code: "format_error", message: I18n.t("error.format") })
       root.pumpQueue()
       return
     }
@@ -566,14 +578,23 @@ Item {
 
   function refreshSnapshot(onDone, onError) {
     return sendRequest("snapshot", {}, function(res) {
+      if (!res || typeof res.state !== "string" || typeof res.revision !== "string" ||
+          !res.capabilities || typeof res.capabilities.connect !== "boolean") {
+        root.lastError = I18n.t("error.protocol")
+        if (onError) onError({ code: "invalid_snapshot", message: root.lastError })
+        return
+      }
       applySnapshot(res)
+      root.retryCount = 0
+      root.retryBackoffMs = 2000
+      root.lastError = ""
       if (onDone) onDone(res)
     }, onError)
   }
 
   function connect(onDone, onError) {
     if (!root.capabilities || !root.capabilities.connect) {
-      var msg = "Connect capability unavailable before handshake"
+      var msg = root.unavailableReason || I18n.t("backend.connectUnavailable")
       root.lastError = msg
       root.errorNotice("capability_unavailable", msg)
       if (onError) onError({ code: "capability_unavailable", message: msg })
@@ -587,7 +608,7 @@ Item {
 
   function disconnect(onDone, onError) {
     // Flush unsafe queued mutations on disconnect
-    root.flushQueuedMutations("Cancelled by disconnect")
+    root.flushQueuedMutations(I18n.t("error.cancelled"))
     return sendRequest("disconnect", {}, function(res) {
       applySnapshot(res)
       if (onDone) onDone(res)
@@ -597,9 +618,9 @@ Item {
   function cancel(targetId) {
     var idToCancel = targetId || root.activeRequestId
     if (!idToCancel) return null
-    return sendRequest("cancel", { id: idToCancel }, function() {
-      root.activeProgress = null
-      root.activeOperation = ""
+    return sendRequest("cancel", { id: idToCancel }, function(res) {
+      // The target stays pending until its terminal response arrives.
+      if (res && res.cancelled === true) root.activeProgress = null
     }, null, true)
   }
 
@@ -653,9 +674,14 @@ Item {
   }
 
   function verifyServer(id, onDone, onError) {
+    root.serverVerification = null
     return sendRequest("servers.verify", { id: id }, function(res) {
+      root.serverVerification = res
       if (onDone) onDone(res)
-    }, onError)
+    }, function(err) {
+      root.serverVerification = { id: id, ok: false, error: err.message }
+      if (onError) onError(err)
+    })
   }
 
   // Subscriptions
@@ -735,9 +761,14 @@ Item {
   }
 
   function verifyFree(id, onDone, onError) {
+    root.freeVerification = null
     return sendRequest("free.verify", { id: id }, function(res) {
+      root.freeVerification = res
       if (onDone) onDone(res)
-    }, onError)
+    }, function(err) {
+      root.freeVerification = { id: id, ok: false, error: err.message }
+      if (onError) onError(err)
+    })
   }
 
   function applyFree(id, onDone, onError) {

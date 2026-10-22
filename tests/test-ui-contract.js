@@ -145,7 +145,7 @@ console.log(`✓ All ${qmlFiles.length} QML files exist and passed syntax bracke
   // Service safe connect defaults before handshake
   const serviceQml = fs.readFileSync(path.join(rootDir, "Service.qml"), "utf8");
   assert(/capabilities:\s*\(\{\s*connect:\s*false/.test(serviceQml), "Service.qml must default capabilities.connect to false before handshake");
-  assert(serviceQml.includes("Connect capability unavailable before handshake"), "Service.qml connect() must fail closed before handshake");
+  assert(serviceQml.includes('I18n.t("backend.connectUnavailable")'), "Service.qml connect() must fail closed before handshake");
 
   // BarWidget lifecycle: no fallback Service, only injected or host service
   const barWidgetQml = fs.readFileSync(path.join(rootDir, "BarWidget.qml"), "utf8");

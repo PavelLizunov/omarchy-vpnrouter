@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -47,8 +48,8 @@ Item {
       width: parent.width
       height: noticeRow.implicitHeight + Style.space(12)
       radius: Style.cornerRadius
-      color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
-      border.color: Color.accent
+      color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
+      border.color: Commons.Color.accent
       border.width: 1
 
       Row {
@@ -59,7 +60,7 @@ Item {
 
         Text {
           text: "󰄬"
-          color: Color.accent
+          color: Commons.Color.accent
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
           anchors.verticalCenter: parent.verticalCenter
@@ -68,7 +69,7 @@ Item {
         Text {
           width: parent.width - Style.space(40)
           text: root.successNotice
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
           anchors.verticalCenter: parent.verticalCenter
@@ -100,7 +101,7 @@ Item {
 
         Text {
           text: root.tr("subscriptions.addTitle")
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
         }
@@ -170,7 +171,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰑤"
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -178,7 +179,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("subscriptions.empty")
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -220,8 +221,8 @@ Item {
 
             Text {
               width: parent.width
-              text: modelData.name || "Subscription"
-              color: Color.foreground
+              text: modelData.name || root.tr("subscriptions.fallbackName")
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.bodySmall
               elide: Text.ElideRight
@@ -229,7 +230,7 @@ Item {
 
             Text {
               text: root.tr("subscriptions.serversCount", [modelData.serverCount || 0])
-              color: Color.muted
+              color: Commons.Color.muted
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }

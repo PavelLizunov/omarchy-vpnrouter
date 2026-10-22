@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -12,6 +13,16 @@ Rectangle {
   function tr(key, args) {
     var _ = i18nRevision
     return I18n.t(key, args)
+  }
+
+  function availabilityText() {
+    var _ = root.i18nRevision
+    if (!root.service || root.connected) return ""
+    if (root.service.backendMissing)
+      return root.tr("backend.notInstalled") + "\n" + root.tr("backend.installHint")
+    if (!root.canConnect && !root.busy)
+      return root.service.unavailableReason || root.tr("backend.connectUnavailable")
+    return ""
   }
 
   signal connectRequested()
@@ -54,8 +65,8 @@ Rectangle {
         height: width
         radius: width / 2
         anchors.verticalCenter: parent.verticalCenter
-        color: root.connected ? Color.accent : (root.busy ? Color.urgent : Style.hoverFill)
-        border.color: root.connected ? Color.accent : Style.hoverBorderColor
+        color: root.connected ? Commons.Color.accent : (root.busy ? Commons.Color.urgent : Style.hoverFill)
+        border.color: root.connected ? Commons.Color.accent : Style.hoverBorderColor
         border.width: connectBtnMouse.activeFocus ? Style.focusBorderWidth : 1
 
         Behavior on color { ColorAnimation { duration: 150 } }
@@ -63,7 +74,7 @@ Rectangle {
         Text {
           anchors.centerIn: parent
           text: root.busy ? "󰦞" : (root.connected ? "󰖂" : "󱚤")
-          color: root.connected ? Color.background : Color.foreground
+          color: root.connected ? Commons.Color.background : Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.display
 
@@ -79,6 +90,7 @@ Rectangle {
         MouseArea {
           id: connectBtnMouse
           anchors.fill: parent
+          enabled: root.connected || (root.canConnect && !root.busy)
           hoverEnabled: true
           cursorShape: (root.connected || root.canConnect) ? Qt.PointingHandCursor : Qt.ForbiddenCursor
           onClicked: {
@@ -96,7 +108,7 @@ Rectangle {
 
         Text {
           text: root.tr("state." + (root.service ? root.service.state : "unavailable"))
-          color: root.connected ? Color.accent : (root.busy ? Color.urgent : Color.muted)
+          color: root.connected ? Commons.Color.accent : (root.busy ? Commons.Color.urgent : Commons.Color.muted)
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -104,7 +116,7 @@ Rectangle {
         Text {
           width: parent.width
           text: root.activeServerName
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
           elide: Text.ElideRight
@@ -125,8 +137,8 @@ Rectangle {
             Text {
               id: modeText
               anchors.centerIn: parent
-              text: root.service && root.service.routingMode === "full" ? "FULL VPN" : "SPLIT"
-              color: Color.muted
+              text: root.service && root.service.routingMode === "full" ? root.tr("routing.fullBadge") : root.tr("routing.splitBadge")
+              color: Commons.Color.muted
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }
@@ -153,6 +165,17 @@ Rectangle {
       }
     }
 
+    Text {
+      width: parent.width
+      visible: text.length > 0
+      text: root.availabilityText()
+      textFormat: Text.PlainText
+      wrapMode: Text.WordWrap
+      color: Commons.Color.foreground
+      font.family: Style.font.family
+      font.pixelSize: Style.font.bodySmall
+    }
+
     // In-Flight Operation & Cancel Row
     Rectangle {
       visible: root.service && root.service.activeOperation !== ""
@@ -169,7 +192,7 @@ Rectangle {
 
         Text {
           text: "󰦞"
-          color: Color.accent
+          color: Commons.Color.accent
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
           NumberAnimation on rotation {
@@ -179,8 +202,8 @@ Rectangle {
         }
 
         Text {
-          text: (root.service ? root.service.activeOperation : "") + "…"
-          color: Color.foreground
+          text: root.tr("operation.pending")
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -190,7 +213,7 @@ Rectangle {
           text: root.service && root.service.activeProgress
             ? "(" + root.service.activeProgress.completed + "/" + root.service.activeProgress.total + ")"
             : ""
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
         }
@@ -212,8 +235,8 @@ Rectangle {
       width: parent.width
       height: errRow.implicitHeight + Style.space(12)
       radius: Style.cornerRadius
-      color: Qt.rgba(Color.urgent.r, Color.urgent.g, Color.urgent.b, 0.15)
-      border.color: Color.urgent
+      color: Qt.rgba(Commons.Color.urgent.r, Commons.Color.urgent.g, Commons.Color.urgent.b, 0.15)
+      border.color: Commons.Color.urgent
       border.width: 1
 
       Row {
@@ -224,7 +247,7 @@ Rectangle {
 
         Text {
           text: "󰅚"
-          color: Color.urgent
+          color: Commons.Color.urgent
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
           anchors.verticalCenter: parent.verticalCenter
@@ -233,7 +256,8 @@ Rectangle {
         Text {
           width: parent.width - dismissErrBtn.width - Style.space(32)
           text: root.service ? root.service.lastError : ""
-          color: Color.foreground
+          textFormat: Text.PlainText
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
           wrapMode: Text.WordWrap

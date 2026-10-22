@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -63,7 +64,7 @@ Item {
 
         Text {
           text: root.tr("apps.routingMode")
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
         }
@@ -107,7 +108,7 @@ Item {
 
         Text {
           text: root.tr("apps.appsMode")
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
         }
@@ -179,7 +180,7 @@ Item {
 
         Text {
           text: root.tr("apps.runningHeader")
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
         }
@@ -206,7 +207,7 @@ Item {
 
                 Text {
                   text: "+ " + modelData
-                  color: Color.foreground
+                  color: Commons.Color.foreground
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                 }
@@ -228,7 +229,7 @@ Item {
     // Configured Applications Header
     Text {
       text: root.tr("apps.configuredHeader", [root.configuredApps.length])
-      color: Color.foreground
+      color: Commons.Color.foreground
       font.family: Style.font.family
       font.pixelSize: Style.font.title
     }
@@ -246,7 +247,7 @@ Item {
       Text {
         anchors.centerIn: parent
         text: root.tr("apps.empty")
-        color: Color.muted
+        color: Commons.Color.muted
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
       }
@@ -272,7 +273,7 @@ Item {
 
           Text {
             text: "󰵮"
-            color: Color.accent
+            color: Commons.Color.accent
             font.family: Style.font.family
             font.pixelSize: Style.font.iconSmall
             anchors.verticalCenter: parent.verticalCenter
@@ -281,7 +282,7 @@ Item {
           Text {
             width: parent.width - deleteAppBtn.width - Style.space(40)
             text: modelData
-            color: Color.foreground
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter

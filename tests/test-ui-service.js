@@ -1272,7 +1272,7 @@ function createSettingsViewSim(service, overrides) {
   assert(match, "Actual draft initializer must exist");
   const getDraft = new Function("service", match[1]);
   const draft = getDraft(svc);
-  assert.strictEqual(draft, null, "Profile default must remain selected after refresh");
+  assert.strictEqual(draft, "smart", "Read-only DNS mode must show the resolved profile mode when override is null");
   const view = createSettingsViewSim(svc, { dnsModeVal: draft });
   assert.strictEqual("dnsMode" in view.buildSettingsPayload(), false, "Unrelated save must not send dnsMode");
   assert.strictEqual(getDraft({ settingsData: { dnsMode: "smart", dnsModeOverride: "direct" } }), "direct");

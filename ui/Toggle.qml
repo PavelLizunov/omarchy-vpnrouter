@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 
 Item {
   id: root
@@ -42,13 +43,13 @@ Item {
 
       color: {
         if (!root.enabled) return Qt.rgba(0.2, 0.2, 0.2, 0.3)
-        if (root.checked) return Color.accent
+        if (root.checked) return Commons.Color.accent
         return Style.normalFill
       }
 
       border.color: {
         if (root.activeFocus) return Style.focusBorderColor
-        if (root.checked) return Color.accent
+        if (root.checked) return Commons.Color.accent
         if (root.hot) return Style.hoverBorderColor
         return Style.normalBorderColor
       }
@@ -65,7 +66,7 @@ Item {
         radius: width / 2
         anchors.verticalCenter: parent.verticalCenter
         x: root.checked ? (track.width - width - Style.space(3)) : Style.space(3)
-        color: root.checked ? Color.background : (root.hot ? Color.foreground : Qt.darker(Color.foreground, 1.2))
+        color: root.checked ? Commons.Color.background : (root.hot ? Commons.Color.foreground : Qt.darker(Commons.Color.foreground, 1.2))
 
         Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
         Behavior on color { ColorAnimation { duration: 150 } }
@@ -80,7 +81,7 @@ Item {
       Text {
         visible: root.label !== ""
         text: root.label
-        color: root.enabled ? Color.foreground : Color.muted
+        color: root.enabled ? Commons.Color.foreground : Commons.Color.muted
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
       }
@@ -88,7 +89,7 @@ Item {
       Text {
         visible: root.description !== ""
         text: root.description
-        color: Color.muted
+        color: Commons.Color.muted
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
       }

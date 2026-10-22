@@ -189,3 +189,24 @@ console.log("ALL PROTOCOL TESTS PASSED!\n");
   assert.strictEqual(Protocol.formatRequest('servers.import', {text: 'я'.repeat(1000)}, 'utf8').ok, true);
   console.log('✓ Direct request/response UTF-8 byte ceilings passed');
 }
+
+// Backend emits uncorrelated errors and can flush multiple legal frames at once.
+{
+  assert.strictEqual(Protocol.isValidRequestId('req_backend-1'), false, 'Transport IDs allow alphanumeric and hyphen only');
+  const uncorrelated = Protocol.parseFrame('{"v":1,"id":null,"error":{"code":"invalid_request","message":"The request is malformed or invalid."}}');
+  assert.strictEqual(uncorrelated.id, null);
+  assert.strictEqual(uncorrelated.isError, true);
+  assert.strictEqual(uncorrelated.error.code, 'invalid_request');
+  const frames = [], errors = [];
+  const acc = Protocol.createChunkAccumulator(f => frames.push(f), e => errors.push(e));
+  const frame = JSON.stringify({v: 1, id: 'burst', result: {text: 'x'.repeat(180000)}}) + '\n';
+  acc.feed(frame + frame);
+  assert.strictEqual(frames.length, 2, 'Each frame, not the combined read, has a 256 KiB limit');
+  assert.strictEqual(errors.length, 0);
+  acc.feed('x'.repeat(Protocol.MAX_FRAME_BYTES + 1));
+  acc.feed('discard this suffix\n' + '{"v":1,"id":"recovered","result":{}}\n');
+  assert.strictEqual(errors.length, 1, 'Oversized frame suffix must be discarded through its delimiter');
+  assert.strictEqual(frames.at(-1).id, 'recovered');
+  assert.strictEqual(acc.getBufferLength(), 0);
+  console.log('✓ Backend uncorrelated errors, burst frame limits and oversized-frame resynchronization passed');
+}

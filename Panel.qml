@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import qs.Ui 1.0 as Ui
 import "ui" as VpnUi
 import "lib/Model.js" as Model
@@ -186,7 +187,7 @@ Ui.Panel {
 
                   Text {
                     text: root.tr("simple.activeServer")
-                    color: Color.foreground
+                    color: Commons.Color.foreground
                     font.family: Style.font.family
                     font.pixelSize: Style.font.title
                   }
@@ -210,7 +211,7 @@ Ui.Panel {
                     height: Style.space(32)
                     radius: Style.cornerRadius
                     color: modelData.selected ? Style.selectedFill : (sMouse.containsMouse ? Style.hoverFill : "transparent")
-                    border.color: modelData.selected ? Color.accent : "transparent"
+                    border.color: modelData.selected ? Commons.Color.accent : "transparent"
                     border.width: modelData.selected ? 1 : 0
 
                     Row {
@@ -223,15 +224,15 @@ Ui.Panel {
                         height: width
                         radius: width / 2
                         anchors.verticalCenter: parent.verticalCenter
-                        color: modelData.selected ? Color.accent : "transparent"
-                        border.color: modelData.selected ? Color.accent : Color.muted
+                        color: modelData.selected ? Commons.Color.accent : "transparent"
+                        border.color: modelData.selected ? Commons.Color.accent : Commons.Color.muted
                         border.width: 1
                       }
 
                       Text {
                         width: parent.width - latLabel.width - Style.space(36)
-                        text: modelData.name || "Server"
-                        color: modelData.selected ? Color.accent : Color.foreground
+                        text: modelData.name || root.tr("servers.fallbackName")
+                        color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
                         font.family: Style.font.family
                         font.pixelSize: Style.font.bodySmall
                         anchors.verticalCenter: parent.verticalCenter
@@ -240,8 +241,8 @@ Ui.Panel {
 
                       Text {
                         id: latLabel
-                        text: Model.formatLatency(modelData.latencyMs)
-                        color: Color.muted
+                        text: Model.formatLatency(modelData.latencyMs, I18n)
+                        color: Commons.Color.muted
                         font.family: Style.font.family
                         font.pixelSize: Style.font.caption
                         anchors.verticalCenter: parent.verticalCenter
@@ -277,7 +278,7 @@ Ui.Panel {
 
                 Text {
                   text: root.tr("apps.routingMode")
-                  color: Color.foreground
+                  color: Commons.Color.foreground
                   font.family: Style.font.family
                   font.pixelSize: Style.font.title
                 }

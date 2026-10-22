@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -47,8 +48,8 @@ Item {
       width: parent.width
       height: exportRow.implicitHeight + Style.space(12)
       radius: Style.cornerRadius
-      color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
-      border.color: Color.accent
+      color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
+      border.color: Commons.Color.accent
       border.width: 1
 
       Row {
@@ -59,7 +60,7 @@ Item {
 
         Text {
           text: "󰄬"
-          color: Color.accent
+          color: Commons.Color.accent
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
           anchors.verticalCenter: parent.verticalCenter
@@ -68,7 +69,7 @@ Item {
         Text {
           width: parent.width - Style.space(40)
           text: root.tr("diagnostics.exportedPath", [root.service ? root.service.diagnosticsExportPath : ""])
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
           anchors.verticalCenter: parent.verticalCenter
@@ -100,7 +101,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰓅"
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -108,7 +109,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("diagnostics.empty")
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -143,13 +144,13 @@ Item {
 
             readonly property string st: String(modelData.status || "").toUpperCase()
             color: {
-              if (st === "PASS" || st === "OK") return Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.15)
-              if (st === "FAIL" || st === "ERROR") return Qt.rgba(Color.urgent.r, Color.urgent.g, Color.urgent.b, 0.15)
+              if (st === "PASS" || st === "OK") return Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.15)
+              if (st === "FAIL" || st === "ERROR") return Qt.rgba(Commons.Color.urgent.r, Commons.Color.urgent.g, Commons.Color.urgent.b, 0.15)
               return Qt.rgba(0.9, 0.7, 0.2, 0.15) // Warning
             }
             border.color: {
-              if (st === "PASS" || st === "OK") return Color.accent
-              if (st === "FAIL" || st === "ERROR") return Color.urgent
+              if (st === "PASS" || st === "OK") return Commons.Color.accent
+              if (st === "FAIL" || st === "ERROR") return Commons.Color.urgent
               return "#d4a017"
             }
             border.width: 1
@@ -174,8 +175,8 @@ Item {
 
             Text {
               width: parent.width
-              text: modelData.name || "Check"
-              color: Color.foreground
+              text: modelData.name || root.tr("diagnostics.fallbackName")
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.bodySmall
             }
@@ -184,7 +185,7 @@ Item {
               visible: modelData.message !== "" && modelData.message !== undefined
               width: parent.width
               text: modelData.message || ""
-              color: Color.muted
+              color: Commons.Color.muted
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
               wrapMode: Text.WordWrap

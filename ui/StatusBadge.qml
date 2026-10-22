@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -19,17 +20,17 @@ Item {
   readonly property color statusColor: {
     switch (state) {
       case "connected":
-        return Color.accent
+        return Commons.Color.accent
       case "connecting":
       case "disconnecting":
-        return Style.resolveStateColor("urgent", Color.foreground, Color.accent, Color.urgent)
+        return Style.resolveStateColor("urgent", Commons.Color.foreground, Commons.Color.accent, Commons.Color.urgent)
       case "error":
-        return Color.urgent
+        return Commons.Color.urgent
       case "disconnected":
-        return Color.muted
+        return Commons.Color.muted
       case "unavailable":
       default:
-        return Qt.darker(Color.muted, 1.4)
+        return Qt.darker(Commons.Color.muted, 1.4)
     }
   }
 

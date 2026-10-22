@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -30,8 +31,8 @@ Item {
       width: parent.width
       height: noticeRow.implicitHeight + Style.space(12)
       radius: Style.cornerRadius
-      color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
-      border.color: Color.accent
+      color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
+      border.color: Commons.Color.accent
       border.width: 1
 
       Row {
@@ -42,7 +43,7 @@ Item {
 
         Text {
           text: "󰄬"
-          color: Color.accent
+          color: Commons.Color.accent
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
           anchors.verticalCenter: parent.verticalCenter
@@ -51,7 +52,7 @@ Item {
         Text {
           width: parent.width - Style.space(40)
           text: root.statusNotice
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
           anchors.verticalCenter: parent.verticalCenter
@@ -82,7 +83,7 @@ Item {
 
         Text {
           text: root.tr("rules.priority")
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
         }
@@ -131,9 +132,9 @@ Item {
           wrapMode: TextEdit.Wrap
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
-          color: Color.foreground
-          selectionColor: Color.accent
-          selectedTextColor: Color.background
+          color: Commons.Color.foreground
+          selectionColor: Commons.Color.accent
+          selectedTextColor: Commons.Color.background
           text: (root.service && root.service.rules) ? (root.service.rules.text || "") : ""
         }
       }
@@ -175,7 +176,7 @@ Item {
           if (root.service) {
             root.service.exportRules(root.importExportFormat, function(exported) {
               rulesTextEdit.text = exported
-              root.statusNotice = "Rules exported (" + root.importExportFormat.toUpperCase() + ")"
+              root.statusNotice = root.tr("rules.exported", [root.importExportFormat.toUpperCase()])
             })
           }
         }
@@ -194,14 +195,14 @@ Item {
             height: Style.spacing.controlHeight
             radius: Style.cornerRadius
             color: root.importExportFormat === modelData ? Style.selectedFill : (fmtMouse.containsMouse ? Style.hoverFill : Style.normalFill)
-            border.color: root.importExportFormat === modelData ? Color.accent : Style.normalBorderColor
+            border.color: root.importExportFormat === modelData ? Commons.Color.accent : Style.normalBorderColor
             border.width: 1
 
             Text {
               id: fmtText
               anchors.centerIn: parent
               text: modelData.toUpperCase()
-              color: root.importExportFormat === modelData ? Color.accent : Color.foreground
+              color: root.importExportFormat === modelData ? Commons.Color.accent : Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }

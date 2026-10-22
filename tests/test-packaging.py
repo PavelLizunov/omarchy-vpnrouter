@@ -1051,9 +1051,10 @@ class TestBackendWrapper(PackagingTestBase):
             capture_output=True,
             text=True,
         )
-        self.assertEqual(res.returncode, 1)
+        self.assertEqual(res.returncode, 127)
         self.assertIn("backend executable not found", res.stderr)
         self.assertIn("./setup --backend-dir", res.stderr)
+        self.assertIn("vpnrouter-headless", res.stderr)
 
     def test_wrapper_path_injection_immunity(self):
         """Wrapper MUST NOT search PATH or execute an executable placed on PATH."""
@@ -1078,7 +1079,7 @@ class TestBackendWrapper(PackagingTestBase):
             capture_output=True,
             text=True,
         )
-        self.assertEqual(res.returncode, 1)
+        self.assertEqual(res.returncode, 127)
         self.assertNotIn("MALICIOUS_PATH_EXECUTION", res.stdout)
         self.assertNotIn("MALICIOUS_PATH_EXECUTION", res.stderr)
 

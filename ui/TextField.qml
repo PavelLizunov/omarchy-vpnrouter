@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 
 Item {
   id: root
@@ -30,8 +31,8 @@ Item {
     id: bg
     anchors.fill: parent
     radius: Style.cornerRadius
-    color: Style.controlFill(textInput.activeFocus, root.hot, Color.foreground, Color.accent)
-    border.color: Style.controlBorder(textInput.activeFocus, root.hot, Color.foreground, Color.accent)
+    color: Style.controlFill(textInput.activeFocus, root.hot, Commons.Color.foreground, Commons.Color.accent)
+    border.color: Style.controlBorder(textInput.activeFocus, root.hot, Commons.Color.foreground, Commons.Color.accent)
     border.width: Style.controlBorderWidth(textInput.activeFocus, root.hot)
 
     Behavior on color { ColorAnimation { duration: 150 } }
@@ -55,9 +56,9 @@ Item {
           echoMode: root.echoMode
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
-          color: root.enabled ? Color.foreground : Color.muted
-          selectionColor: Color.accent
-          selectedTextColor: Color.background
+          color: root.enabled ? Commons.Color.foreground : Commons.Color.muted
+          selectionColor: Commons.Color.accent
+          selectedTextColor: Commons.Color.background
           clip: true
           activeFocusOnTab: false
 
@@ -68,7 +69,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             visible: textInput.text.length === 0 && !textInput.activeFocus
             text: root.placeholderText
-            color: Color.muted
+            color: Commons.Color.muted
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             elide: Text.ElideRight
@@ -87,7 +88,7 @@ Item {
         Text {
           anchors.centerIn: parent
           text: root.showPassword ? "󰈈" : "󰈉"
-          color: eyeMouseArea.containsMouse ? Color.accent : Color.muted
+          color: eyeMouseArea.containsMouse ? Commons.Color.accent : Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.iconSmall
         }

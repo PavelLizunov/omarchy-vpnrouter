@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -68,7 +69,7 @@ Item {
             anchors.fill: parent
             radius: Style.cornerRadius
             color: active ? Style.selectedFill : (hot ? Style.hoverFill : "transparent")
-            border.color: (tabItem.activeFocus || tabMouse.activeFocus) ? Style.focusBorderColor : (active ? Color.accent : "transparent")
+            border.color: (tabItem.activeFocus || tabMouse.activeFocus) ? Style.focusBorderColor : (active ? Commons.Color.accent : "transparent")
             border.width: (tabItem.activeFocus || tabMouse.activeFocus) ? Style.focusBorderWidth : (active ? 1 : 0)
 
             Behavior on color { ColorAnimation { duration: 150 } }
@@ -80,7 +81,7 @@ Item {
 
               Text {
                 text: modelData.icon
-                color: active ? Color.accent : (hot ? Color.foreground : Color.muted)
+                color: active ? Commons.Color.accent : (hot ? Commons.Color.foreground : Commons.Color.muted)
                 font.family: Style.font.family
                 font.pixelSize: Style.font.iconSmall
                 anchors.verticalCenter: parent.verticalCenter
@@ -88,7 +89,7 @@ Item {
 
               Text {
                 text: modelData.label
-                color: active ? Color.foreground : (hot ? Color.foreground : Color.muted)
+                color: active ? Commons.Color.foreground : (hot ? Commons.Color.foreground : Commons.Color.muted)
                 font.family: Style.font.family
                 font.pixelSize: Style.font.bodySmall
                 anchors.verticalCenter: parent.verticalCenter

@@ -15,9 +15,9 @@ Native QML and Quickshell plugin for Omarchy Quattro, providing desktop shell in
 
 This repository provides the Omarchy Quattro shell plugin interface, packaging lifecycle, and launcher wrapper.
 
-- **Backend Status:** The headless daemon (`VPNRouter.Headless`) and its bounded Omarchy adapter were delivered at commit `64e1e805` in upstream draft PR #296 (with 5 green CI checks). However, that PR is **not merged** and no release binaries have been published.
-- **Frontend / Packaging Status:** Plugin packaging scripts, deterministic launcher wrapper, and test harness are implemented here in draft form. Native QML interface components and root manifest are maintained in parallel.
-- **Connection Capability Limits:** A compiled backend binary alone is **NOT sufficient to connect**. A supported connection path has not been accepted: runtime binary selection/distribution, binary integrity and compatibility, and TUN privileges remain unresolved. This is not a guarantee that connection attempts cannot launch the engine on a provisioned host. The setup tool does not fake connection state or invent remote release URLs.
+- **Backend contract:** The plugin follows `VPNRouter.Headless` at `29dcca1a29a670f0a45cf44a72fa639231427040` in upstream [PR #616](https://github.com/PavelLizunov/VPNRouter/pull/616). Live plugin loading and traffic routing still need acceptance.
+- **Availability:** Connect stays disabled unless the backend reports `capabilities.connect=true`. The hero shows its `unavailableReason` verbatim. A missing backend shows an installation hint for `vpnrouter-headless` and stops automatic retries. Other process failures retry after 2–30 seconds; only a successful snapshot response resets the delay.
+- **Verification:** Server and free-pool verification show success, latency or failure details in their respective views. Kill switch and DNS lockdown remain unavailable on Linux; a saved DNS-lockdown preference is neither shown as active nor resubmitted when unsupported.
 
 ---
 
@@ -34,7 +34,7 @@ The packaging and launcher scripts enforce explicit safety boundaries:
    The launcher wrapper `bin/vpnrouter-headless` executes only bounded paths:
    - Packaged backend payload: `<plugin_dir>/bin/backend/VPNRouter.Headless`
    - System installation: `/usr/lib/vpnrouter-headless/VPNRouter.Headless`
-   The wrapper never searches `$PATH`, rejects symlink targets, and contains no environment variable overrides or testing backdoors. If no backend is found, it terminates with exit code 1 without downloading external files.
+   The wrapper never searches `$PATH`, rejects symlink targets, and contains no environment variable overrides or testing backdoors. If no backend is found, it terminates with exit code 127 without downloading external files.
 
 3. **Strict Protocol v1 Argument Filtering & Local Help:**
    The launcher wrapper forwards only contract-authorized arguments (`--stdio`, `--data-dir <ABSOLUTE_PATH>`). Optional help (`--help`, `-h`) is generated locally without executing the backend. All unauthorized flags (including `--version`) and arbitrary echo/piped inputs are rejected with exit code 2.
@@ -71,19 +71,30 @@ The packaging and launcher scripts enforce explicit safety boundaries:
 - Python 3 (required for setup lifecycle operations; no weak `jq` fallback)
 - *Firewall route filtering status:* `killSwitch` and `DNS lockdown` route filtering via firewall are pending a dedicated privileged broker (`capabilities.killSwitch: false`, `capabilities.dnsLockdown: false`).
 
-### Backend Requirements & Known Deployment Gap
-- .NET 10 runtime (if running framework-dependent backend) or self-contained binary
-- `sing-box` (supplied with backend build materials)
-- **Deployment & Connection Gap Notice:** A compiled backend binary alone is **NOT enough to connect**. A backend binary does not establish a supported connection path: runtime binary selection/distribution, integrity/compatibility checks and TUN privileges remain unresolved:
-  - Upstream `VPNRouter.Core` currently resolves its routing binary path strictly via `AppPaths.SingBoxExePath` (`~/.config/vpnrouter/bin/sing-box`), whereas `setup` stages files into `<plugin_dir>/bin/backend/`.
-  - **Do NOT copy or deploy binaries into writable user data directories (such as `~/.config/vpnrouter/bin/`)** as a workaround. Doing so is not a safe, supported, or ready-to-connect deployment path.
-  - Safe tunnel connection requires upstream support for secure binary location, integrity validation, and an approved privileged helper design for TUN interface management.
+### Backend requirements
+
+The Arch `vpnrouter-headless` package supplies `/usr/lib/vpnrouter-headless/VPNRouter.Headless` and its .NET dependencies. Its runtime is `/usr/lib/vpnrouter-headless/runtime/sing-box`; the package install hook applies file capabilities. The backend verifies runtime ownership, permissions and capabilities before allowing connect. A plugin-local publish directory alone does not provision that system runtime. Kill switch and DNS lockdown remain unavailable on Linux.
 
 ---
 
 ## Installation & Setup
 
-Because pre-compiled backend binaries are not yet published upstream, the backend must be supplied locally from an explicit local build directory.
+With the `vpnrouter-headless` package already installed, copy the plugin's committed files into a real directory (not a symlink):
+
+```bash
+plugin_dir="$HOME/.config/omarchy/plugins/io.github.pavellizunov.vpnrouter"
+mkdir -p "$plugin_dir"
+git archive HEAD | tar -x -C "$plugin_dir"
+omarchy plugin validate "$plugin_dir"
+omarchy-shell shell rescanPlugins
+omarchy plugin enable io.github.pavellizunov.vpnrouter --section right
+omarchy restart shell
+omarchy plugin list --json
+```
+
+Run these commands from this repository at the reviewed commit. The wrapper uses the system backend when no plugin-local payload exists, so `setup --backend-dir` is unnecessary for this route. Shell logs: `journalctl --user -t omarchy-shell -b -f`. These are installation instructions; development checks do not install or enable the plugin.
+
+For a locally published backend instead, use the optional setup flow below.
 
 ### 1. Build the Backend from Upstream Source
 In your local checkout of `VPNRouter`:
@@ -108,10 +119,9 @@ Verify installation and protocol compatibility without modifying files:
 ./setup --status
 ```
 
-### 4. Enable Plugin in Omarchy Shell (Testing Reference Only)
-> **Notice:** The following activation step is documented **strictly as a reference for separately authorized testing** in an isolated development environment. It is **NOT** a recommended production installation procedure, as this plugin is an early draft and live VPN connections are not yet supported.
+### 4. Enable the copied plugin
 
-Enable the plugin explicitly for testing:
+After copying into the user plugin directory and rescanning as above:
 ```bash
 omarchy plugin enable io.github.pavellizunov.vpnrouter
 ```

@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -51,7 +52,7 @@ Item {
 
         Text {
           text: root.tr("custom.addTitle")
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
         }
@@ -77,14 +78,14 @@ Item {
             wrapMode: TextEdit.Wrap
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
-            color: Color.foreground
-            selectionColor: Color.accent
-            selectedTextColor: Color.background
+            color: Commons.Color.foreground
+            selectionColor: Commons.Color.accent
+            selectedTextColor: Commons.Color.background
 
             Text {
               visible: customTextArea.text.length === 0
               text: root.tr("custom.jsonLabel") + "…"
-              color: Color.muted
+              color: Commons.Color.muted
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }
@@ -140,7 +141,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰘦"
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -148,7 +149,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("custom.empty")
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -164,7 +165,7 @@ Item {
         height: customRow.implicitHeight + Style.space(16)
         radius: Style.cornerRadius
         color: modelData.selected ? Style.selectedFill : (cMouse.containsMouse ? Style.hoverFill : Style.normalFill)
-        border.color: modelData.selected ? Color.accent : Style.normalBorderColor
+        border.color: modelData.selected ? Commons.Color.accent : Style.normalBorderColor
         border.width: modelData.selected ? 1 : Style.normalBorderWidth
 
         Row {
@@ -179,7 +180,7 @@ Item {
             radius: width / 2
             anchors.verticalCenter: parent.verticalCenter
             color: "transparent"
-            border.color: modelData.selected ? Color.accent : Color.muted
+            border.color: modelData.selected ? Commons.Color.accent : Commons.Color.muted
             border.width: 2
 
             Rectangle {
@@ -188,14 +189,14 @@ Item {
               height: width
               radius: width / 2
               anchors.centerIn: parent
-              color: Color.accent
+              color: Commons.Color.accent
             }
           }
 
           Text {
             width: parent.width - btnRow.width - Style.space(50)
             text: modelData.name || modelData.id
-            color: modelData.selected ? Color.accent : Color.foreground
+            color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter

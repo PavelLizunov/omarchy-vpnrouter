@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -32,7 +33,7 @@ Item {
 
     Text {
       text: "󰖂"
-      color: root.service && root.service.isConnected ? Color.accent : Color.foreground
+      color: root.service && root.service.isConnected ? Commons.Color.accent : Commons.Color.foreground
       font.family: Style.font.family
       font.pixelSize: Style.font.heading
       anchors.verticalCenter: parent.verticalCenter
@@ -44,14 +45,14 @@ Item {
 
       Text {
         text: root.tr("app.name")
-        color: Color.foreground
+        color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.title
       }
 
       Text {
         text: root.tr("app.subtitle")
-        color: Color.muted
+        color: Commons.Color.muted
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
       }
@@ -82,7 +83,7 @@ Item {
       Text {
         anchors.centerIn: parent
         text: root.currentLocale.toUpperCase()
-        color: Color.foreground
+        color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
       }
@@ -112,7 +113,7 @@ Item {
 
         Text {
           text: root.mode === "simple" ? "󰒘" : "󰒓"
-          color: Color.accent
+          color: Commons.Color.accent
           font.family: Style.font.family
           font.pixelSize: Style.font.iconSmall
           anchors.verticalCenter: parent.verticalCenter
@@ -120,7 +121,7 @@ Item {
 
         Text {
           text: root.mode === "simple" ? root.tr("mode.simple") : root.tr("mode.advanced")
-          color: Color.foreground
+          color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
           anchors.verticalCenter: parent.verticalCenter

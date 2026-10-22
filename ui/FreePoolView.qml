@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -34,6 +35,20 @@ Item {
       }
     }
 
+    Text {
+      width: parent.width
+      visible: text.length > 0
+      text: {
+        var _ = root.i18nRevision
+        return root.service ? Model.verificationText(root.service.freeVerification, root.service.freeServers, I18n) : ""
+      }
+      textFormat: Text.PlainText
+      wrapMode: Text.WordWrap
+      color: root.service && root.service.freeVerification && root.service.freeVerification.ok === true ? Commons.Color.accent : Commons.Color.urgent
+      font.family: Style.font.family
+      font.pixelSize: Style.font.bodySmall
+    }
+
     // Empty state
     Rectangle {
       visible: !root.service || !root.service.freeServers || root.service.freeServers.length === 0
@@ -51,7 +66,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰓠"
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.display
         }
@@ -59,7 +74,7 @@ Item {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("free.empty")
-          color: Color.muted
+          color: Commons.Color.muted
           font.family: Style.font.family
           font.pixelSize: Style.font.bodySmall
         }
@@ -86,7 +101,7 @@ Item {
 
           Text {
             text: "󰓠"
-            color: Color.accent
+            color: Commons.Color.accent
             font.family: Style.font.family
             font.pixelSize: Style.font.icon
             anchors.verticalCenter: parent.verticalCenter
@@ -99,8 +114,8 @@ Item {
 
             Text {
               width: parent.width
-              text: modelData.name || "Free Server"
-              color: Color.foreground
+              text: modelData.name || root.tr("free.fallbackName")
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.bodySmall
               elide: Text.ElideRight
@@ -118,21 +133,21 @@ Item {
                 Text {
                   id: protoBadge
                   anchors.centerIn: parent
-                  text: Model.protocolDisplay(modelData.protocol)
-                  color: Color.muted
+                  text: Model.protocolDisplay(modelData.protocol, I18n)
+                  color: Commons.Color.muted
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                 }
               }
 
               Text {
-                text: Model.formatLatency(modelData.latencyMs)
+                text: Model.formatLatency(modelData.latencyMs, I18n)
                 color: {
                   var tier = Model.latencyTier(modelData.latencyMs)
-                  if (tier === "good") return Color.accent
-                  if (tier === "medium") return Color.foreground
-                  if (tier === "poor") return Color.urgent
-                  return Color.muted
+                  if (tier === "good") return Commons.Color.accent
+                  if (tier === "medium") return Commons.Color.foreground
+                  if (tier === "poor") return Commons.Color.urgent
+                  return Commons.Color.muted
                 }
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption

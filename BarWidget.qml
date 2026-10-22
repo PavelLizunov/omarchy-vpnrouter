@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 import qs.Ui 1.0 as Ui
 import "lib/Model.js" as Model
 import "lib/I18n.js" as I18n
@@ -66,17 +67,17 @@ Ui.BarWidget {
 
   // Ink color according to state
   readonly property color inkColor: {
-    if (isError) return bar ? bar.urgent : Color.urgent
-    if (isBusy) return bar ? bar.urgent : Color.urgent
-    if (isConnected) return Color.accent
-    return bar ? bar.foreground : Color.muted
+    if (isError) return bar ? bar.urgent : Commons.Color.urgent
+    if (isBusy) return bar ? bar.urgent : Commons.Color.urgent
+    if (isConnected) return Commons.Color.accent
+    return bar ? bar.foreground : Commons.Color.muted
   }
 
   readonly property string barTooltip: {
     var _ = i18nRevision
     var title = "VPNRouter: " + I18n.t("state." + vpnState)
     if (activeServerName) title += " (" + activeServerName + ")"
-    if (serverLatency !== null && serverLatency !== undefined) title += " · " + Math.round(serverLatency) + " ms"
+    if (serverLatency !== null && serverLatency !== undefined) title += " · " + I18n.t("latency.ms", [Math.round(serverLatency)])
     return title
   }
 
@@ -195,7 +196,7 @@ Ui.BarWidget {
       // Latency badge or server label on bar if enabled and connected
       Text {
         visible: !root.vertical && root.showLatencySetting && root.isConnected && root.serverLatency !== null
-        text: Math.round(root.serverLatency || 0) + "ms"
+        text: I18n.t("latency.ms", [Math.round(root.serverLatency || 0)])
         color: root.inkColor
         font.family: Style.font.family
         font.pixelSize: Style.font.caption

@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 
 Item {
   id: root
@@ -24,11 +25,11 @@ Item {
   readonly property bool pressed: mouseArea.pressed
 
   readonly property color iconColor: {
-    if (!root.enabled) return Color.muted
-    if (variant === "danger") return hot ? Color.urgent : Qt.darker(Color.urgent, 1.2)
-    if (variant === "accent") return hot ? Color.accent : Qt.darker(Color.accent, 1.2)
-    if (hot || activeFocus) return Color.foreground
-    return Qt.darker(Color.foreground, 1.3)
+    if (!root.enabled) return Commons.Color.muted
+    if (variant === "danger") return hot ? Commons.Color.urgent : Qt.darker(Commons.Color.urgent, 1.2)
+    if (variant === "accent") return hot ? Commons.Color.accent : Qt.darker(Commons.Color.accent, 1.2)
+    if (hot || activeFocus) return Commons.Color.foreground
+    return Qt.darker(Commons.Color.foreground, 1.3)
   }
 
   readonly property color bgFill: {

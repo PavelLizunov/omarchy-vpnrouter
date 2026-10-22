@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons 1.0
+import qs.Commons 1.0 as Commons
 
 Item {
   id: root
@@ -24,22 +25,22 @@ Item {
   readonly property bool pressed: mouseArea.pressed
 
   readonly property color baseColor: {
-    if (variant === "primary") return Color.accent
-    if (variant === "danger") return Color.urgent
-    return Color.foreground
+    if (variant === "primary") return Commons.Color.accent
+    if (variant === "danger") return Commons.Color.urgent
+    return Commons.Color.foreground
   }
 
   readonly property color bgFill: {
     if (!root.enabled) return Qt.rgba(0, 0, 0, 0.05)
     if (variant === "primary") {
-      if (pressed) return Qt.darker(Color.accent, 1.2)
-      if (hot || activeFocus) return Qt.lighter(Color.accent, 1.1)
-      return Color.accent
+      if (pressed) return Qt.darker(Commons.Color.accent, 1.2)
+      if (hot || activeFocus) return Qt.lighter(Commons.Color.accent, 1.1)
+      return Commons.Color.accent
     }
     if (variant === "danger") {
-      if (pressed) return Qt.darker(Color.urgent, 1.2)
-      if (hot || activeFocus) return Qt.lighter(Color.urgent, 1.1)
-      return Color.urgent
+      if (pressed) return Qt.darker(Commons.Color.urgent, 1.2)
+      if (hot || activeFocus) return Qt.lighter(Commons.Color.urgent, 1.1)
+      return Commons.Color.urgent
     }
     if (variant === "subtle") {
       if (pressed) return Style.pressedFill
@@ -53,9 +54,9 @@ Item {
   }
 
   readonly property color textColor: {
-    if (!root.enabled) return Color.muted
-    if (variant === "primary" || variant === "danger") return Color.background
-    return Color.foreground
+    if (!root.enabled) return Commons.Color.muted
+    if (variant === "primary" || variant === "danger") return Commons.Color.background
+    return Commons.Color.foreground
   }
 
   readonly property color borderColor: {
