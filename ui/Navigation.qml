@@ -46,6 +46,9 @@ Item {
 
       Item {
         id: tabItem
+        Accessible.role: Accessible.PageTab
+        Accessible.name: modelData.label
+        Accessible.selected: active
         width: (root.width - Style.space(8)) / 3
         height: Style.spacing.controlHeight
         activeFocusOnTab: true
@@ -72,6 +75,7 @@ Item {
             spacing: Style.space(6)
 
             Text {
+              textFormat: Text.PlainText
               text: modelData.icon
               color: active ? Commons.Color.accent : Commons.Color.foreground
               font.family: Style.font.family
@@ -80,6 +84,7 @@ Item {
             }
 
             Text {
+              textFormat: Text.PlainText
               text: modelData.label
               color: Commons.Color.foreground
               font.family: Style.font.family

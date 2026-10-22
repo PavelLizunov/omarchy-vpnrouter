@@ -75,6 +75,7 @@ Item {
       }
 
       Text {
+        textFormat: Text.PlainText
         visible: root.showText
         text: root.stateTitle
         color: root.statusColor

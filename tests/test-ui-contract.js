@@ -140,12 +140,12 @@ console.log(`✓ All ${qmlFiles.length} QML files exist and passed syntax bracke
   const panelQml = fs.readFileSync(path.join(rootDir, "Panel.qml"), "utf8");
   assert(panelQml.includes("onModeChangeRequested"), "Panel.qml must handle onModeChangeRequested");
   assert(panelQml.includes("focusTarget: keyCatcher"), "Panel.qml must set KeyboardPanel focusTarget to keyCatcher");
-  assert(panelQml.includes("PanelKeyCatcher"), "Panel.qml must wrap content with PanelKeyCatcher");
+  assert(panelQml.includes("FocusScope {") && panelQml.includes("Keys.onEscapePressed: root.close()"), "Form controls need native Tab traversal and Escape dismissal");
 
   // Service safe connect defaults before handshake
   const serviceQml = fs.readFileSync(path.join(rootDir, "Service.qml"), "utf8");
   assert(/capabilities:\s*\(\{\s*connect:\s*false/.test(serviceQml), "Service.qml must default capabilities.connect to false before handshake");
-  assert(serviceQml.includes('I18n.t("backend.connectUnavailable")'), "Service.qml connect() must fail closed before handshake");
+  assert(serviceQml.includes('Model.unavailableText(root, ({ t: root.tr }))'), "Service.qml connect() must fail closed before handshake");
 
   // BarWidget lifecycle: no fallback Service, only injected or host service
   const barWidgetQml = fs.readFileSync(path.join(rootDir, "BarWidget.qml"), "utf8");

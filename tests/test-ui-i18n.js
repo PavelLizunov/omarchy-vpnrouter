@@ -48,14 +48,14 @@ const ruJson = JSON.parse(fs.readFileSync(ruPath, "utf8"));
 
   assert.strictEqual(I18n.t("app.name"), "VPNRouter");
   assert.strictEqual(I18n.t("state.connected"), "Connected");
-  assert.strictEqual(I18n.t("subscriptions.serversCount", [5]), "5 servers");
+  assert.strictEqual(I18n.t("subscriptions.serversCount", [5]), "Servers: 5");
   assert.strictEqual(I18n.t("diagnostics.exportedPath", ["/tmp/diag.tar.gz"]), "Bundle exported to: /tmp/diag.tar.gz");
 
   // Switch to Russian
   I18n.setLocale("ru");
   assert.strictEqual(I18n.t("app.name"), "VPNRouter");
   assert.strictEqual(I18n.t("state.connected"), "Подключено");
-  assert.strictEqual(I18n.t("subscriptions.serversCount", [5]), "5 серверов");
+  assert.strictEqual(I18n.t("subscriptions.serversCount", [5]), "Серверы: 5");
   assert.strictEqual(I18n.t("diagnostics.exportedPath", ["/tmp/diag.tar.gz"]), "Отчёт сохранён в: /tmp/diag.tar.gz");
 
   // Fallback to English if key missing in Russian

@@ -56,19 +56,17 @@ Ui.BarWidget {
   // Settings
   readonly property bool showLatencySetting: setting("showLatency", true) !== false
 
-  // Ink color according to state
-  readonly property color inkColor: {
-    if (isError) return bar ? bar.urgent : Commons.Color.urgent
-    if (isBusy) return bar ? bar.urgent : Commons.Color.urgent
-    if (isConnected) return Commons.Color.accent
-    return bar ? bar.foreground : Commons.Color.muted
-  }
+  readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
+  readonly property string stateIcon: ({ disconnected: "󰖪", connecting: "󰦞", connected: "󰖂", error: "󰅚", unavailable: "󰒣", missing: "󰆍" })[visualState]
+  readonly property color inkColor: visualState === "error" || visualState === "unavailable" ? (bar ? bar.urgent : Commons.Color.urgent) : visualState === "connected" || visualState === "connecting" ? Commons.Color.accent : (bar ? bar.foreground : Commons.Color.foreground)
 
   readonly property string barTooltip: {
     var _ = i18nRevision
-    var title = "VPNRouter: " + root.tr("state." + vpnState)
-    if (activeServerName) title += " (" + activeServerName + ")"
-    if (serverLatency !== null && serverLatency !== undefined) title += " · " + root.tr("latency.ms", [Math.round(serverLatency)])
+    var label = visualState === "missing" ? root.tr("backend.notInstalled") : root.tr("state." + vpnState)
+    var title = root.tr("bar.state", [label])
+    var server = activeServerName || (activeServerItem ? activeServerItem.name : "")
+    if (server) title += "\n" + root.tr("bar.server", [server])
+    if (isConnected && serverLatency !== null && serverLatency !== undefined) title += " · " + root.tr("latency.ms", [Math.round(serverLatency)])
     return title
   }
 
@@ -139,7 +137,7 @@ Ui.BarWidget {
     bar: root.bar
     hasVisualContent: true
     labelVisible: false
-    dimmed: !root.isConnected && !root.isBusy && !root.isError
+    dimmed: false
     fixedWidth: root.vertical ? -1 : (contentRow.implicitWidth + Style.space(16))
     fixedHeight: root.vertical ? (contentRow.implicitHeight + Style.space(12)) : -1
     tooltipText: root.barTooltip
@@ -169,15 +167,16 @@ Ui.BarWidget {
       spacing: Style.space(5)
 
       Text {
+        textFormat: Text.PlainText
         id: barGlyph
-        text: root.isBusy ? "󰦞" : "󰖂"
+        text: root.stateIcon
         color: root.inkColor
         font.family: Style.font.family
         font.pixelSize: Style.font.iconSmall
         anchors.verticalCenter: parent.verticalCenter
 
         NumberAnimation on rotation {
-          running: root.isBusy
+          running: root.visualState === "connecting"
           onRunningChanged: if (!running) barGlyph.rotation = 0
           from: 0
           to: 360

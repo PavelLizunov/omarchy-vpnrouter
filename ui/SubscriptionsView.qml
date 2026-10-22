@@ -16,6 +16,24 @@ Item {
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
+  function openForm() {
+    root.showAddForm = true
+    Qt.callLater(function() { subNameInput.forceActiveFocus() })
+  }
+
+  function submit() {
+    if (!root.service || !subNameInput.text.trim() || !subUrlInput.text.trim()) return
+    var name = subNameInput.text.trim()
+    var url = subUrlInput.text.trim()
+    subUrlInput.clear()
+    subNameInput.clear()
+    root.showAddForm = false
+    root.successNotice = ""
+    root.service.addSubscription(name, url, function() {
+      root.successNotice = root.tr("subscriptions.added")
+    })
+  }
+
   implicitWidth: parent ? parent.width : Style.space(480)
   implicitHeight: column.implicitHeight
 
@@ -32,7 +50,7 @@ Item {
       Button {
         text: "+ " + root.tr("subscriptions.addTitle")
         variant: root.showAddForm ? "subtle" : "primary"
-        onClicked: root.showAddForm = !root.showAddForm
+        onClicked: { if (root.showAddForm) { subUrlInput.clear(); root.showAddForm = false } else root.openForm() }
       }
 
       Button {
@@ -59,6 +77,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           text: "󰄬"
           color: Commons.Color.accent
           font.family: Style.font.family
@@ -67,6 +86,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           width: parent.width - Style.space(40)
           text: root.successNotice
           color: Commons.Color.foreground
@@ -100,24 +120,48 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           text: root.tr("subscriptions.addTitle")
           color: Commons.Color.foreground
           font.family: Style.font.family
           font.pixelSize: Style.font.title
         }
 
+        Text {
+          textFormat: Text.PlainText
+          width: parent.width
+          text: root.tr("subscriptions.nameLabel")
+          wrapMode: Text.WordWrap
+          color: Commons.Color.foreground
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+        }
+
         TextField {
           id: subNameInput
           width: parent.width
           placeholderText: root.tr("subscriptions.namePlaceholder")
+          onAccepted: subUrlInput.forceActiveFocus()
         }
 
         // Secret URL field (password masked)
+        Text {
+          textFormat: Text.PlainText
+          width: parent.width
+          text: root.tr("subscriptions.urlLabel")
+          wrapMode: Text.WordWrap
+          color: Commons.Color.foreground
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+        }
+
         TextField {
           id: subUrlInput
           width: parent.width
           isPassword: true
+          passwordToggleLabel: root.tr("subscriptions.showUrl")
           placeholderText: root.tr("subscriptions.urlPlaceholder")
+          onAccepted: root.submit()
         }
 
         Row {
@@ -127,18 +171,7 @@ Item {
             text: root.tr("action.add")
             variant: "primary"
             enabled: subNameInput.text.trim().length > 0 && subUrlInput.text.trim().length > 0
-            onClicked: {
-              if (root.service) {
-                var name = subNameInput.text.trim()
-                var url = subUrlInput.text.trim()
-                // IMMEDIATELY clear sensitive URL from text field property
-                subUrlInput.clear()
-                subNameInput.clear()
-                root.showAddForm = false
-                root.successNotice = root.tr("subscriptions.urlClearedNotice")
-                root.service.addSubscription(name, url)
-              }
-            }
+            onClicked: root.submit()
           }
 
           Button {
@@ -169,6 +202,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰑤"
           color: Commons.Color.foreground
@@ -177,6 +211,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("subscriptions.empty")
           color: Commons.Color.foreground
@@ -220,6 +255,7 @@ Item {
             spacing: Style.space(2)
 
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               text: modelData.name || root.tr("subscriptions.fallbackName")
               color: Commons.Color.foreground
@@ -229,7 +265,8 @@ Item {
             }
 
             Text {
-              text: root.tr("subscriptions.serversCount", [modelData.serverCount || 0])
+              textFormat: Text.PlainText
+              text: typeof modelData.serverCount === "number" ? root.tr("subscriptions.serversCount", [modelData.serverCount]) : root.tr("subscriptions.countUnknown")
               color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption

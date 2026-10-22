@@ -138,7 +138,7 @@ assert.strictEqual(root.activeProgress.id, 'srv_1');
 
 const hero = {service: {...snapshot, backendMissing: false}, connected: false, busy: false,
   canConnect: false, tr: I18n.t};
-qmlFunctions('ui/HeroCard.qml', {root: hero, I18n});
+qmlFunctions('ui/HeroCard.qml', {root: hero, I18n, Model});
 assert.strictEqual(hero.availabilityText(), snapshot.unavailableReason);
 hero.service.backendMissing = true;
 assert.match(hero.availabilityText(), /^VPNRouter backend is not installed\n.*vpnrouter-headless/);

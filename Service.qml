@@ -21,6 +21,9 @@ Item {
   property bool helperPresent: false
   property bool backendMissing: false
   property string unavailableReason: ""
+  property var unavailableReasonCode: null
+  property bool serversLoaded: false
+  property bool subscriptionsLoaded: false
   property bool starting: false
   property int retryCount: 0
   property int retryBackoffMs: 2000
@@ -70,6 +73,7 @@ Item {
   property var freeVerification: null
   property var freeServers: []
   property int freeTotal: 0
+  property bool appsLoaded: false
   property var apps: ({ include: [], exclude: [], running: [] })
   property var profiles: []
   property var rules: ({ text: "", priority: "toggles_first" })
@@ -336,6 +340,10 @@ Item {
     root.state = "unavailable"
     root.capabilities = ({ connect: false, killSwitch: false, dnsLockdown: false })
     root.unavailableReason = ""
+    root.unavailableReasonCode = null
+    root.appsLoaded = false
+    root.serversLoaded = false
+    root.subscriptionsLoaded = false
     root.busy = false
     root.activeOperation = ""
     root.activeRequestId = ""
@@ -431,6 +439,7 @@ Item {
     if (isError) {
       var errCode = error ? error.code : "unknown_error"
       var errMsg = error ? error.message : I18n.t("error.generic")
+      if (errCode === "not_removable") errMsg = root.tr("error.notRemovable")
       root.lastError = errMsg
       if (errCode === "conflict") {
         root.flushQueuedMutations(I18n.t("error.conflict"))
@@ -468,6 +477,7 @@ Item {
     root.errorCode = norm.errorCode || ""
     root.capabilities = norm.capabilities
     root.unavailableReason = norm.unavailableReason
+    root.unavailableReasonCode = norm.unavailableReasonCode || null
   }
 
   // ---- Dispatch and Queue ---------------------------------------------------
@@ -611,7 +621,7 @@ Item {
 
   function connect(onDone, onError) {
     if (!root.capabilities || !root.capabilities.connect) {
-      var msg = root.unavailableReason || I18n.t("backend.connectUnavailable")
+      var msg = Model.unavailableText(root, ({ t: root.tr }))
       root.lastError = msg
       root.errorNotice("capability_unavailable", msg)
       if (onError) onError({ code: "capability_unavailable", message: msg })
@@ -645,6 +655,7 @@ Item {
   function listServers(offset, limit, onDone, onError) {
     return sendRequest("servers.list", { offset: offset || 0, limit: limit || 100 }, function(res) {
       root.servers = (res && res.items) ? res.items : []
+      root.serversLoaded = true
       root.serversTotal = (res && res.total) ? res.total : root.servers.length
       if (onDone) onDone(root.servers)
     }, onError)
@@ -705,6 +716,7 @@ Item {
   function listSubscriptions(offset, limit, onDone, onError) {
     return sendRequest("subscriptions.list", { offset: offset || 0, limit: limit || 100 }, function(res) {
       root.subscriptions = (res && res.items) ? res.items : []
+      root.subscriptionsLoaded = true
       root.subscriptionsTotal = (res && res.total) ? res.total : root.subscriptions.length
       if (onDone) onDone(root.subscriptions)
     }, onError)
@@ -802,8 +814,10 @@ Item {
       root.apps = {
         include: (res && res.include) ? res.include : [],
         exclude: (res && res.exclude) ? res.exclude : [],
-        running: (res && res.running) ? res.running : []
+        running: (res && res.running) ? res.running : [],
+        runningApps: res && Array.isArray(res.runningApps) ? res.runningApps : null
       }
+      root.appsLoaded = true
       if (onDone) onDone(root.apps)
     }, onError)
   }

@@ -80,6 +80,12 @@ Item {
     return payload
   }
 
+  function submit() {
+    if (root.service) root.service.setSettings(root.buildSettingsPayload(), function() {
+      root.saveNotice = root.tr("settings.saved")
+    })
+  }
+
   implicitWidth: parent ? parent.width : Style.space(480)
   implicitHeight: column.implicitHeight
 
@@ -105,6 +111,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           text: "󰄬"
           color: Commons.Color.accent
           font.family: Style.font.family
@@ -113,6 +120,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           width: parent.width - Style.space(40)
           text: root.saveNotice
           color: Commons.Color.foreground
@@ -145,6 +153,7 @@ Item {
         spacing: Style.space(10)
 
         Text {
+          textFormat: Text.PlainText
           text: root.tr("settings.title")
           color: Commons.Color.foreground
           font.family: Style.font.family
@@ -156,6 +165,7 @@ Item {
           spacing: Style.space(12)
 
           Text {
+            textFormat: Text.PlainText
             width: Style.space(160)
             text: root.tr("settings.mtu")
             color: Commons.Color.foreground
@@ -170,6 +180,7 @@ Item {
             text: String(root.mtuVal)
             placeholderText: "1420"
             onTextChanged: root.mtuVal = Model.validateMtu(text)
+            onAccepted: root.submit()
           }
         }
 
@@ -222,14 +233,23 @@ Item {
           }
         }
 
+        Toggle {
+          width: parent.width
+          label: root.tr("settings.killSwitch")
+          description: root.tr("settings.killSwitchUnsupported")
+          enabled: false
+          checked: false
+        }
+
         // DNS mode is read from the profile. Current Core rejects writing it here.
         Column {
           width: parent.width
           spacing: Style.space(6)
 
           Text {
+            textFormat: Text.PlainText
             width: parent.width
-            text: root.tr("settings.dnsMode") + ": " + (root.dnsModeVal || root.tr("settings.dnsMode.resetDefault"))
+            text: root.tr("settings.dnsModeValue", [root.dnsModeVal || root.tr("settings.dnsMode.resetDefault")])
             color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
@@ -253,6 +273,7 @@ Item {
               spacing: Style.space(8)
 
               Text {
+                textFormat: Text.PlainText
                 text: "󰌵"
                 color: Commons.Color.accent
                 font.family: Style.font.family
@@ -261,6 +282,7 @@ Item {
               }
 
               Text {
+                textFormat: Text.PlainText
                 width: parent.width - Style.space(28)
                 text: root.dnsExplanationText
                 color: Commons.Color.foreground
@@ -291,6 +313,7 @@ Item {
           spacing: Style.space(4)
 
           Text {
+            textFormat: Text.PlainText
             text: root.tr("settings.excludeCidr")
             color: Commons.Color.foreground
             font.family: Style.font.family
@@ -307,6 +330,11 @@ Item {
 
             TextEdit {
               id: cidrEdit
+              activeFocusOnTab: true
+              textFormat: TextEdit.PlainText
+              Keys.onPressed: function(event) {
+                if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ControlModifier)) { root.submit(); event.accepted = true }
+              }
               anchors.fill: parent
               anchors.margins: Style.space(6)
               wrapMode: TextEdit.Wrap
@@ -318,6 +346,7 @@ Item {
               text: root.cidrsVal
 
               Text {
+                textFormat: Text.PlainText
                 width: parent.width
                 wrapMode: Text.WordWrap
                 visible: cidrEdit.text.length === 0
@@ -334,14 +363,7 @@ Item {
         Button {
           text: root.tr("settings.save")
           variant: "primary"
-          onClicked: {
-            if (root.service) {
-              var payload = root.buildSettingsPayload()
-              root.service.setSettings(payload, function() {
-                root.saveNotice = root.tr("settings.saved")
-              })
-            }
-          }
+          onClicked: root.submit()
         }
       }
     }

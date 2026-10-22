@@ -1,4 +1,5 @@
 import QtQuick
+import "../lib/Focus.js" as Focus
 import qs.Commons 1.0
 import qs.Commons 1.0 as Commons
 
@@ -16,6 +17,9 @@ Item {
   implicitHeight: Style.spacing.controlHeight
 
   activeFocusOnTab: true
+  onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
+  Accessible.role: Accessible.Button
+  Accessible.name: root.text
 
   Keys.onReturnPressed: if (root.enabled && !root.busy) root.clicked()
   Keys.onEnterPressed: if (root.enabled && !root.busy) root.clicked()
@@ -32,15 +36,10 @@ Item {
 
   readonly property color bgFill: {
     if (!root.enabled) return Qt.rgba(0, 0, 0, 0.05)
-    if (variant === "primary") {
-      if (pressed) return Qt.darker(Commons.Color.accent, 1.2)
-      if (hot || activeFocus) return Qt.lighter(Commons.Color.accent, 1.1)
-      return Commons.Color.accent
-    }
-    if (variant === "danger") {
-      if (pressed) return Qt.darker(Commons.Color.urgent, 1.2)
-      if (hot || activeFocus) return Qt.lighter(Commons.Color.urgent, 1.1)
-      return Commons.Color.urgent
+    if (variant === "primary" || variant === "danger") {
+      if (pressed) return Style.pressedFill
+      if (hot || activeFocus) return Style.hoverFill
+      return Style.selectedFill
     }
     if (variant === "subtle") {
       if (pressed) return Style.pressedFill
@@ -55,13 +54,14 @@ Item {
 
   readonly property color textColor: {
     if (!root.enabled) return Commons.Color.foreground
-    if (variant === "primary" || variant === "danger") return Commons.Color.background
+    if (variant === "primary" || variant === "danger") return Commons.Color.foreground
     return Commons.Color.foreground
   }
 
   readonly property color borderColor: {
     if (activeFocus) return Style.focusBorderColor
-    if (variant === "primary" || variant === "danger") return "transparent"
+    if (variant === "primary") return Commons.Color.accent
+    if (variant === "danger") return Commons.Color.urgent
     if (hot) return Style.hoverBorderColor
     return Style.normalBorderColor
   }
@@ -85,6 +85,7 @@ Item {
       spacing: Style.space(6)
 
       Text {
+        textFormat: Text.PlainText
         visible: root.icon !== "" && !root.busy
         text: root.icon
         color: root.textColor
@@ -94,6 +95,7 @@ Item {
       }
 
       Text {
+        textFormat: Text.PlainText
         visible: root.busy
         text: "󰦞"
         color: root.textColor
@@ -110,6 +112,7 @@ Item {
       }
 
       Text {
+        textFormat: Text.PlainText
         visible: root.text !== ""
         text: root.text
         color: root.textColor

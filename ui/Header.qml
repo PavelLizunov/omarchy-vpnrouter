@@ -35,6 +35,7 @@ Item {
     spacing: Style.space(10)
 
     Text {
+      textFormat: Text.PlainText
       text: "󰖂"
       color: root.service && root.service.isConnected ? Commons.Color.accent : Commons.Color.foreground
       font.family: Style.font.family
@@ -48,6 +49,7 @@ Item {
       spacing: Style.space(1)
 
       Text {
+        textFormat: Text.PlainText
         text: root.tr("app.name")
         color: Commons.Color.foreground
         font.family: Style.font.family
@@ -55,6 +57,7 @@ Item {
       }
 
       Text {
+        textFormat: Text.PlainText
         width: parent.width
         wrapMode: Text.WordWrap
         text: root.tr("app.subtitle")
@@ -84,6 +87,8 @@ Item {
     // Explicit overrides cycle back to the shell language (AUTO).
     Rectangle {
       id: langButton
+      Accessible.role: Accessible.Button
+      Accessible.name: root.tr("language.change")
       activeFocusOnTab: true
       Keys.onReturnPressed: root.localeToggled()
       Keys.onSpacePressed: root.localeToggled()
@@ -95,8 +100,9 @@ Item {
       border.width: Style.normalBorderWidth
 
       Text {
+        textFormat: Text.PlainText
         anchors.centerIn: parent
-        text: root.service && root.service.locale === "auto" ? "AUTO" : root.currentLocale.toUpperCase()
+        text: root.service && root.service.locale === "auto" ? root.tr("language.auto") : root.currentLocale.toUpperCase()
         color: Commons.Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
@@ -114,6 +120,8 @@ Item {
     // Mode Toggle (Simple / Advanced)
     Rectangle {
       id: modeButton
+      Accessible.role: Accessible.Button
+      Accessible.name: root.tr(root.mode === "simple" ? "mode.advanced" : "mode.simple")
       activeFocusOnTab: true
       Keys.onReturnPressed: root.modeChangeRequested(root.mode === "simple" ? "advanced" : "simple")
       Keys.onSpacePressed: root.modeChangeRequested(root.mode === "simple" ? "advanced" : "simple")
@@ -130,6 +138,7 @@ Item {
         spacing: Style.space(5)
 
         Text {
+          textFormat: Text.PlainText
           text: root.mode === "simple" ? "󰒘" : "󰒓"
           color: Commons.Color.accent
           font.family: Style.font.family
@@ -138,6 +147,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           text: root.mode === "simple" ? root.tr("mode.simple") : root.tr("mode.advanced")
           color: Commons.Color.foreground
           font.family: Style.font.family

@@ -1,4 +1,5 @@
 import QtQuick
+import "../lib/Focus.js" as Focus
 import qs.Commons 1.0
 import qs.Commons 1.0 as Commons
 
@@ -15,6 +16,10 @@ Item {
   implicitHeight: Math.max(Style.spacing.controlHeight, row.implicitHeight)
 
   activeFocusOnTab: true
+  onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
+  Accessible.role: Accessible.CheckBox
+  Accessible.name: root.label
+  Accessible.checked: root.checked
 
   Keys.onSpacePressed: if (root.enabled) root.toggle()
   Keys.onReturnPressed: if (root.enabled) root.toggle()
@@ -82,6 +87,7 @@ Item {
       spacing: Style.space(2)
 
       Text {
+        textFormat: Text.PlainText
         visible: root.label !== ""
         width: parent.width
         wrapMode: Text.WordWrap
@@ -92,6 +98,7 @@ Item {
       }
 
       Text {
+        textFormat: Text.PlainText
         visible: root.description !== ""
         width: parent.width
         wrapMode: Text.WordWrap

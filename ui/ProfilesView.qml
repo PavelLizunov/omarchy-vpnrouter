@@ -48,6 +48,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰒓"
           color: Commons.Color.foreground
@@ -56,6 +57,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("profiles.empty")
           color: Commons.Color.foreground
@@ -104,9 +106,10 @@ Item {
           }
 
           Text {
+            textFormat: Text.PlainText
             width: parent.width - actBtn.width - Style.space(50)
             text: modelData.name || modelData.id
-            color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
@@ -126,6 +129,7 @@ Item {
         MouseArea {
           id: profMouse
           anchors.fill: parent
+          anchors.rightMargin: actBtn.width + Style.space(16)
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
           onClicked: if (root.service) root.service.selectProfiles([modelData.id])

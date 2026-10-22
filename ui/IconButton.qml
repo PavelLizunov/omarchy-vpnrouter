@@ -1,4 +1,5 @@
 import QtQuick
+import "../lib/Focus.js" as Focus
 import qs.Commons 1.0
 import qs.Commons 1.0 as Commons
 
@@ -16,6 +17,9 @@ Item {
   implicitHeight: Style.spacing.controlHeight
 
   activeFocusOnTab: true
+  onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
+  Accessible.role: Accessible.Button
+  Accessible.name: root.tooltipText
 
   Keys.onReturnPressed: if (root.enabled && !root.busy) root.clicked()
   Keys.onEnterPressed: if (root.enabled && !root.busy) root.clicked()
@@ -42,12 +46,13 @@ Item {
     anchors.fill: parent
     radius: Style.cornerRadius
     color: root.bgFill
-    border.color: activeFocus ? Style.focusBorderColor : "transparent"
-    border.width: activeFocus ? Style.focusBorderWidth : 0
+    border.color: root.activeFocus ? Style.focusBorderColor : "transparent"
+    border.width: root.activeFocus ? Style.focusBorderWidth : 0
 
     Behavior on color { ColorAnimation { duration: 150 } }
 
     Text {
+      textFormat: Text.PlainText
       anchors.centerIn: parent
       visible: !root.busy
       text: root.icon
@@ -57,6 +62,7 @@ Item {
     }
 
     Text {
+      textFormat: Text.PlainText
       anchors.centerIn: parent
       visible: root.busy
       text: "󰦞"

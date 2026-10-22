@@ -42,6 +42,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           text: "󰄬"
           color: Commons.Color.accent
           font.family: Style.font.family
@@ -50,6 +51,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           width: parent.width - Style.space(40)
           text: root.statusNotice
           color: Commons.Color.foreground
@@ -82,6 +84,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           text: root.tr("rules.priority")
           color: Commons.Color.foreground
           font.family: Style.font.family
@@ -131,6 +134,8 @@ Item {
 
         TextEdit {
           id: rulesTextEdit
+          activeFocusOnTab: true
+          textFormat: TextEdit.PlainText
           width: parent.width
           wrapMode: TextEdit.Wrap
           font.family: Style.font.family
@@ -154,7 +159,7 @@ Item {
         onClicked: {
           if (root.service) {
             root.service.setRules(rulesTextEdit.text, root.selectedPriority, function() {
-              root.statusNotice = root.tr("rules.importedSuccess")
+              root.statusNotice = root.tr("rules.saved")
             })
           }
         }
@@ -193,18 +198,22 @@ Item {
           model: ["json", "csv", "singbox"]
 
           Rectangle {
+            activeFocusOnTab: true
+            Keys.onReturnPressed: root.importExportFormat = modelData
+            Keys.onSpacePressed: root.importExportFormat = modelData
             width: fmtText.implicitWidth + Style.space(12)
             height: Style.spacing.controlHeight
             radius: Style.cornerRadius
             color: root.importExportFormat === modelData ? Style.selectedFill : (fmtMouse.containsMouse ? Style.hoverFill : Style.normalFill)
-            border.color: root.importExportFormat === modelData ? Commons.Color.accent : Style.normalBorderColor
+            border.color: activeFocus ? Style.focusBorderColor : root.importExportFormat === modelData ? Commons.Color.accent : Style.normalBorderColor
             border.width: 1
 
             Text {
+              textFormat: Text.PlainText
               id: fmtText
               anchors.centerIn: parent
               text: modelData.toUpperCase()
-              color: root.importExportFormat === modelData ? Commons.Color.accent : Commons.Color.foreground
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }

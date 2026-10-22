@@ -36,6 +36,7 @@ Ui.Panel {
     if (opened) {
       if (service) {
         service.refreshSnapshot()
+        service.listSubscriptions(0, 100)
         if (mode === "advanced") {
           refreshTab(currentTab)
         } else {
@@ -56,6 +57,7 @@ Ui.Panel {
     switch (tabId) {
       case "servers":
         service.listServers(0, 100)
+        service.listSubscriptions(0, 100)
         break
       case "subscriptions":
         service.listSubscriptions(0, 100)
@@ -94,6 +96,13 @@ Ui.Panel {
     }
   }
 
+  function openSubscriptionForm() {
+    root.currentTab = "subscriptions"
+    root.setDisplayMode("advanced")
+    flickableContent.contentY = 0
+    subscriptionsView.openForm()
+  }
+
   function toggleLocale() {
     if (!service) return
     // Cycle back to the shell language after the two explicit overrides.
@@ -113,11 +122,11 @@ Ui.Panel {
     contentWidth: panel.fittedContentWidth(Style.space(root.mode === "advanced" ? 540 : 440))
     contentHeight: panel.fittedContentHeight(root.mode === "advanced" ? Style.space(640) : fixedHeader.implicitHeight + Style.space(12) + mainColumn.implicitHeight, Style.space(640))
 
-    Ui.PanelKeyCatcher {
+    FocusScope {
       id: keyCatcher
       anchors.fill: parent
-      onCloseRequested: root.close()
-      onTabRequested: function(direction) { root.switchPanel(direction) }
+      focus: true
+      Keys.onEscapePressed: root.close()
 
       Column {
         id: fixedHeader
@@ -145,6 +154,7 @@ Ui.Panel {
           onConnectRequested: if (root.service) root.service.connect()
           onDisconnectRequested: if (root.service) root.service.disconnect()
           onCancelRequested: if (root.service) root.service.cancel()
+          onAddSubscriptionRequested: root.openSubscriptionForm()
         }
 
         VpnUi.Navigation {
@@ -165,6 +175,7 @@ Ui.Panel {
 
       Flickable {
         id: flickableContent
+        objectName: "vpnContentViewport"
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: fixedHeader.bottom
@@ -207,6 +218,7 @@ Ui.Panel {
                   width: parent.width
 
                   Text {
+                    textFormat: Text.PlainText
                     text: root.tr("simple.activeServer")
                     color: Commons.Color.foreground
                     font.family: Style.font.family
@@ -251,6 +263,7 @@ Ui.Panel {
                       }
 
                       Text {
+                        textFormat: Text.PlainText
                         width: parent.width - latLabel.width - Style.space(36)
                         text: modelData.name || root.tr("servers.fallbackName")
                         color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
@@ -261,6 +274,7 @@ Ui.Panel {
                       }
 
                       Text {
+                        textFormat: Text.PlainText
                         id: latLabel
                         text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                         color: Commons.Color.foreground
@@ -298,6 +312,7 @@ Ui.Panel {
                 spacing: Style.space(8)
 
                 Text {
+                  textFormat: Text.PlainText
                   text: root.tr("apps.routingMode")
                   color: Commons.Color.foreground
                   font.family: Style.font.family
@@ -346,6 +361,7 @@ Ui.Panel {
 
             // Section Views
             VpnUi.ServersView {
+              onAddSubscriptionRequested: root.openSubscriptionForm()
               visible: root.currentTab === "servers"
               width: parent.width
               service: root.service
@@ -353,6 +369,7 @@ Ui.Panel {
             }
 
             VpnUi.SubscriptionsView {
+              id: subscriptionsView
               visible: root.currentTab === "subscriptions"
               width: parent.width
               service: root.service

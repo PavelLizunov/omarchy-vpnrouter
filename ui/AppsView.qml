@@ -1,13 +1,16 @@
 import QtQuick
+import QtQuick.Layouts
+import Quickshell
 import qs.Commons 1.0
 import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
+import "../lib/Model.js" as Model
 
 Item {
   id: root
-
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
+  property string searchQuery: ""
 
   function tr(key, args) {
     var _ = i18nRevision
@@ -16,19 +19,16 @@ Item {
 
   implicitWidth: parent ? parent.width : Style.space(480)
   implicitHeight: column.implicitHeight
-
   readonly property string routingMode: service ? service.routingMode : "split"
   readonly property string routingAppsMode: service ? service.routingAppsMode : "include"
-  readonly property var configuredApps: {
-    if (!service || !service.apps) return []
-    return routingAppsMode === "include" ? (service.apps.include || []) : (service.apps.exclude || [])
-  }
-  readonly property var runningApps: (service && service.apps && service.apps.running) ? service.apps.running : []
+  readonly property var configuredApps: !service || !service.apps ? [] : (routingAppsMode === "include" ? service.apps.include : service.apps.exclude) || []
+  readonly property var runningApps: Model.runningApplications(service ? service.apps : null, searchQuery)
+  readonly property bool hasSuggestions: !!(service && service.apps && Array.isArray(service.apps.runningApps))
 
   function addApp(name) {
     if (!name || !root.service) return
     var trimmed = String(name).trim()
-    if (trimmed.length === 0) return
+    if (!trimmed) return
     var list = root.configuredApps.slice()
     if (list.indexOf(trimmed) === -1) {
       list.push(trimmed)
@@ -37,204 +37,40 @@ Item {
   }
 
   function removeApp(name) {
-    if (!name || !root.service) return
-    var list = root.configuredApps.filter(function(item) { return item !== name })
-    root.service.setApps(root.routingAppsMode, list)
+    if (root.service) root.service.setApps(root.routingAppsMode, root.configuredApps.filter(function(item) { return item !== name }))
   }
 
   Column {
     id: column
     width: parent.width
-    spacing: Style.space(12)
+    spacing: Style.space(10)
 
-    // Routing Mode Selection Card
-    Rectangle {
+    Text {
+      textFormat: Text.PlainText
       width: parent.width
-      height: modeCol.implicitHeight + Style.space(16)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: Style.normalBorderColor
-      border.width: Style.normalBorderWidth
-
-      Column {
-        id: modeCol
-        anchors.fill: parent
-        anchors.margins: Style.space(10)
-        spacing: Style.space(8)
-
-        Text {
-          text: root.tr("apps.routingMode")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.title
-        }
-
-        Column {
-          width: parent.width
-          spacing: Style.space(6)
-
-          Toggle {
-            width: parent.width
-            label: root.tr("apps.routingMode.split")
-            checked: root.routingMode === "split"
-            onToggled: function(val) {
-              if (root.service) root.service.setRouting(val ? "split" : "full", root.routingAppsMode)
-            }
-          }
-
-          Toggle {
-            width: parent.width
-            label: root.tr("apps.routingMode.full")
-            checked: root.routingMode === "full"
-            onToggled: function(val) {
-              if (root.service) root.service.setRouting(val ? "full" : "split", root.routingAppsMode)
-            }
-          }
-        }
-      }
+      text: root.tr("apps.matchHint")
+      wrapMode: Text.WordWrap
+      color: Commons.Color.foreground
+      font.family: Style.font.family
+      font.pixelSize: Style.font.caption
     }
 
-    // Apps Filter Policy Card
-    Rectangle {
+    RowLayout {
       width: parent.width
-      height: policyCol.implicitHeight + Style.space(16)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: Style.normalBorderColor
-      border.width: Style.normalBorderWidth
-
-      Column {
-        id: policyCol
-        anchors.fill: parent
-        anchors.margins: Style.space(10)
-        spacing: Style.space(8)
-
-        Text {
-          text: root.tr("apps.appsMode")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.title
-        }
-
-        Column {
-          width: parent.width
-          spacing: Style.space(6)
-
-          Toggle {
-            width: parent.width
-            label: root.tr("apps.appsMode.include")
-            checked: root.routingAppsMode === "include"
-            onToggled: function(val) {
-              if (root.service) root.service.setRouting(root.routingMode, val ? "include" : "exclude")
-            }
-          }
-
-          Toggle {
-            width: parent.width
-            label: root.tr("apps.appsMode.exclude")
-            checked: root.routingAppsMode === "exclude"
-            onToggled: function(val) {
-              if (root.service) root.service.setRouting(root.routingMode, val ? "exclude" : "include")
-            }
-          }
-        }
-      }
-    }
-
-    // Add Custom Process Form
-    Row {
-      width: parent.width
-      spacing: Style.space(8)
-
       TextField {
         id: customAppInput
-        width: parent.width - addAppBtn.width - Style.space(8)
+        Layout.fillWidth: true
         placeholderText: root.tr("apps.customAppPlaceholder")
-        onAccepted: {
-          root.addApp(customAppInput.text)
-          customAppInput.clear()
-        }
+        onAccepted: { root.addApp(text); clear() }
       }
-
       Button {
-        id: addAppBtn
-        text: "+ " + root.tr("apps.addApp")
+        text: root.tr("apps.addApp")
         variant: "primary"
         enabled: customAppInput.text.trim().length > 0
-        onClicked: {
-          root.addApp(customAppInput.text)
-          customAppInput.clear()
-        }
+        onClicked: { root.addApp(customAppInput.text); customAppInput.clear() }
       }
     }
 
-    // Running Applications Suggestions
-    Rectangle {
-      visible: root.runningApps.length > 0
-      width: parent.width
-      height: runningCol.implicitHeight + Style.space(16)
-      radius: Style.cornerRadius
-      color: Style.hoverFill
-      border.color: Style.normalBorderColor
-      border.width: Style.normalBorderWidth
-
-      Column {
-        id: runningCol
-        anchors.fill: parent
-        anchors.margins: Style.space(8)
-        spacing: Style.space(6)
-
-        Text {
-          text: root.tr("apps.runningHeader")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
-        }
-
-        Flow {
-          width: parent.width
-          spacing: Style.space(6)
-
-          Repeater {
-            model: root.runningApps
-
-            Rectangle {
-              width: Math.min(runningCol.width, chipRow.implicitWidth + Style.space(12))
-              height: Style.space(24)
-              radius: height / 2
-              color: chipMouse.containsMouse ? Style.pressedFill : Style.normalFill
-              border.color: Style.normalBorderColor
-              border.width: 1
-
-              Row {
-                id: chipRow
-                anchors.centerIn: parent
-                spacing: Style.space(4)
-
-                Text {
-                  width: Math.min(implicitWidth, runningCol.width - Style.space(12))
-                  elide: Text.ElideRight
-                  text: "+ " + modelData
-                  color: Commons.Color.foreground
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                }
-              }
-
-              MouseArea {
-                id: chipMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.addApp(modelData)
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Configured Applications Header
     Text {
       textFormat: Text.PlainText
       text: root.tr("apps.configuredHeader", [root.configuredApps.length])
@@ -242,30 +78,72 @@ Item {
       font.family: Style.font.family
       font.pixelSize: Style.font.title
     }
-
-    // Empty configured apps state
-    Rectangle {
-      visible: root.configuredApps.length === 0
+    Text {
+      textFormat: Text.PlainText
+      visible: !root.configuredApps.length
       width: parent.width
-      height: Style.space(80)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: Style.normalBorderColor
-      border.width: 1
-
-      Text {
-        anchors.centerIn: parent
-        text: root.tr("apps.empty")
-        color: Commons.Color.foreground
-        font.family: Style.font.family
-        font.pixelSize: Style.font.bodySmall
+      text: root.tr("apps.empty")
+      wrapMode: Text.WordWrap
+      color: Commons.Color.foreground
+      font.family: Style.font.family
+      font.pixelSize: Style.font.bodySmall
+    }
+    Repeater {
+      model: root.configuredApps
+      Rectangle {
+        width: column.width
+        height: Style.spacing.controlHeight + Style.space(8)
+        radius: Style.cornerRadius
+        color: Style.normalFill
+        border.color: Style.normalBorderColor
+        border.width: Style.normalBorderWidth
+        RowLayout {
+          anchors.fill: parent
+          anchors.margins: Style.space(4)
+          Text {
+            textFormat: Text.PlainText
+            Layout.fillWidth: true
+            Layout.leftMargin: Style.space(6)
+            text: modelData
+            elide: Text.ElideRight
+            color: Commons.Color.foreground
+            font.family: Style.font.family
+            font.pixelSize: Style.font.bodySmall
+          }
+          IconButton {
+            icon: "󰅖"
+            tooltipText: root.tr("apps.removeApp", [modelData])
+            onClicked: root.removeApp(modelData)
+          }
+        }
       }
     }
 
-    // Configured Apps List
+    Text {
+      textFormat: Text.PlainText
+      text: root.tr("apps.runningHeader")
+      color: Commons.Color.foreground
+      font.family: Style.font.family
+      font.pixelSize: Style.font.title
+    }
+    TextField {
+      width: parent.width
+      visible: root.hasSuggestions
+      placeholderText: root.tr("apps.searchPlaceholder")
+      onTextChanged: root.searchQuery = text
+    }
+    Text {
+      textFormat: Text.PlainText
+      visible: !root.runningApps.length
+      width: parent.width
+      text: root.service && root.service.activeOperation === "apps.list" && !root.service.appsLoaded ? root.tr("list.loading") : !root.hasSuggestions ? root.tr("apps.legacyHint") : root.searchQuery.trim() ? root.tr("apps.noMatches") : root.tr("apps.runningEmpty")
+      wrapMode: Text.WordWrap
+      color: Commons.Color.foreground
+      font.family: Style.font.family
+      font.pixelSize: Style.font.bodySmall
+    }
     Repeater {
-      model: root.configuredApps
-
+      model: root.runningApps
       Rectangle {
         width: column.width
         height: appRow.implicitHeight + Style.space(12)
@@ -273,41 +151,70 @@ Item {
         color: Style.normalFill
         border.color: Style.normalBorderColor
         border.width: Style.normalBorderWidth
-
-        Row {
+        RowLayout {
           id: appRow
           anchors.fill: parent
           anchors.margins: Style.space(6)
           spacing: Style.space(10)
-
-          Text {
-            text: "󰵮"
-            color: Commons.Color.accent
-            font.family: Style.font.family
-            font.pixelSize: Style.font.iconSmall
-            anchors.verticalCenter: parent.verticalCenter
+          Image {
+            Layout.preferredWidth: Style.space(28)
+            Layout.preferredHeight: Style.space(28)
+            source: Quickshell.iconPath(modelData.icon, true) || Quickshell.iconPath("application-x-executable", true)
+            sourceSize: Qt.size(Style.space(28), Style.space(28))
+            fillMode: Image.PreserveAspectFit
           }
-
-          Text {
-            width: parent.width - deleteAppBtn.width - Style.space(40)
-            text: modelData
-            elide: Text.ElideRight
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
-            anchors.verticalCenter: parent.verticalCenter
+          Column {
+            Layout.fillWidth: true
+            spacing: Style.space(2)
+            Text {
+              textFormat: Text.PlainText
+              width: parent.width
+              text: modelData.displayName
+              elide: Text.ElideRight
+              color: Commons.Color.foreground
+              font.family: Style.font.family
+              font.pixelSize: Style.font.bodySmall
+            }
+            Text {
+              textFormat: Text.PlainText
+              width: parent.width
+              text: root.tr("apps.matchName", [modelData.name])
+              elide: Text.ElideRight
+              color: Commons.Color.foreground
+              font.family: Style.font.family
+              font.pixelSize: Style.font.caption
+            }
           }
-
-          IconButton {
-            id: deleteAppBtn
-            icon: "󰆴"
-            variant: "danger"
-            tooltipText: root.tr("action.remove")
-            anchors.verticalCenter: parent.verticalCenter
-            onClicked: root.removeApp(modelData)
+          Button {
+            readonly property bool selected: root.configuredApps.indexOf(modelData.name) !== -1
+            text: selected ? root.tr("apps.selected") : root.tr("action.add")
+            enabled: !selected
+            onClicked: root.addApp(modelData.name)
           }
         }
       }
+    }
+
+    Text {
+      textFormat: Text.PlainText
+      text: root.tr("apps.routingMode")
+      color: Commons.Color.foreground
+      font.family: Style.font.family
+      font.pixelSize: Style.font.title
+    }
+    Toggle {
+      width: parent.width
+      label: root.tr("apps.routingMode.full")
+      description: root.routingMode === "split" ? root.tr("apps.routingMode.split") : ""
+      checked: root.routingMode === "full"
+      onToggled: function(value) { if (root.service) root.service.setRouting(value ? "full" : "split", root.routingAppsMode) }
+    }
+    Toggle {
+      width: parent.width
+      label: root.tr("apps.appsMode.exclude")
+      description: root.routingAppsMode === "include" ? root.tr("apps.appsMode.include") : ""
+      checked: root.routingAppsMode === "exclude"
+      onToggled: function(value) { if (root.service) root.service.setRouting(root.routingMode, value ? "exclude" : "include") }
     }
   }
 }

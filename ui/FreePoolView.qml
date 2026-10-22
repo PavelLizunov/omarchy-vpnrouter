@@ -64,6 +64,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰓠"
           color: Commons.Color.foreground
@@ -72,6 +73,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("free.empty")
           color: Commons.Color.foreground
@@ -100,6 +102,7 @@ Item {
           spacing: Style.space(10)
 
           Text {
+            textFormat: Text.PlainText
             text: "󰓠"
             color: Commons.Color.accent
             font.family: Style.font.family
@@ -113,6 +116,7 @@ Item {
             spacing: Style.space(2)
 
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               text: modelData.name || root.tr("free.fallbackName")
               color: Commons.Color.foreground
@@ -131,6 +135,7 @@ Item {
                 color: Style.hoverFill
 
                 Text {
+                  textFormat: Text.PlainText
                   id: protoBadge
                   anchors.centerIn: parent
                   text: Model.protocolDisplay(modelData.protocol, ({ t: root.tr }))
@@ -141,6 +146,7 @@ Item {
               }
 
               Text {
+                textFormat: Text.PlainText
                 text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                 color: {
                   var tier = Model.latencyTier(modelData.latencyMs)

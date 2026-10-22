@@ -2,6 +2,7 @@ import QtQuick
 import qs.Commons 1.0
 import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
+import "../lib/Model.js" as Model
 
 Item {
   id: root
@@ -59,6 +60,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           text: "󰄬"
           color: Commons.Color.accent
           font.family: Style.font.family
@@ -67,6 +69,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           width: parent.width - Style.space(40)
           text: root.tr("diagnostics.exportedPath", [root.service ? root.service.diagnosticsExportPath : ""])
           color: Commons.Color.foreground
@@ -99,6 +102,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰓅"
           color: Commons.Color.foreground
@@ -107,6 +111,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("diagnostics.empty")
           color: Commons.Color.foreground
@@ -142,28 +147,17 @@ Item {
             radius: Style.cornerRadius
             anchors.verticalCenter: parent.verticalCenter
 
-            readonly property string st: String(modelData.status || "").toUpperCase()
-            color: {
-              if (st === "PASS" || st === "OK") return Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.15)
-              if (st === "FAIL" || st === "ERROR") return Qt.rgba(Commons.Color.urgent.r, Commons.Color.urgent.g, Commons.Color.urgent.b, 0.15)
-              return Qt.rgba(0.9, 0.7, 0.2, 0.15) // Warning
-            }
-            border.color: {
-              if (st === "PASS" || st === "OK") return Commons.Color.accent
-              if (st === "FAIL" || st === "ERROR") return Commons.Color.urgent
-              return "#d4a017"
-            }
+            readonly property string st: Model.diagnosticSeverity(modelData)
+            color: Style.normalFill
+            border.color: st === "fail" || st === "warn" ? Commons.Color.urgent : Style.normalBorderColor
             border.width: 1
 
             Text {
+              textFormat: Text.PlainText
               id: statusLabel
               anchors.centerIn: parent
-              text: {
-                if (statusPill.st === "PASS" || statusPill.st === "OK") return root.tr("diagnostics.statusPass")
-                if (statusPill.st === "FAIL" || statusPill.st === "ERROR") return root.tr("diagnostics.statusFail")
-                return root.tr("diagnostics.statusWarn")
-              }
-              color: statusPill.border.color
+              text: root.tr("diagnostics.severity." + statusPill.st)
+              color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }
@@ -175,17 +169,20 @@ Item {
             spacing: Style.space(2)
 
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               text: modelData.name || root.tr("diagnostics.fallbackName")
+              wrapMode: Text.WordWrap
               color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.bodySmall
             }
 
             Text {
+              textFormat: Text.PlainText
               visible: modelData.message !== "" && modelData.message !== undefined
               width: parent.width
-              text: modelData.message || ""
+              text: Model.diagnosticIsUnconfigured(modelData) ? root.tr("diagnostics.notConfigured") : modelData.message || ""
               color: Commons.Color.foreground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption

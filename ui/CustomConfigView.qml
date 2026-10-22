@@ -15,6 +15,14 @@ Item {
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
+  function submit() {
+    var text = customTextArea.text.trim()
+    if (!root.service || !text || !customNameInput.text.trim()) return
+    root.service.importCustom(customNameInput.text.trim(), text)
+    customNameInput.clear(); customTextArea.text = ""
+    root.showImportForm = false
+  }
+
   implicitWidth: parent ? parent.width : Style.space(480)
   implicitHeight: column.implicitHeight
 
@@ -51,6 +59,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           text: root.tr("custom.addTitle")
           color: Commons.Color.foreground
           font.family: Style.font.family
@@ -61,6 +70,7 @@ Item {
           id: customNameInput
           width: parent.width
           placeholderText: root.tr("custom.nameLabel")
+          onAccepted: customTextArea.forceActiveFocus()
         }
 
         Rectangle {
@@ -73,6 +83,11 @@ Item {
 
           TextEdit {
             id: customTextArea
+            activeFocusOnTab: true
+            textFormat: TextEdit.PlainText
+            Keys.onPressed: function(event) {
+              if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.ControlModifier)) { root.submit(); event.accepted = true }
+            }
             anchors.fill: parent
             anchors.margins: Style.space(6)
             wrapMode: TextEdit.Wrap
@@ -83,6 +98,7 @@ Item {
             selectedTextColor: Commons.Color.background
 
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               wrapMode: Text.WordWrap
               visible: customTextArea.text.length === 0
@@ -101,16 +117,7 @@ Item {
             text: root.tr("action.import")
             variant: "primary"
             enabled: customNameInput.text.trim().length > 0 && customTextArea.text.trim().length > 0
-            onClicked: {
-              if (root.service) {
-                var name = customNameInput.text.trim()
-                var txt = customTextArea.text.trim()
-                customNameInput.clear()
-                customTextArea.text = ""
-                root.showImportForm = false
-                root.service.importCustom(name, txt)
-              }
-            }
+            onClicked: root.submit()
           }
 
           Button {
@@ -141,6 +148,7 @@ Item {
         spacing: Style.space(8)
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰘦"
           color: Commons.Color.foreground
@@ -149,6 +157,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("custom.empty")
           color: Commons.Color.foreground
@@ -196,9 +205,10 @@ Item {
           }
 
           Text {
+            textFormat: Text.PlainText
             width: parent.width - btnRow.width - Style.space(50)
             text: modelData.name || modelData.id
-            color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
+            color: Commons.Color.foreground
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
@@ -229,6 +239,7 @@ Item {
         MouseArea {
           id: cMouse
           anchors.fill: parent
+          anchors.rightMargin: btnRow.width + Style.space(16)
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
           onClicked: if (root.service) root.service.selectCustom(modelData.id)
