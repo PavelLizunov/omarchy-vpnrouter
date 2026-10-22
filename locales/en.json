@@ -78,6 +78,7 @@
   "apps.appsMode.include": "Route Listed Apps (Only listed apps use VPN)",
   "apps.appsMode.exclude": "Bypass Listed Apps (Listed apps bypass VPN)",
   "apps.runningHeader": "Running Applications",
+  "apps.otherProcesses": "Other processes ({0})",
   "apps.configuredHeader": "Selected apps: {0}",
   "apps.customAppPlaceholder": "Add process name (e.g. firefox, steam)…",
   "apps.addApp": "Add App",

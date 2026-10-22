@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 
 // Mock host environment fixture for Omarchy Quattro headless testing
 Item {

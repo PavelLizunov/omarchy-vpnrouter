@@ -1,6 +1,9 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Hyprland
 import qs.Commons 1.0
 import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
@@ -14,7 +17,7 @@ Item {
   property string searchQuery: ""
 
   function tr(key, args) {
-    var _ = i18nRevision
+    var _ = root.i18nRevision
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
@@ -23,7 +26,13 @@ Item {
   readonly property string routingMode: service ? service.routingMode : "split"
   readonly property string routingAppsMode: service ? service.routingAppsMode : "include"
   readonly property var configuredApps: !service || !service.apps ? [] : (routingAppsMode === "include" ? service.apps.include : service.apps.exclude) || []
-  readonly property var runningApps: Model.runningApplications(service ? service.apps : null, searchQuery)
+  // Shared reactive host model; no helper, polling or shell IPC command.
+  property var windowToplevels: Hyprland.toplevels.values
+  property bool otherProcessesExpanded: false
+  onSearchQueryChanged: root.otherProcessesExpanded = root.searchQuery.trim().length > 0
+  readonly property var suggestions: Model.runningApplications(root.service ? root.service.apps : null, root.searchQuery, root.windowToplevels)
+  readonly property var runningApps: root.suggestions.filter(function(app) { return !!app.desktopId || app.hasWindow })
+  readonly property var otherProcesses: root.suggestions.filter(function(app) { return !app.desktopId && !app.hasWindow })
   readonly property bool hasSuggestions: !!(service && service.apps && Array.isArray(service.apps.runningApps))
 
   function appIconSource(name) {
@@ -98,6 +107,8 @@ Item {
     Repeater {
       model: root.configuredApps
       Rectangle {
+        id: configuredRow
+        required property string modelData
         width: column.width
         height: Style.spacing.controlHeight + Style.space(8)
         radius: Style.cornerRadius
@@ -111,7 +122,7 @@ Item {
             textFormat: Text.PlainText
             Layout.fillWidth: true
             Layout.leftMargin: Style.space(6)
-            text: modelData
+            text: configuredRow.modelData
             elide: Text.ElideRight
             color: Commons.Color.foreground
             font.family: Style.font.family
@@ -119,8 +130,8 @@ Item {
           }
           IconButton {
             icon: "󰅖"
-            tooltipText: root.tr("apps.removeApp", [modelData])
-            onClicked: root.removeApp(modelData)
+            tooltipText: root.tr("apps.removeApp", [configuredRow.modelData])
+            onClicked: root.removeApp(configuredRow.modelData)
           }
         }
       }
@@ -141,7 +152,7 @@ Item {
     }
     Text {
       textFormat: Text.PlainText
-      visible: !root.runningApps.length
+      visible: !root.runningApps.length && !root.otherProcesses.length
       width: parent.width
       text: root.service && root.service.activeOperation === "apps.list" && !root.service.appsLoaded ? root.tr("list.loading") : !root.hasSuggestions ? root.tr("apps.legacyHint") : root.searchQuery.trim() ? root.tr("apps.noMatches") : root.tr("apps.runningEmpty")
       wrapMode: Text.WordWrap
@@ -149,9 +160,12 @@ Item {
       font.family: Style.font.family
       font.pixelSize: Style.font.bodySmall
     }
-    Repeater {
-      model: root.runningApps
+    Component {
+      id: applicationRow
       Rectangle {
+        id: appDelegate
+        required property var modelData
+        objectName: "vpnAppRow-" + appDelegate.modelData.name
         width: column.width
         height: appRow.implicitHeight + Style.space(12)
         radius: Style.cornerRadius
@@ -166,8 +180,8 @@ Item {
           Image {
             Layout.preferredWidth: Style.space(28)
             Layout.preferredHeight: Style.space(28)
-            objectName: "vpnAppIcon-" + modelData.name
-            source: root.appIconSource(modelData.icon)
+            objectName: "vpnAppIcon-" + appDelegate.modelData.name
+            source: root.appIconSource(appDelegate.modelData.icon)
             sourceSize: Qt.size(Style.space(28), Style.space(28))
             fillMode: Image.PreserveAspectFit
           }
@@ -177,7 +191,7 @@ Item {
             Text {
               textFormat: Text.PlainText
               width: parent.width
-              text: modelData.displayName
+              text: appDelegate.modelData.displayName
               elide: Text.ElideRight
               color: Commons.Color.foreground
               font.family: Style.font.family
@@ -186,7 +200,7 @@ Item {
             Text {
               textFormat: Text.PlainText
               width: parent.width
-              text: root.tr("apps.matchName", [modelData.name])
+              text: root.tr("apps.matchName", [appDelegate.modelData.name])
               elide: Text.ElideRight
               color: Commons.Color.foreground
               font.family: Style.font.family
@@ -194,13 +208,30 @@ Item {
             }
           }
           Button {
-            readonly property bool selected: root.configuredApps.indexOf(modelData.name) !== -1
-            text: selected ? root.tr("apps.selected") : root.tr("action.add")
-            enabled: !selected
-            onClicked: root.addApp(modelData.name)
+            id: appButton
+            readonly property bool selected: root.configuredApps.indexOf(appDelegate.modelData.name) !== -1
+            text: appButton.selected ? root.tr("apps.selected") : root.tr("action.add")
+            enabled: !appButton.selected
+            onClicked: root.addApp(appDelegate.modelData.name)
           }
         }
       }
+    }
+    Repeater {
+      model: root.runningApps
+      delegate: applicationRow
+    }
+    Button {
+      objectName: "vpnOtherProcessesToggle"
+      width: parent.width
+      visible: root.otherProcesses.length > 0
+      icon: root.otherProcessesExpanded ? "󰅀" : "󰅂"
+      text: root.tr("apps.otherProcesses", [root.otherProcesses.length])
+      onClicked: root.otherProcessesExpanded = !root.otherProcessesExpanded
+    }
+    Repeater {
+      model: root.otherProcessesExpanded ? root.otherProcesses : []
+      delegate: applicationRow
     }
 
     Text {

@@ -46,7 +46,7 @@ Rectangle {
      if (scenario !== "legacy") res.runningApps = scenario === "populated" ? [
        {name:"chromium",displayName:"Chromium",icon:"chromium",desktopId:"chromium.desktop",hasWindow:true},
        {name:"steam",displayName:"Steam",icon:"steam",desktopId:"steam.desktop"},
-       {name:"very-long-process-name-for-elision",displayName:"An unusually long application name for clipping review",icon:"vpnrouter-fixture-icon-does-not-exist"},
+       {name:"very-long-process-name-for-elision",displayName:"An unusually long application name for clipping review",desktopId:"fixture.desktop",icon:"vpnrouter-fixture-icon-does-not-exist"},
        {name:"systemd",displayName:"Must never be visible"}] : [];
      break
    case "apps.set": fixture.selectedApps = request.params.names; res = {state:"disconnected",revision:"fixture",capabilities:{connect:false}}; break

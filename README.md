@@ -32,8 +32,12 @@ traverses controls; Escape closes the panel. Enter submits
 single-line forms; multiline server/configuration editors use Ctrl+Enter.
 
 The Apps tab uses optional `apps.list.runningApps` metadata for display names,
-freedesktop icons and exact, case-sensitive process match names. Desktop apps come
-first. Suggestions are capped at 200; search matches display and process names.
+freedesktop icons and exact, case-sensitive process match names. The default list
+shows apps with a desktop entry or an open Hyprland window
+(matched by process name/window class, or PID when supplied by the backend).
+Other processes are collapsed under a counted section. Search matches display
+and process names across both sections and reveals matching processes.
+Suggestions are capped at 200; manual process-name entry remains available.
 Older backends without this metadata show manual entry and the selected list,
 with an explanation instead of unclassified process suggestions.
 

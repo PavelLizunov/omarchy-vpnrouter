@@ -46,7 +46,7 @@ for (const locale of ['en', 'ru']) {
   assert.notStrictEqual(Model.serverSourceLabel(servers[2], [], I18n), 'servers.sourceManual');
   // Invariant noun labels avoid quantity inflection; test zero and Russian 1/2/5/11/21.
   for (const n of [0, 1, 2, 5, 11, 21, 101]) {
-    for (const key of ['apps.configuredHeader', 'subscriptions.serversCount']) {
+    for (const key of ['apps.configuredHeader', 'apps.otherProcesses', 'subscriptions.serversCount']) {
       assert(I18n.t(key, [n]).includes(String(n)));
       assert(!I18n.t(key, [n]).includes('{0}'));
     }

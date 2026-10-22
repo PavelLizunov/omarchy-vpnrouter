@@ -78,6 +78,7 @@
   "apps.appsMode.include": "Маршрутизировать только указанные приложения",
   "apps.appsMode.exclude": "Пускать указанные приложения в обход VPN",
   "apps.runningHeader": "Запущенные приложения",
+  "apps.otherProcesses": "Другие процессы ({0})",
   "apps.configuredHeader": "Выбранные приложения: {0}",
   "apps.customAppPlaceholder": "Имя процесса (например: firefox, steam)…",
   "apps.addApp": "Добавить",
