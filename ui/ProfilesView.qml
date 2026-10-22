@@ -26,7 +26,7 @@ Item {
       spacing: Brand.space(8)
 
       Button {
-        icon: "󰑤"
+        icon: "󰓦"
         text: root.tr("profiles.refresh")
         variant: "primary"
         onClicked: if (root.service) root.service.refreshProfiles()
@@ -50,7 +50,7 @@ Item {
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
-          text: "󰒓"
+          text: "󰘮"
           color: Brand.textPrimary
           font.family: Brand.iconFamily
           font.pixelSize: Brand.font.display

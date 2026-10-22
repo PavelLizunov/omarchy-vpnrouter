@@ -78,3 +78,31 @@ The full R7 report, exact commands/exit codes, token table, original asset hashe
 Live loading, compositor focus, VPN connection/routing, screen reader, RTL and
 large text scaling remain unverified. Owner acceptance of the visual match is
 still a user judgment; this is a direct source/render comparison, not a user study.
+
+## R7b follow-up — application summary and glyph semantics
+
+Base: `73f04b08da217aa1e18c27d8f43ecbdc8006133c`. The lead review found that the
+summary exposed process keys and used plural verbs for a single app. It now uses
+known display names, preserves unknown names and exact routing keys, names at
+most two apps and summarizes the rest. Single, pair and aggregate messages are
+whole EN/RU catalog entries. The aggregate subject stays plural even when the
+remaining count has CLDR category `one` (for example, 21 more apps). The integer
+EN/RU CLDR rules are compared to ICU's Intl.PluralRules for 0–10000; fractional
+and unknown counts are outside this array-count contract. Empty selection uses
+a short desktop-style action hint.
+
+All nine navigation glyphs were checked against Nerd Fonts glyph names. Apps
+uses the same grid as the segment, subscriptions a link, rules a filter,
+settings a cog, diagnostics a stethoscope, free servers a globe, profiles sliders
+and custom configuration JSON. Related refresh/test/export/empty-state glyphs
+were corrected as well. The comparison server is now `Frankfurt 1`; fixture
+provenance stays in test source and image metadata.
+
+The existing native fixture adds a summary suite for both languages, include
+and exclude modes, 0/1/2/many counts, locale changes, exact routing-key retention
+and stable panel geometry. It waits for the host adapter's initial palette load
+before injecting the fixture palette, avoiding a demonstrated startup race.
+README.md and README.ru.md remain accurate: setup, routing semantics and commands
+did not change. R7b screenshots and exact verification/delivery evidence are
+appended to the external `r7-plugin.md` report. No installation or live-shell
+operation is part of this follow-up.

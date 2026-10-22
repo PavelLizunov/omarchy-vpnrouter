@@ -35,7 +35,7 @@ Rectangle {
   property string priority: "toggles_first"
   property var savedSettings: ({mtu:1420,ipv6Enabled:false,strictRoute:false,strictDns:false,dnsMode:"vpn_only",bypassRussianTraffic:true,blockAds:false,dnsLeakLockdown:false,routeExcludeAddress:["192.168.0.0/16"]})
   property var subscriptions: [{id:"one",name:"Example subscription (fixture)",serverCount:2,enabled:true}]
-  property var servers: [{id:"manual",name:"Frankfurt 1 (fixture)",protocol:"vless",source:"manual",removable:true,latencyMs:42},
+  property var servers: [{id:"manual",name:"Frankfurt 1",protocol:"vless",source:"manual",removable:true,latencyMs:42},
                          {id:"sub",name:"Subscription server (fixture)",protocol:"shadowsocks",source:"subscription",subscriptionId:"one",removable:false}]
   property var configs: [{id:"one",name:"Configuration A (fixture)"},{id:"two",name:"Configuration B (fixture)"}]
   property var profiles: [{id:"one",name:"Profile A (fixture)"},{id:"two",name:"Profile B (fixture)"}]
@@ -43,6 +43,7 @@ Rectangle {
   property var appRecords: [
     {name:"chatgpt",displayName:"ChatGPT",icon:"chatgpt",desktopId:"chatgpt.desktop"},
     {name:"chromium",displayName:"Chromium",icon:"chromium",desktopId:"chromium.desktop"},
+    {name:"steam",displayName:"Steam",icon:"steam",desktopId:"steam.desktop"},
     {name:"com.discordapp.Discord",displayName:"Discord",icon:"com.discordapp.Discord",desktopId:"com.discordapp.Discord.desktop"},
     {name:"dropbox",displayName:"Dropbox",icon:"dropbox",desktopId:"dropbox.desktop"},
     {name:"nvim",displayName:"Neovim",icon:"nvim",desktopId:"nvim.desktop"},
@@ -132,6 +133,8 @@ Rectangle {
     interval:fixture.captureDelay;running:true
     onTriggered: {
       try {
+        // Wait for the host adapter's startup read before injecting the fixture palette.
+        checks.tryVerify(function() { return Commons.Color.colorsFile.loaded }, 2000, "Host palette startup loaded")
         Commons.Color.background=fixture.theme === "dark" ? "#171a23" : "#faf4ed"
         checks.wait(30)
         if(fixture.suite) checks.run()
@@ -333,6 +336,7 @@ Rectangle {
       else if(fixture.suite==="actions") actions()
       else if(fixture.suite==="keyboard") keyboard()
       else if(fixture.suite==="pointerForms") pointerForms()
+      else if(fixture.suite==="summary") { summary() }
       else if(fixture.suite==="brand") { brand() }
       else if(fixture.suite==="states") { states() }
       else if(fixture.suite==="geometry") {
@@ -385,6 +389,34 @@ Rectangle {
       backend.activeOperation="";backend.busy=false;backend.state="disconnected";backend.capabilities={connect:true}
       consumer.openSection("apps");wait(30)
       console.log("R6_PASS states disconnected-connected-error-unavailable-connecting disabled-capability rotation-reduced-motion")
+    }
+    function summary() {
+      consumer.setDisplayMode("simple");wait(30)
+      var initial=JSON.stringify(geometry()),original=fixture.includes.slice()
+      for (var locale of ["en","ru"]) {
+        backend.setLocale(locale);wait(15)
+        for (var exclude of [false,true]) {
+          backend.routingAppsMode=exclude ? "exclude" : "include"
+          for (var count of [0,1,2,3,4,5,7,13,14,16,23,24,27]) {
+            var names=["chromium","steam"]
+            while(names.length<count) names.push("ExactCase"+names.length)
+            names=names.slice(0,count)
+            backend.apps={include:names,exclude:names,runningApps:fixture.appRecords};backend.appsLoaded=true;wait(5)
+            var route=locale==="ru" ? (exclude?"напрямую":"через VPN") : (exclude?"direct":"through VPN")
+            var rest=locale==="ru" ? (exclude?"через VPN":"напрямую") : (exclude?"use VPN":"go direct")
+            var expected
+            if(!count) expected=backend.tr(exclude ? "home.appsEmptyExclude" : "home.appsEmpty")
+            else if(locale==="ru") expected=(count===1 ? "Chromium идёт " : count===2 ? "Chromium и Steam идут " : "Chromium, Steam и ещё "+(count-2)+" идут ")+route+". Остальные — "+rest+"."
+            else expected=(count===1 ? "Chromium goes " : count===2 ? "Chromium and Steam go " : "Chromium, Steam and "+(count-2)+" more go ")+route+". Other apps "+rest+"."
+            equal(byName("vpnRoutingSummary").text,expected,"Rendered summary: "+locale+"/"+exclude+"/"+count)
+            equal(JSON.stringify(backend.apps.include),JSON.stringify(names),"Exact process keys preserved")
+            equal(JSON.stringify(geometry()),initial,"Summary does not resize the panel")
+          }
+        }
+      }
+      backend.routingAppsMode=fixture.appRule;backend.setLocale(fixture.locale)
+      backend.apps={include:original,exclude:fixture.excludes,runningApps:fixture.appRecords};wait(15)
+      console.log("R6_PASS summary real-Text both-locales include-exclude 0-1-2-many CLDR-boundaries exact-keys stable-geometry")
     }
     function brand() {
       expect(VpnUi.Brand.dark === (fixture.theme === "dark"),"Palette follows host luminance")

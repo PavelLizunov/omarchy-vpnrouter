@@ -28,7 +28,7 @@ Item {
       spacing: Brand.space(8)
 
       Button {
-        icon: "󰑤"
+        icon: "󰓦"
         text: root.tr("free.refresh")
         variant: "primary"
         onClicked: if (root.service) root.service.refreshFree()
@@ -66,7 +66,7 @@ Item {
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
-          text: "󰓠"
+          text: "󰇧"
           color: Brand.textPrimary
           font.family: Brand.iconFamily
           font.pixelSize: Brand.font.display
@@ -103,7 +103,7 @@ Item {
 
           Text {
             textFormat: Text.PlainText
-            text: "󰓠"
+            text: "󰇧"
             color: Brand.accentFg
             font.family: Brand.iconFamily
             font.pixelSize: Brand.font.icon
@@ -159,7 +159,7 @@ Item {
             spacing: Brand.space(4)
 
             IconButton {
-              icon: "󰓠"
+              icon: "󰓅"
               tooltipText: root.tr("action.test")
               onClicked: if (root.service) root.service.testFree(modelData.id)
             }

@@ -41,14 +41,14 @@ Item {
       spacing: Brand.space(8)
 
       Button {
-        icon: "󰓅"
+        icon: "󰓙"
         text: root.tr("diagnostics.checkBtn")
         variant: "primary"
         onClicked: if (root.service) root.service.checkDiagnostics()
       }
 
       Button {
-        icon: "󰑤"
+        icon: "󰈇"
         text: root.tr("diagnostics.exportBtn")
         variant: "normal"
         onClicked: root.exportBundle()
@@ -81,7 +81,7 @@ Item {
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
-          text: "󰓅"
+          text: "󰓙"
           color: Brand.textPrimary
           font.family: Brand.iconFamily
           font.pixelSize: Brand.font.display

@@ -74,7 +74,7 @@ Item {
       }
 
       Button {
-        icon: "󰑤"
+        icon: "󰓦"
         text: root.tr("subscriptions.refreshAll")
         variant: "normal"
         onClicked: if (root.service) root.service.refreshSubscription()
@@ -191,7 +191,7 @@ Item {
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
-          text: "󰑤"
+          text: "󰌹"
           color: Brand.textPrimary
           font.family: Brand.iconFamily
           font.pixelSize: Brand.font.display
@@ -267,7 +267,7 @@ Item {
             spacing: Brand.space(4)
 
             IconButton {
-              icon: "󰑤"
+              icon: "󰓦"
               tooltipText: root.tr("action.refresh")
               onClicked: if (root.service) root.service.refreshSubscription(modelData.id)
             }

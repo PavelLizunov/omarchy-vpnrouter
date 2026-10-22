@@ -333,7 +333,7 @@ Item {
               spacing: Brand.space(4)
 
               IconButton {
-                icon: "󰓠"
+                icon: "󰓅"
                 tooltipText: root.tr("action.test")
                 onClicked: if (root.service) root.service.testServer(modelData.id)
               }

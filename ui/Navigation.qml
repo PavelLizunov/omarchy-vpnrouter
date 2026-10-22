@@ -20,10 +20,10 @@ Rectangle {
     }
   }
   readonly property var tabs: [
-    {id:"servers",icon:"󰒋"}, {id:"subscriptions",icon:"󰑤"},
-    {id:"apps",icon:"󰵮"}, {id:"rules",icon:"󰁝"},
-    {id:"settings",icon:"󰒓"}, {id:"diagnostics",icon:"󰓅"},
-    {id:"free",icon:"󰓠"}, {id:"profiles",icon:"󰒓"}, {id:"custom",icon:"󰘦"}
+    {id:"servers",icon:"󰒋"}, {id:"subscriptions",icon:"󰌹"},
+    {id:"apps",icon:"󰀻"}, {id:"rules",icon:"󰈶"},
+    {id:"settings",icon:"󰒓"}, {id:"diagnostics",icon:"󰓙"},
+    {id:"free",icon:"󰇧"}, {id:"profiles",icon:"󰘮"}, {id:"custom",icon:"󰘦"}
   ]
   implicitHeight: rows.implicitHeight + Brand.space(8)
   radius: Brand.cardRadius
