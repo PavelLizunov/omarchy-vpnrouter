@@ -1,8 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
-import qs.Ui 1.0 as Ui
 import "../lib/Focus.js" as Focus
 import "../lib/I18n.js" as I18n
 
@@ -12,7 +9,7 @@ Column {
   property int i18nRevision: service ? service.i18nRevision : 0
   readonly property string routingMode: service ? service.routingMode : "split"
   readonly property string routingAppsMode: service ? service.routingAppsMode : "include"
-  spacing: Style.space(8)
+  spacing: Brand.space(8)
 
   function tr(key, args) {
     var _ = root.i18nRevision
@@ -23,14 +20,15 @@ Column {
     width: parent.width
     textFormat: Text.PlainText
     text: root.tr("apps.routingMode")
-    color: Commons.Color.foreground
-    font.family: Style.font.family
-    font.pixelSize: Style.font.title
+    color: Brand.textPrimary
+    font.family: Brand.font.family
+    font.pixelSize: Brand.font.title
   }
-  Ui.ButtonGroup {
+  Choice {
+      width: parent.width
     id: routingChoice
     objectName: "vpnRoutingChoice"
-    fontSize: Style.font.bodySmall
+    label: root.tr("apps.routingMode")
     value: root.routingMode
     options: [{value: "split", label: root.tr("apps.routingMode.split")},
               {value: "full", label: root.tr("apps.routingMode.full")}]
@@ -45,15 +43,16 @@ Column {
     width: parent.width
     textFormat: Text.PlainText
     text: root.tr("apps.appsMode")
-    color: Commons.Color.foreground
-    font.family: Style.font.family
-    font.pixelSize: Style.font.bodySmall
+    color: Brand.textPrimary
+    font.family: Brand.font.family
+    font.pixelSize: Brand.font.bodySmall
   }
-  Ui.ButtonGroup {
+  Choice {
+      width: parent.width
     id: appRuleChoice
     objectName: "vpnAppRuleChoice"
+    label: root.tr("apps.appsMode")
     visible: root.routingMode === "split"
-    fontSize: Style.font.bodySmall
     value: root.routingAppsMode
     options: [{value: "include", label: root.tr("apps.appsMode.include")},
               {value: "exclude", label: root.tr("apps.appsMode.exclude")}]

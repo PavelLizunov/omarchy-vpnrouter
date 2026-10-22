@@ -1,6 +1,4 @@
 import QtQuick
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -54,18 +52,18 @@ Item {
     }, function() { root.pending = false; root.errorKey = "subscriptions.addFailed" })
   }
 
-  implicitWidth: parent ? parent.width : Style.space(480)
+  implicitWidth: parent ? parent.width : Brand.space(480)
   implicitHeight: column.implicitHeight
 
   Column {
     id: column
     width: parent.width
-    spacing: Style.space(10)
+    spacing: Brand.space(10)
 
     // Top action bar
-    Row {
+    Flow {
       width: parent.width
-      spacing: Style.space(8)
+      spacing: Brand.space(8)
 
       Button {
         id: addToggle
@@ -76,7 +74,8 @@ Item {
       }
 
       Button {
-        text: "󰑤 " + root.tr("subscriptions.refreshAll")
+        icon: "󰑤"
+        text: root.tr("subscriptions.refreshAll")
         variant: "normal"
         onClicked: if (root.service) root.service.refreshSubscription()
       }
@@ -95,24 +94,24 @@ Item {
     Rectangle {
       visible: root.showAddForm
       width: parent.width
-      height: addFormCol.implicitHeight + Style.space(20)
-      radius: Style.cornerRadius
-      color: Style.hoverFill
-      border.color: Style.normalBorderColor
-      border.width: Style.normalBorderWidth
+      height: addFormCol.implicitHeight + Brand.space(20)
+      radius: Brand.cornerRadius
+      color: Brand.hoverFill
+      border.color: Brand.normalBorderColor
+      border.width: Brand.normalBorderWidth
 
       Column {
         id: addFormCol
         anchors.fill: parent
-        anchors.margins: Style.space(10)
-        spacing: Style.space(8)
+        anchors.margins: Brand.space(10)
+        spacing: Brand.space(8)
 
         Text {
           textFormat: Text.PlainText
           text: root.tr("subscriptions.addTitle")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.title
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.title
         }
 
         Text {
@@ -120,9 +119,9 @@ Item {
           width: parent.width
           text: root.tr("subscriptions.nameLabel")
           wrapMode: Text.WordWrap
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.caption
         }
 
         TextField {
@@ -139,9 +138,9 @@ Item {
           width: parent.width
           text: root.tr("subscriptions.urlLabel")
           wrapMode: Text.WordWrap
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.caption
         }
 
         TextField {
@@ -156,7 +155,7 @@ Item {
         }
 
         Row {
-          spacing: Style.space(8)
+          spacing: Brand.space(8)
 
           Button {
             text: root.tr("action.add")
@@ -179,32 +178,32 @@ Item {
     Rectangle {
       visible: !root.service || !root.service.subscriptions || root.service.subscriptions.length === 0
       width: parent.width
-      height: Style.space(120)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: Style.normalBorderColor
+      height: Brand.space(120)
+      radius: Brand.cornerRadius
+      color: Brand.normalFill
+      border.color: Brand.normalBorderColor
       border.width: 1
 
       Column {
         anchors.centerIn: parent
-        spacing: Style.space(8)
+        spacing: Brand.space(8)
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰑤"
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.display
+          color: Brand.textPrimary
+          font.family: Brand.iconFamily
+          font.pixelSize: Brand.font.display
         }
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("subscriptions.empty")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.bodySmall
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.bodySmall
         }
       }
     }
@@ -215,17 +214,17 @@ Item {
 
       Rectangle {
         width: column.width
-        height: subRow.implicitHeight + Style.space(16)
-        radius: Style.cornerRadius
-        color: Style.normalFill
-        border.color: Style.normalBorderColor
-        border.width: Style.normalBorderWidth
+        height: subRow.implicitHeight + Brand.space(16)
+        radius: Brand.cornerRadius
+        color: Brand.normalFill
+        border.color: Brand.normalBorderColor
+        border.width: Brand.normalBorderWidth
 
         Row {
           id: subRow
           anchors.fill: parent
-          anchors.margins: Style.space(8)
-          spacing: Style.space(10)
+          anchors.margins: Brand.space(8)
+          spacing: Brand.space(10)
 
           // Enable toggle
           Toggle {
@@ -239,25 +238,25 @@ Item {
           // Details
           Column {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - actionsCol.width - Style.space(60)
-            spacing: Style.space(2)
+            width: parent.width - actionsCol.width - Brand.space(60)
+            spacing: Brand.space(2)
 
             Text {
               textFormat: Text.PlainText
               width: parent.width
               text: modelData.name || root.tr("subscriptions.fallbackName")
-              color: Commons.Color.foreground
-              font.family: Style.font.family
-              font.pixelSize: Style.font.bodySmall
+              color: Brand.textPrimary
+              font.family: Brand.font.family
+              font.pixelSize: Brand.font.bodySmall
               elide: Text.ElideRight
             }
 
             Text {
               textFormat: Text.PlainText
               text: typeof modelData.serverCount === "number" ? root.tr("subscriptions.serversCount", [modelData.serverCount]) : root.tr("subscriptions.countUnknown")
-              color: Commons.Color.foreground
-              font.family: Style.font.family
-              font.pixelSize: Style.font.caption
+              color: Brand.textPrimary
+              font.family: Brand.font.family
+              font.pixelSize: Brand.font.caption
             }
           }
 
@@ -265,7 +264,7 @@ Item {
           Row {
             id: actionsCol
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Style.space(4)
+            spacing: Brand.space(4)
 
             IconButton {
               icon: "󰑤"

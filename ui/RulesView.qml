@@ -1,7 +1,4 @@
 import QtQuick
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
-import qs.Ui 1.0 as Ui
 import "../lib/Focus.js" as Focus
 import "../lib/I18n.js" as I18n
 
@@ -68,13 +65,13 @@ Item {
     }, root.failure)
   }
 
-  implicitWidth: parent ? parent.width : Style.space(480)
+  implicitWidth: parent ? parent.width : Brand.space(480)
   implicitHeight: column.implicitHeight
 
   Column {
     id: column
     width: parent.width
-    spacing: Style.space(10)
+    spacing: Brand.space(10)
     Notice {
       id: feedback
       width: parent.width
@@ -87,14 +84,15 @@ Item {
       width: parent.width
       textFormat: Text.PlainText
       text: root.tr("rules.priority")
-      color: Commons.Color.foreground
-      font.family: Style.font.family
-      font.pixelSize: Style.font.title
+      color: Brand.textPrimary
+      font.family: Brand.font.family
+      font.pixelSize: Brand.font.title
     }
-    Ui.ButtonGroup {
+    Choice {
+      width: parent.width
       id: priorityChoice
       objectName: "vpnRulesPriority"
-      fontSize: Style.font.bodySmall
+      label: root.tr("rules.priority")
       enabled: !root.pending
       value: root.selectedPriority
       options: [{value:"toggles_first",label:root.tr("rules.priority.toggles_first")},
@@ -105,15 +103,15 @@ Item {
     Text {
       textFormat: Text.PlainText
       text: root.tr("rules.textLabel")
-      color: Commons.Color.foreground
-      font.family: Style.font.family
-      font.pixelSize: Style.font.bodySmall
+      color: Brand.textPrimary
+      font.family: Brand.font.family
+      font.pixelSize: Brand.font.bodySmall
     }
     Editor {
       id: rulesTextEdit
       objectName: "vpnRulesEditor"
       width: parent.width
-      height: Style.space(140)
+      height: Brand.space(140)
       enabled: !root.pending
       label: root.tr("rules.textLabel")
       text: root.service && root.service.rules ? root.service.rules.text : ""
@@ -121,7 +119,7 @@ Item {
     }
     Flow {
       width: parent.width
-      spacing: Style.space(8)
+      spacing: Brand.space(8)
       Button {
         text: root.tr("rules.saveBtn")
         variant: "primary"
@@ -138,10 +136,11 @@ Item {
         enabled: !root.pending
         onClicked: root.exportText()
       }
-      Ui.ButtonGroup {
+      Choice {
+      width: parent.width
         id: formatChoice
         objectName: "vpnRulesFormat"
-        fontSize: Style.font.bodySmall
+        label: root.tr("rules.format")
         enabled: !root.pending
         value: root.importExportFormat
         options: [{value:"json",label:"JSON"},{value:"csv",label:"CSV"},{value:"singbox",label:"SINGBOX"}]
@@ -153,7 +152,7 @@ Item {
       objectName: "vpnRulesExport"
       visible: root.exportedText !== ""
       width: parent.width
-      height: Style.space(110)
+      height: Brand.space(110)
       text: root.exportedText
       readOnly: true
       label: root.tr("rules.exportBtn")

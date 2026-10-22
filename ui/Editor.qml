@@ -1,8 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
 import "../lib/Focus.js" as Focus
 
 FocusScope {
@@ -12,7 +10,7 @@ FocusScope {
   property string label: ""
   property string placeholderText: ""
   signal submitted()
-  implicitHeight: Style.space(100)
+  implicitHeight: Brand.space(100)
   activeFocusOnTab: true
   onActiveFocusChanged: if (activeFocus) {
     edit.forceActiveFocus()
@@ -20,16 +18,16 @@ FocusScope {
   }
   Rectangle {
     anchors.fill: parent
-    color: Style.normalFill
-    radius: Style.cornerRadius
-    border.color: root.activeFocus ? Style.focusBorderColor : Style.normalBorderColor
-    border.width: root.activeFocus ? Math.max(1, Style.focusBorderWidth) : Math.max(1, Style.normalBorderWidth)
+    color: Brand.normalFill
+    radius: Brand.space(6)
+    border.color: root.activeFocus ? Brand.focusBorderColor : Brand.normalBorderColor
+    border.width: root.activeFocus ? Math.max(1, Brand.focusBorderWidth) : Math.max(1, Brand.normalBorderWidth)
   }
   Flickable {
     id: viewport
     objectName: "vpnEditorViewport"
     anchors.fill: parent
-    anchors.margins: Style.space(8)
+    anchors.margins: Brand.space(8)
     clip: true
     contentWidth: width
     contentHeight: Math.max(height, edit.implicitHeight)
@@ -45,11 +43,11 @@ FocusScope {
       wrapMode: TextEdit.Wrap
       selectByMouse: true
       Accessible.name: root.label
-      font.family: Style.font.family
-      font.pixelSize: Style.font.bodySmall
-      color: Commons.Color.foreground
-      selectionColor: Commons.Color.accent
-      selectedTextColor: Commons.Color.background
+      font.family: Brand.font.family
+      font.pixelSize: Brand.font.bodySmall
+      color: Brand.textPrimary
+      selectionColor: Brand.accentFg
+      selectedTextColor: Brand.surfaceApp
       Keys.onTabPressed: function(event) {
         root.nextItemInFocusChain(true).forceActiveFocus(Qt.TabFocusReason)
         event.accepted = true
@@ -75,7 +73,7 @@ FocusScope {
         text: root.placeholderText
         textFormat: Text.PlainText
         wrapMode: Text.WordWrap
-        color: Commons.Color.foreground
+        color: Brand.textPrimary
         font: edit.font
       }
     }

@@ -1,7 +1,5 @@
 import QtQuick
 import "../lib/Focus.js" as Focus
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
 
 Item {
   id: root
@@ -10,17 +8,20 @@ Item {
   property string icon: ""
   property string variant: "normal" // "normal" | "primary" | "danger" | "subtle"
   property bool busy: false
+  property bool pill: false
+  property real fontSize: Brand.font.bodySmall
+  property string accessibleLabel: text
 
   signal clicked()
 
-  implicitWidth: Math.max(Style.space(72), contentRow.implicitWidth + Style.space(24))
-  implicitHeight: Style.spacing.controlHeight
+  implicitWidth: Math.max(Brand.space(72), contentRow.implicitWidth + Brand.space(24))
+  implicitHeight: Brand.spacing.controlHeight
 
-  opacity: enabled ? 1 : 0.4
+  opacity: 1
   activeFocusOnTab: enabled && !busy
   onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
   Accessible.role: Accessible.Button
-  Accessible.name: root.text
+  Accessible.name: root.accessibleLabel
 
   Keys.onReturnPressed: if (root.enabled && !root.busy) root.clicked()
   Keys.onEnterPressed: if (root.enabled && !root.busy) root.clicked()
@@ -29,70 +30,40 @@ Item {
   readonly property bool hot: mouseArea.containsMouse
   readonly property bool pressed: mouseArea.pressed
 
-  readonly property color baseColor: {
-    if (variant === "primary") return Commons.Color.accent
-    if (variant === "danger") return Commons.Color.urgent
-    return Commons.Color.foreground
-  }
-
   readonly property color bgFill: {
-    if (!root.enabled) return Style.normalFill
-    if (variant === "primary" || variant === "danger") {
-      if (pressed) return Style.pressedFill
-      if (hot || activeFocus) return Style.hoverFill
-      return Style.selectedFill
-    }
-    if (variant === "subtle") {
-      if (pressed) return Style.pressedFill
-      if (hot || activeFocus) return Style.hoverFill
-      return "transparent"
-    }
-    // Normal
-    if (pressed) return Style.pressedFill
-    if (hot || activeFocus) return Style.hoverFill
-    return Style.normalFill
+    if (!enabled) return Brand.surfaceSunken
+    if (variant === "solid") return hot || pressed ? Brand.accentSolidHover : Brand.accentSolid
+    if (variant === "danger") return Brand.dangerBg
+    if (variant === "subtle") return hot || activeFocus ? Brand.accentBgSubtle : "transparent"
+    return pressed ? Brand.accentBorder : hot || activeFocus ? Brand.accentBgMuted : Brand.accentBgSubtle
   }
-
-  readonly property color textColor: {
-    if (!root.enabled) return Commons.Color.foreground
-    if (variant === "primary" || variant === "danger") return Commons.Color.foreground
-    return Commons.Color.foreground
-  }
-
-  readonly property color borderColor: {
-    if (!root.enabled) return Style.normalBorderColor
-    if (activeFocus) return Style.focusBorderColor
-    if (variant === "primary") return Commons.Color.accent
-    if (variant === "danger") return Commons.Color.urgent
-    if (hot) return Style.hoverBorderColor
-    return Style.normalBorderColor
-  }
-
-  readonly property int borderWidth: activeFocus ? Math.max(1, Style.focusBorderWidth) : (variant === "subtle" ? 0 : Style.normalBorderWidth)
+  readonly property color textColor: !enabled ? Brand.textMuted : variant === "solid" ? Brand.accentOnSolid : variant === "danger" ? Brand.dangerFg : Brand.accentFg
+  readonly property color borderColor: activeFocus ? Brand.accentSolid : variant === "danger" ? Brand.dangerBorder : "transparent"
+  readonly property int borderWidth: activeFocus ? 2 : variant === "danger" ? 1 : 0
 
   Rectangle {
     id: bg
     anchors.fill: parent
-    radius: Style.cornerRadius
+    radius: root.pill ? height / 2 : Brand.space(6)
     color: root.bgFill
     border.color: root.borderColor
     border.width: root.borderWidth
 
-    Behavior on color { ColorAnimation { duration: 150 } }
-    Behavior on border.color { ColorAnimation { duration: 150 } }
+    Behavior on color { ColorAnimation { duration: Brand.reduceMotion ? 0 : 120 } }
+    Behavior on border.color { ColorAnimation { duration: Brand.reduceMotion ? 0 : 120 } }
 
     Row {
       id: contentRow
       anchors.centerIn: parent
-      spacing: Style.space(6)
+      spacing: Brand.space(6)
 
       Text {
         textFormat: Text.PlainText
         visible: root.icon !== "" && !root.busy
         text: root.icon
         color: root.textColor
-        font.family: Style.font.family
-        font.pixelSize: Style.font.iconSmall
+        font.family: Brand.iconFamily
+        font.pixelSize: Brand.font.iconSmall
         anchors.verticalCenter: parent.verticalCenter
       }
 
@@ -101,11 +72,11 @@ Item {
         visible: root.busy
         text: "\u{f0772}"
         color: root.textColor
-        font.family: Style.font.family
-        font.pixelSize: Style.font.iconSmall
+        font.family: Brand.iconFamily
+        font.pixelSize: Brand.font.iconSmall
         anchors.verticalCenter: parent.verticalCenter
         NumberAnimation on rotation {
-          running: root.busy
+          running: root.busy && root.visible && !Brand.reduceMotion
           from: 0
           to: 360
           loops: Animation.Infinite
@@ -118,8 +89,9 @@ Item {
         visible: root.text !== ""
         text: root.text
         color: root.textColor
-        font.family: Style.font.family
-        font.pixelSize: Style.font.bodySmall
+        font.family: Brand.font.family
+        font.pixelSize: root.fontSize
+        font.weight: Font.DemiBold
         anchors.verticalCenter: parent.verticalCenter
       }
     }

@@ -23,17 +23,22 @@ This repository provides the Omarchy Quattro shell plugin interface, packaging l
 
 ## Apps, first run and server sources
 
-When the server and subscription lists are both empty, **Add a subscription** in
-the hero or Servers tab opens the Subscriptions form. Opening the form does not
-fetch anything. The advanced panel keeps one fitted frame and internal scrolling.
-The hero reserves a fixed height, and a native divider separates the fixed
-header/tabs from the scrolling page. Navigation stays in place during errors and
-when switching tabs. Tab
-traverses controls; Escape closes the panel. Enter submits
-single-line forms; multiline server/configuration editors use Ctrl+Enter.
+The home page uses the Virtual Penguin Network desktop palette, original mascot,
+status ring, connection button and routing segments. Content follows the shell's
+background lightness and spacing scale, using Inter when installed, then Segoe UI,
+Noto Sans, Liberation Sans or DejaVu Sans. The Omarchy panel retains its frame and
+lifecycle. Original mascot PNGs in `assets/` are copied without modifying the art.
 
-The Apps tab uses optional `apps.list.runningApps` metadata for display names,
-freedesktop icons and exact, case-sensitive process match names. The default list
+When the server and subscription lists are both empty, **Add a subscription** in
+the connection card or Servers section opens the Subscriptions form. Opening the
+form does not fetch anything. **Change** opens Servers. The home list opens each
+advanced section; its fixed back arrow returns to the originating row. One fitted
+frame and internal scrolling keep the panel stable across sections and forms.
+Tab traverses controls; Escape closes the panel. Enter submits single-line forms;
+multiline server/configuration editors use Ctrl+Enter.
+
+The Applications section uses optional `apps.list.runningApps` metadata for
+display names, freedesktop icons and exact, case-sensitive process match names. The default list
 shows apps with a desktop entry or an open Hyprland window
 (matched by process name/window class, or PID when supplied by the backend).
 Other processes are collapsed under a counted section. Search matches display
@@ -51,7 +56,8 @@ lockdown follows the backend capability and is omitted from writes when absent.
 
 Routing uses explicit native choices: **Selected apps only / All traffic**.
 In split mode, **Only selected apps use VPN / All except selected** chooses the
-app list's meaning. The simple panel exposes the same choices.
+app list's meaning. The home page exposes Selected apps / All traffic;
+Applications also controls the include/exclude policy.
 
 Subscription URLs are masked by default. Import forms keep input on failure and
 clear it after success or Cancel; empty/invalid input produces inline feedback.
@@ -230,10 +236,11 @@ The test suite validates missing backend notices, directory-copied benign mock b
 Run each `tests/test-ui-*.js` file with Node. `tests/test-ui-r4.js` exercises the
 production model and QML functions for metadata, legacy fallback, sources,
 availability reasons, first-run navigation and form validation.
-`tests/qml-r4-consumer.qml` loads the real Panel, Service and locale files with
+`tests/qml-r6-consumer.qml` loads the real Panel, Service and locale files with
 `processDisabled=true` and inert protocol responses. With the external `qml-render`
 tool and a layer-shell-to-Item adapter, it checks actual Qt mouse/key events and
-captures each tab. It does not test the compositor, VPN or network operations.
+captures home and every section in both desktop palettes. It does not test the
+compositor, VPN or network operations.
 
 ### Isolated QML Component Tests (Offscreen Shim)
 The automated QML test runner executes isolated syntax, component loading, and UI model tests offscreen:

@@ -1,6 +1,4 @@
 import QtQuick
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -123,13 +121,13 @@ Item {
     })
   }
 
-  implicitWidth: parent ? parent.width : Style.space(480)
+  implicitWidth: parent ? parent.width : Brand.space(480)
   implicitHeight: column.implicitHeight
 
   Column {
     id: column
     width: parent.width
-    spacing: Style.space(12)
+    spacing: Brand.space(12)
 
     Notice {
       id: feedback
@@ -143,45 +141,45 @@ Item {
     // Network & Engine Settings Card
     Rectangle {
       width: parent.width
-      height: settingsGrid.implicitHeight + Style.space(24)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: Style.normalBorderColor
-      border.width: Style.normalBorderWidth
+      height: settingsGrid.implicitHeight + Brand.space(24)
+      radius: Brand.cornerRadius
+      color: Brand.normalFill
+      border.color: Brand.normalBorderColor
+      border.width: Brand.normalBorderWidth
 
       Column {
         id: settingsGrid
         enabled: !root.pending
         anchors.fill: parent
-        anchors.margins: Style.space(12)
-        spacing: Style.space(10)
+        anchors.margins: Brand.space(12)
+        spacing: Brand.space(10)
 
         Text {
           textFormat: Text.PlainText
           text: root.tr("settings.title")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.title
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.title
         }
 
         // MTU field
         Row {
-          spacing: Style.space(12)
+          spacing: Brand.space(12)
 
           Text {
             textFormat: Text.PlainText
-            width: Style.space(160)
+            width: Brand.space(160)
             wrapMode: Text.WordWrap
             text: root.tr("settings.mtu")
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
+            color: Brand.textPrimary
+            font.family: Brand.font.family
+            font.pixelSize: Brand.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
           }
 
           TextField {
             id: mtuInput
-            width: Style.space(100)
+            width: Brand.space(100)
             text: String(root.mtuVal)
             placeholderText: "1420"
             onAccepted: root.submit()
@@ -248,15 +246,15 @@ Item {
         // DNS mode is read from the profile. Current Core rejects writing it here.
         Column {
           width: parent.width
-          spacing: Style.space(6)
+          spacing: Brand.space(6)
 
           Text {
             textFormat: Text.PlainText
             width: parent.width
             text: root.tr("settings.dnsModeValue", [root.dnsModeText])
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
+            color: Brand.textPrimary
+            font.family: Brand.font.family
+            font.pixelSize: Brand.font.bodySmall
             wrapMode: Text.WordWrap
           }
 
@@ -264,35 +262,35 @@ Item {
           Rectangle {
             visible: root.isCustomMode || root.strictDnsVal || (root.service && root.service.routingMode === "full")
             width: parent.width
-            height: explanationRow.implicitHeight + Style.space(12)
-            radius: Style.cornerRadius
-            color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.08)
-            border.color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.3)
+            height: explanationRow.implicitHeight + Brand.space(12)
+            radius: Brand.cornerRadius
+            color: Qt.rgba(Brand.accentFg.r, Brand.accentFg.g, Brand.accentFg.b, 0.08)
+            border.color: Qt.rgba(Brand.accentFg.r, Brand.accentFg.g, Brand.accentFg.b, 0.3)
             border.width: 1
 
             Row {
               id: explanationRow
               anchors.fill: parent
-              anchors.margins: Style.space(6)
-              spacing: Style.space(8)
+              anchors.margins: Brand.space(6)
+              spacing: Brand.space(8)
 
               Text {
                 textFormat: Text.PlainText
                 text: "󰌵"
-                color: Commons.Color.accent
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
+                color: Brand.accentFg
+                font.family: Brand.iconFamily
+                font.pixelSize: Brand.font.bodySmall
                 anchors.verticalCenter: parent.verticalCenter
               }
 
               Text {
                 textFormat: Text.PlainText
-                width: parent.width - Style.space(28)
+                width: parent.width - Brand.space(28)
                 text: root.dnsExplanationText
-                color: Commons.Color.foreground
+                color: Brand.textPrimary
                 wrapMode: Text.Wrap
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
+                font.family: Brand.font.family
+                font.pixelSize: Brand.font.caption
                 anchors.verticalCenter: parent.verticalCenter
               }
             }
@@ -304,9 +302,9 @@ Item {
             visible: !root.isCustomMode && !root.strictDnsVal && !(root.service && root.service.routingMode === "full") && root.dnsExplanationText.length > 0
             width: parent.width
             wrapMode: Text.Wrap
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.caption
+            color: Brand.textPrimary
+            font.family: Brand.font.family
+            font.pixelSize: Brand.font.caption
             text: root.dnsExplanationText
           }
         }
@@ -314,21 +312,21 @@ Item {
         // Excluded CIDR subnets
         Column {
           width: parent.width
-          spacing: Style.space(4)
+          spacing: Brand.space(4)
 
           Text {
             textFormat: Text.PlainText
             text: root.tr("settings.excludeCidr")
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
+            color: Brand.textPrimary
+            font.family: Brand.font.family
+            font.pixelSize: Brand.font.bodySmall
           }
 
           Editor {
             id: cidrEdit
             objectName: "vpnSettingsCidrs"
             width: parent.width
-            height: Style.space(90)
+            height: Brand.space(90)
             text: root.cidrsVal
             label: root.tr("settings.excludeCidr")
             placeholderText: root.tr("settings.excludeCidrPlaceholder")
@@ -339,7 +337,7 @@ Item {
 
         Flow {
           width: parent.width
-          spacing: Style.space(8)
+          spacing: Brand.space(8)
           Button {
             text: root.tr("settings.save")
             variant: "primary"

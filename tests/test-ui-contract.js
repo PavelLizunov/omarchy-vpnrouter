@@ -131,14 +131,12 @@ console.log(`✓ All ${qmlFiles.length} QML files exist and passed syntax bracke
 
 // 4. QML Architecture & API Invariants Verification
 {
-  // Header duplicate signal fix
+  // Header actions; navigation behavior is exercised by the native consumer.
   const headerQml = fs.readFileSync(path.join(rootDir, "ui/Header.qml"), "utf8");
   assert(!headerQml.includes("signal modeChanged"), "Header.qml must NOT declare duplicate signal modeChanged for property mode");
-  assert(headerQml.includes("signal modeChangeRequested"), "Header.qml must declare signal modeChangeRequested");
+  assert(headerQml.includes("signal closeRequested"), "Header.qml must expose dismissal");
 
-  // Panel uses modeChangeRequested
   const panelQml = fs.readFileSync(path.join(rootDir, "Panel.qml"), "utf8");
-  assert(panelQml.includes("onModeChangeRequested"), "Panel.qml must handle onModeChangeRequested");
   assert(panelQml.includes("focusTarget: keyCatcher"), "Panel.qml must set KeyboardPanel focusTarget to keyCatcher");
   assert(panelQml.includes("FocusScope {") && panelQml.includes("Keys.onEscapePressed: root.close()"), "Form controls need native Tab traversal and Escape dismissal");
 

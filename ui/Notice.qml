@@ -1,8 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import qs.Commons 1.0
 import "../lib/Focus.js" as Focus
-import qs.Commons 1.0 as Commons
 
 Rectangle {
   id: root
@@ -19,17 +17,17 @@ Rectangle {
     })
   }
   onTextChanged: root.reveal()
-  implicitHeight: Math.max(message.implicitHeight, dismiss.implicitHeight) + Style.space(12)
-  color: Style.normalFill
-  radius: Style.cornerRadius
-  border.color: message.activeFocus ? Style.focusBorderColor : error ? Commons.Color.urgent : Style.normalBorderColor
-  border.width: Math.max(1, Style.normalBorderWidth)
+  implicitHeight: Math.max(message.implicitHeight, dismiss.implicitHeight) + Brand.space(12)
+  color: Brand.normalFill
+  radius: Brand.cornerRadius
+  border.color: message.activeFocus ? Brand.focusBorderColor : error ? Brand.dangerFg : Brand.normalBorderColor
+  border.width: Math.max(1, Brand.normalBorderWidth)
   TextEdit {
     id: message
     objectName: "vpnNoticeText"
     onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(message) })
-    x: Style.space(8); y: Style.space(6)
-    width: parent.width - dismiss.width - Style.space(24)
+    x: Brand.space(8); y: Brand.space(6)
+    width: parent.width - dismiss.width - Brand.space(24)
     height: implicitHeight
     text: root.text
     textFormat: TextEdit.PlainText
@@ -37,16 +35,16 @@ Rectangle {
     selectByMouse: true
     activeFocusOnTab: true
     wrapMode: TextEdit.WrapAnywhere
-    color: Commons.Color.foreground
-    selectionColor: Commons.Color.accent
-    selectedTextColor: Commons.Color.background
-    font.family: Style.font.family
-    font.pixelSize: Style.font.bodySmall
+    color: Brand.textPrimary
+    selectionColor: Brand.accentFg
+    selectedTextColor: Brand.surfaceApp
+    font.family: Brand.font.family
+    font.pixelSize: Brand.font.bodySmall
   }
   IconButton {
     id: dismiss
     anchors.right: parent.right
-    anchors.rightMargin: Style.space(6)
+    anchors.rightMargin: Brand.space(6)
     anchors.verticalCenter: parent.verticalCenter
     icon: "󰅖"
     tooltipText: root.dismissLabel

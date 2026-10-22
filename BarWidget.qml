@@ -4,6 +4,7 @@ import qs.Commons 1.0 as Commons
 import qs.Ui 1.0 as Ui
 import "lib/Model.js" as Model
 import "lib/I18n.js" as I18n
+import "ui" as VpnUi
 
 Ui.BarWidget {
   id: root
@@ -59,7 +60,7 @@ Ui.BarWidget {
   readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
   // Material Design shield family from the host bar's Nerd Font.
   readonly property string stateIcon: ({ disconnected: "\u{f0499}", connecting: "\u{f11a3}", connected: "\u{f0cc8}", error: "\u{f0ecd}", unavailable: "\u{f099c}", missing: "\u{f0add}" })[visualState]
-  readonly property color inkColor: visualState === "error" || visualState === "unavailable" ? (bar ? bar.urgent : Commons.Color.urgent) : visualState === "connected" || visualState === "connecting" ? Commons.Color.accent : (bar ? bar.foreground : Commons.Color.foreground)
+  readonly property color inkColor: visualState === "connected" ? VpnUi.Brand.successFg : visualState === "connecting" ? VpnUi.Brand.accentFg : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? VpnUi.Brand.dangerFg : (bar ? bar.foreground : Commons.Color.foreground)
 
   readonly property string barTooltip: {
     var _ = i18nRevision

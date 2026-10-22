@@ -1,6 +1,4 @@
 import QtQuick
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -45,7 +43,7 @@ Item {
     })
   }
 
-  implicitWidth: parent ? parent.width : Style.space(480)
+  implicitWidth: parent ? parent.width : Brand.space(480)
   implicitHeight: column.implicitHeight
 
   readonly property var filteredServers: Model.groupedServers(service ? service.servers : [], searchQuery)
@@ -53,16 +51,16 @@ Item {
   Column {
     id: column
     width: parent.width
-    spacing: Style.space(10)
+    spacing: Brand.space(10)
 
     // Top action bar
     Row {
       width: parent.width
-      spacing: Style.space(8)
+      spacing: Brand.space(8)
 
       TextField {
         id: searchField
-        width: parent.width - importToggleBtn.width - Style.space(8)
+        width: parent.width - importToggleBtn.width - Brand.space(8)
         placeholderText: root.tr("servers.searchPlaceholder")
         onTextChanged: root.searchQuery = text
       }
@@ -92,31 +90,31 @@ Item {
     Rectangle {
       visible: root.showImportBox
       width: parent.width
-      height: importCol.implicitHeight + Style.space(20)
-      radius: Style.cornerRadius
-      color: Style.hoverFill
-      border.color: Style.normalBorderColor
-      border.width: Style.normalBorderWidth
+      height: importCol.implicitHeight + Brand.space(20)
+      radius: Brand.cornerRadius
+      color: Brand.hoverFill
+      border.color: Brand.normalBorderColor
+      border.width: Brand.normalBorderWidth
 
       Column {
         id: importCol
         anchors.fill: parent
-        anchors.margins: Style.space(10)
-        spacing: Style.space(8)
+        anchors.margins: Brand.space(10)
+        spacing: Brand.space(8)
 
         Text {
           textFormat: Text.PlainText
           text: root.tr("servers.importTitle")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.title
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.title
         }
 
         Editor {
           id: importArea
           objectName: "vpnServerImport"
           width: parent.width
-          height: Style.space(90)
+          height: Brand.space(90)
           enabled: !root.pending
           label: root.tr("servers.importTitle")
           placeholderText: root.tr("servers.importPlaceholder")
@@ -124,7 +122,7 @@ Item {
         }
 
         Row {
-          spacing: Style.space(8)
+          spacing: Brand.space(8)
 
           Button {
             text: root.tr("servers.importBtn")
@@ -152,34 +150,34 @@ Item {
       }
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
-      color: Commons.Color.foreground
-      font.family: Style.font.family
-      font.pixelSize: Style.font.bodySmall
+      color: Brand.textPrimary
+      font.family: Brand.font.family
+      font.pixelSize: Brand.font.bodySmall
     }
 
     // Empty state
     Rectangle {
       visible: root.filteredServers.length === 0
       width: parent.width
-      height: emptyColumn.implicitHeight + Style.space(32)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: Style.normalBorderColor
+      height: emptyColumn.implicitHeight + Brand.space(32)
+      radius: Brand.cornerRadius
+      color: Brand.normalFill
+      border.color: Brand.normalBorderColor
       border.width: 1
 
       Column {
         id: emptyColumn
-        width: parent.width - Style.space(24)
+        width: parent.width - Brand.space(24)
         anchors.centerIn: parent
-        spacing: Style.space(8)
+        spacing: Brand.space(8)
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰒋"
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.display
+          color: Brand.textPrimary
+          font.family: Brand.iconFamily
+          font.pixelSize: Brand.font.display
         }
 
         Text {
@@ -189,9 +187,9 @@ Item {
           horizontalAlignment: Text.AlignHCenter
           wrapMode: Text.WordWrap
           text: root.service && root.service.activeOperation === "servers.list" && !root.service.serversLoaded ? root.tr("list.loading") : root.searchQuery.trim() ? root.tr("servers.noMatches") : root.tr("servers.empty")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.bodySmall
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.bodySmall
         }
         Button {
           anchors.horizontalCenter: parent.horizontalCenter
@@ -209,16 +207,17 @@ Item {
 
       Column {
         width: column.width
-        spacing: Style.space(6)
+        spacing: Brand.space(6)
         Text {
           textFormat: Text.PlainText
           visible: index === 0 || Model.serverSourceKey(root.filteredServers[index - 1]) !== Model.serverSourceKey(modelData)
           width: parent.width
           text: Model.serverSourceLabel(modelData, root.service ? root.service.subscriptions : [], ({ t: root.tr }))
           wrapMode: Text.WordWrap
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.title
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.caption
+          font.weight: Font.DemiBold
         }
         Rectangle {
           id: serverRowRect
@@ -231,11 +230,11 @@ Item {
           Accessible.name: modelData.name || root.tr("servers.unnamed")
           Accessible.checked: modelData.selected === true
           width: column.width
-          height: rowContent.implicitHeight + Style.space(14)
-          radius: Style.cornerRadius
-          color: modelData.selected ? Style.selectedFill : (rowMouse.containsMouse ? Style.hoverFill : Style.normalFill)
-          border.color: activeFocus ? Style.focusBorderColor : modelData.selected ? Commons.Color.accent : Style.normalBorderColor
-          border.width: modelData.selected ? 1 : Style.normalBorderWidth
+          height: rowContent.implicitHeight + Brand.space(14)
+          radius: Brand.space(6)
+          color: modelData.selected ? Brand.selectedFill : (rowMouse.containsMouse ? Brand.hoverFill : Brand.normalFill)
+          border.color: activeFocus ? Brand.focusBorderColor : modelData.selected ? Brand.accentBorder : Brand.normalBorderColor
+          border.width: modelData.selected ? 1 : Brand.normalBorderWidth
 
           // Row selection MouseArea in its own background/selection domain (z: 0)
           // Bounded to cover the row up to rowActions so it never overlaps the action buttons
@@ -246,7 +245,7 @@ Item {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.right: parent.right
-            anchors.rightMargin: rowActions.width + Style.space(16)
+            anchors.rightMargin: rowActions.width + Brand.space(16)
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: {
@@ -258,71 +257,69 @@ Item {
             id: rowContent
             z: 1
             anchors.fill: parent
-            anchors.margins: Style.space(8)
-            spacing: Style.space(10)
+            anchors.margins: Brand.space(8)
+            spacing: Brand.space(10)
 
             // Selection Radio / Check indicator
             Rectangle {
-              width: Style.space(18)
+              width: Brand.space(18)
               height: width
               radius: width / 2
               anchors.verticalCenter: parent.verticalCenter
               color: "transparent"
-              border.color: Commons.Color.foreground
+              border.color: Brand.textPrimary
               border.width: 2
 
               Rectangle {
                 visible: modelData.selected === true
-                width: Style.space(8)
+                width: Brand.space(8)
                 height: width
                 radius: width / 2
                 anchors.centerIn: parent
-                color: Commons.Color.accent
+                color: Brand.accentFg
               }
             }
 
             // Name & Protocol
             Column {
               anchors.verticalCenter: parent.verticalCenter
-              width: parent.width - rowActions.width - Style.space(60)
-              spacing: Style.space(2)
+              width: parent.width - rowActions.width - Brand.space(60)
+              spacing: Brand.space(2)
 
               Text {
                 textFormat: Text.PlainText
                 width: parent.width
                 text: modelData.name || root.tr("servers.unnamed")
-                color: Commons.Color.foreground
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
+                color: modelData.selected ? Brand.accentFg : Brand.textPrimary
+                font.weight: Font.DemiBold
+                font.family: Brand.font.family
+                font.pixelSize: Brand.font.bodySmall
                 elide: Text.ElideRight
               }
 
               Row {
-                spacing: Style.space(6)
+                spacing: Brand.space(6)
 
                 Rectangle {
-                  height: Style.space(16)
-                  width: protoLabel.implicitWidth + Style.space(8)
-                  radius: Style.cornerRadius
-                  color: Style.hoverFill
+                  height: Brand.space(16)
+                  width: protoLabel.implicitWidth + Brand.space(8)
+                  radius: height / 2
+                  color: Brand.pillNeutralBg
 
                   Text {
                     textFormat: Text.PlainText
                     id: protoLabel
                     anchors.centerIn: parent
                     text: Model.protocolDisplay(modelData.protocol, ({ t: root.tr }))
-                    color: Commons.Color.foreground
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
+                    color: Brand.pillNeutralFg
+                    font.family: Brand.font.family
+                    font.pixelSize: Brand.font.caption
                   }
                 }
 
-                Text {
-                  textFormat: Text.PlainText
-                  text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
-                  color: Commons.Color.foreground
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
+                LatencyPill {
+                  latency: modelData.latencyMs
+                  label: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                   anchors.verticalCenter: parent.verticalCenter
                 }
               }
@@ -333,7 +330,7 @@ Item {
               id: rowActions
               z: 2
               anchors.verticalCenter: parent.verticalCenter
-              spacing: Style.space(4)
+              spacing: Brand.space(4)
 
               IconButton {
                 icon: "󰓠"

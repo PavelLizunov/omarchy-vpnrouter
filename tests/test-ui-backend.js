@@ -153,8 +153,15 @@ assert.strictEqual(binding('ui/SettingsView.qml', /checked: (root.hasDnsLockdown
   {hasDnsLockdownCap: false, dnsLeakVal: true}), false);
 assert.strictEqual(binding('ui/SettingsView.qml', /checked: (root.hasDnsLockdownCap && root.dnsLeakVal)/,
   {hasDnsLockdownCap: true, dnsLeakVal: true}), true);
-assert.strictEqual(binding('ui/HeroCard.qml', /enabled: (root.connected \|\| root.canConnect)/,
-  {connected: false, canConnect: false}), false);
+for (const [values, expected] of [
+  [{connected:false,canConnect:false,busy:false,needsSetup:false}, false],
+  [{connected:false,canConnect:true,busy:false,needsSetup:false}, true],
+  [{connected:true,canConnect:false,busy:false,needsSetup:false}, true],
+  [{connected:true,canConnect:true,busy:true,needsSetup:false}, false],
+  [{connected:false,canConnect:true,busy:false,needsSetup:true}, false]
+]) {
+  assert.strictEqual(binding('ui/HeroCard.qml', /enabled: (.*)/, values), expected);
+}
 assert.strictEqual(root.capabilities.killSwitch, false);
 assert(!/checked:.*killSwitch/i.test(read('ui/SettingsView.qml')), 'No unsupported kill-switch toggle');
 const settingsRoot = {hasDnsLockdownCap: false, dnsLeakVal: true, cidrsVal: '', mtuVal: 1420};

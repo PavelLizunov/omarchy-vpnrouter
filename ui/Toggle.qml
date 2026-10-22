@@ -1,7 +1,5 @@
 import QtQuick
 import "../lib/Focus.js" as Focus
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
 
 Item {
   id: root
@@ -12,8 +10,8 @@ Item {
 
   signal toggled(bool nextState)
 
-  implicitWidth: Style.space(36) + Style.space(10) + labels.implicitWidth
-  implicitHeight: Math.max(Style.spacing.controlHeight, row.implicitHeight)
+  implicitWidth: Brand.space(36) + Brand.space(10) + labels.implicitWidth
+  implicitHeight: Math.max(Brand.spacing.controlHeight, row.implicitHeight)
 
   activeFocusOnTab: true
   onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
@@ -35,29 +33,29 @@ Item {
     id: row
     width: parent.width
     anchors.verticalCenter: parent.verticalCenter
-    spacing: Style.space(10)
+    spacing: Brand.space(10)
 
     // Switch track
     Rectangle {
       id: track
-      width: Style.space(36)
-      height: Style.space(20)
+      width: Brand.space(36)
+      height: Brand.space(20)
       radius: height / 2
       anchors.verticalCenter: parent.verticalCenter
 
       color: {
-        if (!root.enabled) return Qt.rgba(0.2, 0.2, 0.2, 0.3)
-        if (root.checked) return Commons.Color.accent
-        return Style.normalFill
+        if (!root.enabled) return Brand.surfaceSunken
+        if (root.checked) return Brand.accentSolid
+        return Brand.normalFill
       }
 
       border.color: {
-        if (root.activeFocus) return Style.focusBorderColor
-        if (root.checked) return Commons.Color.accent
-        if (root.hot) return Style.hoverBorderColor
-        return Style.normalBorderColor
+        if (root.activeFocus) return Brand.focusBorderColor
+        if (root.checked) return Brand.accentSolid
+        if (root.hot) return Brand.hoverBorderColor
+        return Brand.normalBorderColor
       }
-      border.width: root.activeFocus ? Style.focusBorderWidth : Style.normalBorderWidth
+      border.width: root.activeFocus ? Brand.focusBorderWidth : Brand.normalBorderWidth
 
       Behavior on color { ColorAnimation { duration: 150 } }
       Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -65,12 +63,12 @@ Item {
       // Switch thumb
       Rectangle {
         id: thumb
-        width: Style.space(14)
+        width: Brand.space(14)
         height: width
         radius: width / 2
         anchors.verticalCenter: parent.verticalCenter
-        x: root.checked ? (track.width - width - Style.space(3)) : Style.space(3)
-        color: root.checked ? Commons.Color.background : (root.hot ? Commons.Color.foreground : Qt.darker(Commons.Color.foreground, 1.2))
+        x: root.checked ? (track.width - width - Brand.space(3)) : Brand.space(3)
+        color: root.checked ? Brand.accentOnSolid : (root.hot ? Brand.textPrimary : Qt.darker(Brand.textPrimary, 1.2))
 
         Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
         Behavior on color { ColorAnimation { duration: 150 } }
@@ -82,7 +80,7 @@ Item {
       id: labels
       width: Math.max(0, row.width - track.width - row.spacing)
       anchors.verticalCenter: parent.verticalCenter
-      spacing: Style.space(2)
+      spacing: Brand.space(2)
 
       Text {
         textFormat: Text.PlainText
@@ -90,9 +88,9 @@ Item {
         width: parent.width
         wrapMode: Text.WordWrap
         text: root.label
-        color: Commons.Color.foreground
-        font.family: Style.font.family
-        font.pixelSize: Style.font.bodySmall
+        color: Brand.textPrimary
+        font.family: Brand.font.family
+        font.pixelSize: Brand.font.bodySmall
       }
 
       Text {
@@ -101,9 +99,9 @@ Item {
         width: parent.width
         wrapMode: Text.WordWrap
         text: root.description
-        color: Commons.Color.foreground
-        font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        color: Brand.textPrimary
+        font.family: Brand.font.family
+        font.pixelSize: Brand.font.caption
       }
     }
   }

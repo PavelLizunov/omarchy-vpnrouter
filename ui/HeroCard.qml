@@ -1,310 +1,144 @@
+pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Controls as Controls
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
+import QtQuick.Shapes
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
-Rectangle {
+Column {
   id: root
-
+  objectName: "vpnHero"
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
-
+  signal connectRequested()
+  signal disconnectRequested()
+  signal cancelRequested()
   function tr(key, args) {
     var _ = i18nRevision
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
-
+  readonly property bool connected: !!service && service.isConnected
+  readonly property bool busy: !!service && (service.busy || service.isConnecting || service.isDisconnecting)
+  readonly property bool missing: !service || service.backendMissing || service.state === "unavailable"
+  readonly property bool failed: !!service && (service.state === "error" || service.state === "conflict")
+  readonly property bool canConnect: !!service && service.capabilities && service.capabilities.connect === true && !missing
+  readonly property bool needsSetup: !!service && service.serversLoaded && service.subscriptionsLoaded && !service.servers.length && !service.subscriptions.length && !connected && !busy && !missing && service.configMode !== "custom"
+  readonly property color stateColor: connected ? Brand.successSolid : busy ? Brand.accentSolid : failed || missing ? Brand.dangerSolid : Brand.borderStrong
+  readonly property string availability: availabilityText()
   function availabilityText() {
     var _ = root.i18nRevision
-    if (!root.service || root.connected) return ""
-    if (root.service.backendMissing)
-      return root.tr("backend.notInstalled") + "\n" + root.tr("backend.installHint")
-    if (!root.canConnect && !root.busy)
-      return Model.unavailableText(root.service, ({ t: root.tr }))
+    if (root.connected) return ""
+    if (root.service && root.service.backendMissing) return root.tr("backend.notInstalled") + "\n" + root.tr("backend.installHint")
+    if (!root.service || root.service.state === "unavailable") return root.tr("backend.notRunning")
+    if (root.service.lastError) return root.service.lastError
+    if (!root.canConnect && !root.busy && !root.needsSetup) return Model.unavailableText(root.service, ({t:root.tr}))
     return ""
   }
-
-  signal addSubscriptionRequested()
-  signal connectRequested()
-  signal disconnectRequested()
-  signal cancelRequested()
-  signal openServerPickerRequested()
-
-  radius: Style.cornerRadius
-  color: Style.normalFill
-  border.color: Style.normalBorderColor
-  border.width: Style.normalBorderWidth
-
-  implicitWidth: parent ? parent.width : Style.space(480)
-  // Reserve the same header space for pending/error and every tab.
-  implicitHeight: Style.space(176)
-
-  readonly property bool needsSetup: !!(service && service.serversLoaded && service.subscriptionsLoaded && service.servers.length === 0 && service.subscriptions.length === 0 && !connected && !busy && service.configMode !== "custom")
-  readonly property bool canConnect: service && service.capabilities && service.capabilities.connect === true
-  readonly property bool connected: service ? service.isConnected : false
-  readonly property bool connecting: service ? service.isConnecting : false
-  readonly property bool disconnecting: service ? service.isDisconnecting : false
-  readonly property bool busy: service ? (service.busy || connecting || disconnecting) : false
-  readonly property string activeServerName: service && service.activeServer ? service.activeServer : root.tr("simple.noActiveServer")
-
-  Flickable {
-    id: heroViewport
-    objectName: "vpnHeroViewport"
-    anchors.fill: parent
-    anchors.margins: Style.space(12)
-    contentWidth: width
-    contentHeight: cardColumn.implicitHeight
-    clip: true
-    boundsBehavior: Flickable.StopAtBounds
-    flickableDirection: Flickable.VerticalFlick
-    Controls.ScrollBar.vertical: Controls.ScrollBar { policy: Controls.ScrollBar.AsNeeded }
-
-    Column {
-      id: cardColumn
-      width: heroViewport.width
-      spacing: Style.space(12)
-
-      // Main status row
-      Row {
-        width: parent.width
-        spacing: Style.space(12)
-
-        // Connection Action Button (Hero Dial)
-        Rectangle {
-          id: connectBtn
-          width: Style.space(52)
-          height: width
-          radius: width / 2
-          anchors.verticalCenter: parent.verticalCenter
-          opacity: connectBtnMouse.enabled ? 1 : 0.4
-          color: root.connected ? Commons.Color.accent : (root.busy ? Commons.Color.urgent : Style.hoverFill)
-          border.color: root.connected ? Commons.Color.accent : Style.hoverBorderColor
-          border.width: connectBtnMouse.activeFocus ? Style.focusBorderWidth : 1
-
-          Behavior on color { ColorAnimation { duration: 150 } }
-
-          Text {
-            textFormat: Text.PlainText
-            id: connectionGlyph
-            anchors.centerIn: parent
-            text: root.busy ? "\u{f0772}" : (root.connected ? "󰖂" : "󱚤")
-            color: root.connected ? Commons.Color.background : Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.display
-
-            NumberAnimation on rotation {
-              running: root.busy
-              onRunningChanged: if (!running) connectionGlyph.rotation = 0
-              from: 0
-              to: 360
-              loops: Animation.Infinite
-              duration: 1000
-            }
-          }
-
-          MouseArea {
-            id: connectBtnMouse
-            anchors.fill: parent
-            enabled: !root.needsSetup && (root.connected || (root.canConnect && !root.busy))
-            hoverEnabled: true
-            cursorShape: (root.connected || root.canConnect) ? Qt.PointingHandCursor : Qt.ForbiddenCursor
-            onClicked: {
-              if (root.connected) root.disconnectRequested()
-              else if (root.canConnect) root.connectRequested()
-            }
-          }
-        }
-
-        // Server Info & Quick Switch
-        Column {
-          anchors.verticalCenter: parent.verticalCenter
-          width: parent.width - connectBtn.width - (actionRow.visible ? actionRow.width : 0) - Style.space(24)
-          spacing: Style.space(3)
-
-          Text {
-            textFormat: Text.PlainText
-            text: root.tr("state." + (root.service ? root.service.state : "unavailable"))
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
-          }
-
-          Text {
-            textFormat: Text.PlainText
-            width: parent.width
-            text: root.needsSetup ? root.tr("firstRun.title") : root.activeServerName
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.title
-            elide: Text.ElideRight
-          }
-
-          Row {
-            spacing: Style.space(8)
-
-            // Routing mode badge
-            Rectangle {
-              radius: Style.cornerRadius
-              height: Style.space(18)
-              width: modeText.implicitWidth + Style.space(10)
-              color: Style.normalFill
-              border.color: Style.normalBorderColor
-              border.width: 1
-
-              Text {
-                textFormat: Text.PlainText
-                id: modeText
-                anchors.centerIn: parent
-                text: root.service && root.service.routingMode === "full" ? root.tr("routing.fullBadge") : root.tr("routing.splitBadge")
-                color: Commons.Color.foreground
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-              }
-            }
-          }
-        }
-
-        // Right Action Row
-        Row {
-          id: actionRow
-          visible: !root.needsSetup
-          anchors.verticalCenter: parent.verticalCenter
-          spacing: Style.space(6)
-
-          Button {
-            text: root.connected ? root.tr("action.disconnect") : root.tr("action.connect")
-            variant: root.connected ? "danger" : "primary"
-            busy: root.busy
-            enabled: root.connected || root.canConnect
-            onClicked: {
-              if (root.connected) root.disconnectRequested()
-              else if (root.canConnect) root.connectRequested()
-            }
-          }
-        }
-      }
-
-      Button {
-        visible: root.needsSetup
-        text: root.tr("firstRun.addSubscription")
-        variant: "primary"
-        onClicked: root.addSubscriptionRequested()
-      }
-
-      Text {
-        width: parent.width
-        visible: text.length > 0
-        text: root.availabilityText()
-        textFormat: Text.PlainText
-        wrapMode: Text.WordWrap
-        color: Commons.Color.foreground
-        font.family: Style.font.family
-        font.pixelSize: Style.font.bodySmall
-      }
-
-      // In-Flight Operation & Cancel Row
+  spacing: Brand.space(6)
+  Item {
+    width: parent.width
+    height: Brand.space(152)
+    Rectangle {
+      id: emblem
+      objectName: "vpnEmblem"
+      anchors.horizontalCenter: parent.horizontalCenter
+      width: Brand.space(136); height: width; radius: width / 2
+      color: root.connected ? Brand.successBg : root.busy ? Brand.accentBgSubtle : root.failed || root.missing ? Brand.dangerBg : "transparent"
       Rectangle {
-        visible: root.service && root.service.activeOperation !== ""
-        width: parent.width
-        height: Style.space(28)
-        radius: Style.cornerRadius
-        color: Style.hoverFill
-
-        Row {
-          anchors.left: parent.left
-          anchors.leftMargin: Style.space(8)
-          anchors.verticalCenter: parent.verticalCenter
-          spacing: Style.space(8)
-
-          Text {
-            textFormat: Text.PlainText
-            text: "\u{f0772}"
-            color: Commons.Color.accent
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
-            NumberAnimation on rotation {
-              running: root.service && root.service.activeOperation !== ""
-              from: 0; to: 360; loops: Animation.Infinite; duration: 1000
-            }
-          }
-
-          Text {
-            textFormat: Text.PlainText
-            text: root.tr("operation.pending")
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
-          }
-
-          Text {
-            textFormat: Text.PlainText
-            visible: root.service && root.service.activeProgress !== null
-            text: root.service && root.service.activeProgress
-              ? "(" + root.service.activeProgress.completed + "/" + root.service.activeProgress.total + ")"
-              : ""
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.caption
-          }
+        anchors.centerIn: parent
+        width: Brand.space(114); height: width; radius: width / 2
+        color: "transparent"
+        border.width: Brand.space(3)
+        border.color: root.stateColor
+      }
+      Shape {
+        id: spinner
+        objectName: "vpnConnectingArc"
+        visible: root.busy
+        anchors.centerIn: parent
+        width: Brand.space(114); height: width
+        ShapePath {
+          strokeColor: Brand.accentFg
+          strokeWidth: Brand.space(3)
+          fillColor: "transparent"
+          capStyle: ShapePath.RoundCap
+          PathAngleArc { centerX: spinner.width/2; centerY: spinner.height/2; radiusX: spinner.width/2-1.5; radiusY: spinner.height/2-1.5; startAngle: -90; sweepAngle: 100 }
         }
-
-        IconButton {
-          anchors.right: parent.right
-          anchors.rightMargin: Style.space(4)
-          anchors.verticalCenter: parent.verticalCenter
-          icon: "󰅖"
-          tooltipText: root.tr("action.cancel")
-          onClicked: root.cancelRequested()
+        RotationAnimation on rotation { from: 0; to: 360; duration: 1100; loops: Animation.Infinite; running: root.busy && root.visible && !Brand.reduceMotion }
+      }
+      Rectangle {
+        anchors.centerIn: parent
+        width: Brand.space(92); height: width; radius: width / 2
+        color: Brand.surfaceBase
+        border.color: Brand.borderDefault
+        Image {
+          objectName: "vpnHeroMascot"
+          anchors.centerIn: parent
+          width: Brand.space(70); height: width
+          source: Brand.mascot
+          fillMode: Image.PreserveAspectFit
+          smooth: true
         }
       }
-
-      // Error Alert Banner
       Rectangle {
-        visible: root.service && root.service.lastError !== ""
-        width: parent.width
-        height: errRow.implicitHeight + Style.space(12)
-        radius: Style.cornerRadius
-        color: Qt.rgba(Commons.Color.urgent.r, Commons.Color.urgent.g, Commons.Color.urgent.b, 0.15)
-        border.color: Commons.Color.urgent
-        border.width: 1
-
-        Row {
-          id: errRow
-          anchors.fill: parent
-          anchors.margins: Style.space(6)
-          spacing: Style.space(8)
-
-          Text {
-            textFormat: Text.PlainText
-            text: "󰅚"
-            color: Commons.Color.urgent
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
-            anchors.verticalCenter: parent.verticalCenter
-          }
-
-          Text {
-            width: parent.width - dismissErrBtn.width - Style.space(32)
-            text: root.service ? root.service.lastError : ""
-            textFormat: Text.PlainText
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.caption
-            wrapMode: Text.WordWrap
-            anchors.verticalCenter: parent.verticalCenter
-          }
-
-          IconButton {
-            id: dismissErrBtn
-            icon: "󰅖"
-            tooltipText: root.tr("action.dismiss")
-            anchors.verticalCenter: parent.verticalCenter
-            onClicked: if (root.service) root.service.lastError = ""
-          }
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: parent.height - height + Brand.space(6)
+        width: Brand.space(34); height: width; radius: width / 2
+        color: root.connected || root.busy || root.failed || root.missing ? root.stateColor : Brand.surfaceRaised
+        border.width: Brand.space(3)
+        border.color: Brand.surfaceApp
+        Text {
+          anchors.centerIn: parent
+          textFormat: Text.PlainText
+          text: root.connected ? "\u{f0cc8}" : root.failed || root.missing ? "\u{f0ecd}" : "\u{f0499}"
+          color: root.connected || root.busy || root.failed || root.missing ? Brand.surfaceBase : Brand.textMuted
+          font.family: Brand.iconFamily
+          font.pixelSize: Brand.space(16)
         }
       }
     }
+  }
+  Text {
+    objectName: "vpnStateTitle"
+    width: parent.width
+    textFormat: Text.PlainText
+    text: root.failed ? root.tr("home.error") : root.needsSetup ? root.tr("home.addConfig") : root.service && root.service.state === "disconnected" ? root.tr("home.disconnected") : root.tr("state." + (root.service ? root.service.state : "unavailable"))
+    horizontalAlignment: Text.AlignHCenter
+    wrapMode: Text.WordWrap
+    color: root.connected ? Brand.successFg : root.failed || root.missing ? Brand.dangerFg : Brand.textPrimary
+    font.family: Brand.fontFamily
+    font.pixelSize: Brand.space(22)
+    font.weight: Font.DemiBold
+  }
+  Text {
+    width: parent.width
+    textFormat: Text.PlainText
+    text: root.connected ? root.tr("home.active") : root.needsSetup ? root.tr("home.addHint") : root.busy ? root.tr("home.connecting") : root.availability || root.tr(root.failed ? "error.generic" : "home.direct")
+    horizontalAlignment: Text.AlignHCenter
+    wrapMode: Text.WordWrap
+    color: Brand.textSecondary
+    font.family: Brand.fontFamily
+    font.pixelSize: Brand.space(12)
+    lineHeight: 1.3
+  }
+  Item { width: 1; height: Brand.space(6) }
+  Button {
+    objectName: "vpnConnect"
+    width: parent.width
+    implicitHeight: Brand.space(48)
+    pill: true
+    fontSize: Brand.space(15)
+    icon: "⏻"
+    text: root.busy ? root.tr("home.wait") : root.connected ? root.tr("action.disconnect") : root.tr("action.connect")
+    variant: root.busy ? "normal" : root.connected ? "danger" : "solid"
+    enabled: !root.busy && (root.connected || root.canConnect) && !root.needsSetup
+    onClicked: { if (root.connected) root.disconnectRequested(); else root.connectRequested() }
+  }
+  Button {
+    objectName: "vpnCancelOperation"
+    visible: root.busy && !!root.service && !!root.service.activeOperation
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: root.tr("action.cancel")
+    variant: "subtle"
+    onClicked: root.cancelRequested()
   }
 }

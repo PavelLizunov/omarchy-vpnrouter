@@ -3,6 +3,7 @@ import QtQuick
 import QtTest
 import qs.Commons as Commons
 import ".." as Vpn
+import "../ui" as VpnUi
 Rectangle {
   id: fixture
   width: 540; height: 640
@@ -11,6 +12,11 @@ Rectangle {
   property string tab: "apps"
   property string suite: ""
   property string capture: ""
+  property string theme: "light"
+  property string stateName: "disconnected"
+  property int captureDelay: 400
+  property bool reducedMotion: false
+  property string motionOutputPrefix: ""
   property bool scrollBottom: false
   property bool previewReady: false
   property var messages: []
@@ -29,7 +35,7 @@ Rectangle {
   property string priority: "toggles_first"
   property var savedSettings: ({mtu:1420,ipv6Enabled:false,strictRoute:false,strictDns:false,dnsMode:"vpn_only",bypassRussianTraffic:true,blockAds:false,dnsLeakLockdown:false,routeExcludeAddress:["192.168.0.0/16"]})
   property var subscriptions: [{id:"one",name:"Example subscription (fixture)",serverCount:2,enabled:true}]
-  property var servers: [{id:"manual",name:"Manual server (fixture)",protocol:"vless",source:"manual",removable:true},
+  property var servers: [{id:"manual",name:"Frankfurt 1 (fixture)",protocol:"vless",source:"manual",removable:true,latencyMs:42},
                          {id:"sub",name:"Subscription server (fixture)",protocol:"shadowsocks",source:"subscription",subscriptionId:"one",removable:false}]
   property var configs: [{id:"one",name:"Configuration A (fixture)"},{id:"two",name:"Configuration B (fixture)"}]
   property var profiles: [{id:"one",name:"Profile A (fixture)"},{id:"two",name:"Profile B (fixture)"}]
@@ -54,7 +60,7 @@ Rectangle {
     for(var i=0;i<children.length;i++) all(children[i],predicate,list)
     return list
   }
-  function snapshot() { return {state:"disconnected",revision:"fixture",activeServer:(fixture.servers.find(function(x){return x.id===fixture.selectedServer}) || {name:fixture.selectedServer}).name,routingMode:fixture.route,routingAppsMode:fixture.appRule,configMode:"generated",capabilities:{connect:false},unavailableReasonCode:"runtime-capabilities"} }
+  function snapshot() { return {state:fixture.stateName,revision:"fixture",activeServer:(fixture.servers.find(function(x){return x.id===fixture.selectedServer}) || {name:fixture.selectedServer}).name,routingMode:fixture.route,routingAppsMode:fixture.appRule,configMode:"generated",capabilities:{connect:true}} }
   function complete(request, forcedError) {
     var method=request.method, p=request.params, result=fixture.snapshot(), error=null
     if (forcedError) error={code:"invalid_argument",message:"Fixture rejected input"}
@@ -111,19 +117,30 @@ Rectangle {
   Vpn.Service { id: backend; processDisabled:true;fakeBackend:fixture.respond }
   Vpn.Panel { id: consumer;objectName:"consumer";width:parent.width;height:parent.height;mode:"advanced";service:backend }
   Timer {
-    interval:60;running:true
+    interval:80;running:true
     onTriggered: {
+      Commons.Color.background=fixture.theme === "dark" ? "#171a23" : "#faf4ed"
+      Commons.Style.reduceMotion=fixture.reducedMotion
       backend.setLocale(fixture.locale);consumer.currentTab=fixture.tab;consumer.open();backend.getApps()
+      if (fixture.stateName === "unavailable") {backend.backendMissing=true;backend.capabilities={connect:false}}
+      if (fixture.stateName === "error") backend.lastError=backend.tr("error.timeout")
+      if (fixture.stateName === "connecting") {backend.activeOperation="connect";backend.busy=true}
       var apps=fixture.find(consumer,function(x){return x.objectName==="vpnAppsView"});apps.windowToplevels=[]
     }
   }
   Timer {
-    interval:250;running:true
+    interval:fixture.captureDelay;running:true
     onTriggered: {
       try {
+        Commons.Color.background=fixture.theme === "dark" ? "#171a23" : "#faf4ed"
+        checks.wait(30)
         if(fixture.suite) checks.run()
         checks.prepareCapture()
-        console.log("R6_READY",JSON.stringify({suite:fixture.suite,capture:fixture.capture,requests:fixture.messages,geometry:checks.geometry()}))
+        Commons.Color.background=fixture.theme === "dark" ? "#171a23" : "#faf4ed"
+        checks.wait(180)
+        if (fixture.stateName === "error") {backend.lastError=backend.tr("error.timeout");checks.wait(20)}
+        checks.expect(VpnUi.Brand.dark === (fixture.theme === "dark"),"Capture palette matches declared theme")
+        console.log("R6_READY",JSON.stringify({suite:fixture.suite,capture:fixture.capture,requests:fixture.messages,geometry:checks.geometry(),theme:fixture.theme,dark:VpnUi.Brand.dark,font:VpnUi.Brand.fontFamily,arc:fixture.find(consumer,function(x){return x.objectName==="vpnConnectingArc"}).rotation}))
       } catch(e) { console.error("R6_FAIL",fixture.suite,String(e),e.stack) }
       fixture.previewReady=true
     }
@@ -142,14 +159,14 @@ Rectangle {
       expect(x!==null,"Button "+key);return x
     }
     function field(parent,placeholder) {var x=fixture.find(parent,function(x){return x.placeholderText===backend.tr(placeholder) && x.isPassword!==undefined});expect(x!==null,placeholder);return x}
-    function go(tab) {consumer.currentTab=tab;consumer.refreshTab(tab);byName("vpnContentViewport").contentY=0;wait(35)}
+    function go(tab) {consumer.openSection(tab);byName("vpnContentViewport").contentY=0;wait(35)}
     function activate(item,key) {item.forceActiveFocus();wait(5);keyClick(key || Qt.Key_Return);wait(45)}
     function click(item) {item.forceActiveFocus();wait(5);mouseClick(item);wait(45)}
     function fill(item,text) {item.text=text;item.forceActiveFocus();wait(5)}
     function count(method) {return fixture.messages.filter(function(m){return m===method}).length}
     function geometry() {
       var frame=fixture.find(consumer,function(x){return x.contentWidth!==undefined && x.availableHeight!==undefined})
-      var nav=fixture.find(consumer,function(x){return x.tabSelected!==undefined})
+      var nav=fixture.find(consumer,function(x){return x.objectName==="vpnSectionHeader"})
       return [frame.x,frame.y,frame.width,frame.height,nav.x,nav.y]
     }
     function visibleNotice(key) {
@@ -233,33 +250,26 @@ Rectangle {
       console.log("R6_PASS settings real-typing invalid-mtu cidr-no-loss backend-rejection all-editable-toggles revert bindings pending saved ipv6-cidr")
     }
     function routing() {
-      go("apps");var p=page("Apps"),route=byName("vpnRoutingChoice"),rule=byName("vpnAppRuleChoice")
-      route.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);wait(35);equal(backend.routingMode,"full");expect(!rule.visible)
-      route.forceActiveFocus();keyClick(Qt.Key_Left);keyClick(Qt.Key_Space);wait(35);equal(backend.routingMode,"split");expect(rule.visible)
-      rule.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);wait(35);equal(backend.routingAppsMode,"exclude");equal(p.configuredApps[0],"thunderbird")
-      rule.forceActiveFocus();keyClick(Qt.Key_Left);keyClick(Qt.Key_Space);wait(35);equal(backend.routingAppsMode,"include");equal(p.configuredApps[0],"chromium")
-      equal(fixture.find(p,function(x){return x.objectName==="vpnAppRow-thunderbird"}).modelData.name,"thunderbird")
-      var lang=fixture.find(consumer,function(x){return x.Accessible!==undefined && x.Accessible.name===backend.tr("language.change")})
-      // Inspect the actual visible header controls by signals; keyboard dispatch below.
-      var header=fixture.find(consumer,function(x){return x.localeToggled!==undefined})
-      var headerRects=fixture.all(header,function(x){return x.activeFocusOnTab===true && x.clicked===undefined && x.width>30},[])
-      expect(headerRects.length>=2);var languageButton=headerRects[0],modeButton=headerRects[1]
-      backend.setLocale("auto");var before=fixture.messages.length
-      activate(languageButton);equal(backend.locale,"en");activate(languageButton,Qt.Key_Space);equal(backend.locale,"ru");activate(languageButton);equal(backend.locale,"auto");equal(fixture.messages.length,before,"Language cycle has no service operations")
-      backend.setLocale(fixture.locale)
-      activate(modeButton);equal(consumer.mode,"simple");wait(25)
-      expect(backend.serversLoaded && backend.servers.length>0,"Entering simple mode fetches quick-selector servers")
-      activate(byName("vpnSimpleServer-sub"),Qt.Key_Space);equal(fixture.selectedServer,"sub")
-      var simpleRoute=byName("vpnRoutingChoice"),simpleRule=byName("vpnAppRuleChoice")
-      simpleRoute.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);wait(35);equal(backend.routingMode,"full");expect(!simpleRule.visible)
-      simpleRoute.forceActiveFocus();keyClick(Qt.Key_Left);keyClick(Qt.Key_Return);wait(35);expect(simpleRule.visible)
-      simpleRule.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);wait(35);equal(backend.routingAppsMode,"exclude")
-      // Tab / Shift+Tab use the native group as a single focus stop.
-      simpleRoute.forceActiveFocus();keyClick(Qt.Key_Tab);wait(10);expect(simpleRule.activeFocus);keyClick(Qt.Key_Backtab);wait(10);expect(simpleRoute.activeFocus)
-      activate(modeButton,Qt.Key_Space);equal(consumer.mode,"advanced")
-      p=page("Apps");route=byName("vpnRoutingChoice");fixture.failNext="routing.set";route.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);wait(35);equal(backend.routingMode,"split","Rejected choice keeps actual value")
-      console.log("R6_PASS routing full-split include-exclude both-surfaces arrows enter space tab backtab language-cycle mode-cycle failure")
+      go("apps")
+      var choice=byName("vpnRoutingChoice");activate(choice)
+      keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);wait(35);equal(backend.routingMode,"full")
+      keyClick(Qt.Key_Left);keyClick(Qt.Key_Space);wait(35);equal(backend.routingMode,"split")
+      choice=byName("vpnAppRuleChoice");choice.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);wait(35);equal(backend.routingAppsMode,"exclude")
+      keyClick(Qt.Key_Left);keyClick(Qt.Key_Space);wait(35);equal(backend.routingAppsMode,"include")
+      consumer.setDisplayMode("simple");wait(40)
+      choice=byName("vpnHomeRoutingChoice");choice.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);wait(35);equal(backend.routingMode,"full")
+      expect(fixture.find(byName("vpnHomeRoutingChoice"),function(x){return x.objectName==="vpnChoice-full"}).selected,"Full pill selected")
+      equal(byName("vpnRoutingSummary").text,backend.tr("home.allTraffic"))
+      keyClick(Qt.Key_Left);keyClick(Qt.Key_Space);wait(35);equal(backend.routingMode,"split")
+      click(fixture.find(byName("vpnHomeRoutingChoice"),function(x){return x.objectName==="vpnChoice-full"}));equal(backend.routingMode,"full");click(fixture.find(byName("vpnHomeRoutingChoice"),function(x){return x.objectName==="vpnChoice-split"}));equal(backend.routingMode,"split")
+      var before=fixture.messages.length
+      fixture.holdMethod="routing.set";click(fixture.find(byName("vpnHomeRoutingChoice"),function(x){return x.objectName==="vpnChoice-full"}));expect(!choice.enabled,"Pending disables group")
+      fixture.release(true);wait(35);equal(backend.routingMode,"split","Rejected change retains confirmed value")
+      fixture.holdMethod="routing.set";click(fixture.find(byName("vpnHomeRoutingChoice"),function(x){return x.objectName==="vpnChoice-full"}));fixture.release(false);wait(35);equal(backend.routingMode,"full")
+      consumer.openSection("apps");wait(35)
+      console.log("R6_PASS routing apps-home arrows-return-space-pointer pending-failure-success")
     }
+
     function actions() {
       go("profiles");var p=page("Profiles");activate(button(p,"profiles.refresh"));var selects=fixture.all(p,function(x){return x.clicked!==undefined && x.text===backend.tr("profiles.select") && x.enabled},[]);equal(selects.length,1);activate(selects[0],Qt.Key_Space);wait(20);equal(fixture.selectedProfile,"two");expect(backend.profiles[1].selected)
       go("diagnostics");p=page("Diagnostics");activate(button(p,"diagnostics.checkBtn"));equal(backend.diagnosticsItems.length,2)
@@ -323,17 +333,21 @@ Rectangle {
       else if(fixture.suite==="actions") actions()
       else if(fixture.suite==="keyboard") keyboard()
       else if(fixture.suite==="pointerForms") pointerForms()
+      else if(fixture.suite==="brand") { brand() }
+      else if(fixture.suite==="states") { states() }
       else if(fixture.suite==="geometry") {
-        var tabs=["servers","subscriptions","free","apps","profiles","rules","custom","settings","diagnostics"]
-        var navigation=fixture.find(consumer,function(x){return x.tabSelected!==undefined})
+        var tabs=["servers","subscriptions","apps","rules","settings","diagnostics","free","profiles","custom"]
         for(var i=0;i<tabs.length;i++) {
-          var item=fixture.find(navigation,function(x){return x.activeFocusOnTab && x.active!==undefined && x.objectName==="vpnTab-"+tabs[i]})
+          consumer.setDisplayMode("simple");wait(35)
+          var item=byName("vpnTab-"+tabs[i])
           if(i%2===0) click(item);else activate(item,Qt.Key_Enter)
-          equal(consumer.currentTab,tabs[i],"Real tab activation")
-          equal(JSON.stringify(geometry()),initial,"Fixed card and navigation on every tab")
+          equal(consumer.currentTab,tabs[i],"Real list navigation")
+          equal(consumer.mode,"advanced")
+          equal(JSON.stringify(geometry()),initial,"Fixed card and back navigation on every section")
+          expect(byName("vpnBack").activeFocus,"Entry focuses back control")
+          click(byName("vpnBack"));equal(consumer.mode,"simple")
+          expect(item.activeFocus,"Back restores originating row focus")
         }
-        var choices=fixture.all(consumer,function(x){return x.visible && x.options!==undefined && x.value!==undefined},[])
-        for(var j=0;j<choices.length;j++) expect(choices[j].width<=choices[j].parent.width+1,"Native choices fit available width")
         go("subscriptions");click(button(page("Subscriptions"),"subscriptions.addTitle"));click(button(page("Subscriptions"),"action.cancel"));go("apps")
         console.log("R6_PASS geometry all-tabs-editor-return")
       }
@@ -343,8 +357,63 @@ Rectangle {
       consumer.open();wait(40)
       console.log("R6_RESULT",fixture.suite,"PASS",JSON.stringify(geometry()))
     }
+    function states() {
+      consumer.setDisplayMode("simple");wait(35)
+      var hero=byName("vpnHero"),button=byName("vpnConnect"),arc=fixture.find(consumer,function(x){return x.objectName==="vpnConnectingArc"})
+      backend.state="disconnected";backend.backendMissing=false;backend.capabilities={connect:false};wait(20)
+      expect(!button.enabled,"Connect disabled without capability")
+      backend.capabilities={connect:true};wait(20);expect(button.enabled,"Connect enabled only with capability")
+      backend.state="connected";wait(20);equal(byName("vpnStateTitle").text,backend.tr("state.connected"));expect(button.enabled,"Disconnect available")
+      expect(String(hero.stateColor)===String(VpnUi.Brand.successSolid),"Success ring")
+      backend.state="error";backend.lastError=backend.tr("error.timeout");wait(20);expect(String(hero.stateColor)===String(VpnUi.Brand.dangerSolid),"Error ring");equal(hero.availability,backend.tr("error.timeout"),"Error reason is visible")
+      backend.state="unavailable";backend.backendMissing=true;backend.capabilities={connect:false};wait(20);expect(!button.enabled,"Missing backend cannot connect")
+      expect(hero.availability.indexOf(backend.tr("backend.installHint"))!==-1,"Honest install hint")
+      backend.backendMissing=false;backend.state="connecting";backend.lastError="";backend.busy=true;backend.activeOperation="connect";wait(30)
+      expect(!button.enabled,"Connecting cannot duplicate")
+      var start=arc.rotation;wait(130);expect(Math.abs(arc.rotation-start)>1,"Connecting arc moves")
+      console.log("R7_MOTION",start,arc.rotation,"after130ms")
+      if(fixture.motionOutputPrefix) {
+        byName("vpnContentViewport").contentY=0
+        for(var i=0;i<3;i++) {
+          var saved=false
+          fixture.grabToImage(function(result) { saved=result.saveToFile(fixture.motionOutputPrefix+i+".png") })
+          wait(30);expect(saved,"Offscreen frame saved");wait(150)
+        }
+      }
+      Commons.Style.reduceMotion=true;wait(25);start=arc.rotation;wait(130);equal(arc.rotation,start,"Reduced motion stops rotation")
+      Commons.Style.reduceMotion=false
+      backend.activeOperation="";backend.busy=false;backend.state="disconnected";backend.capabilities={connect:true}
+      consumer.openSection("apps");wait(30)
+      console.log("R6_PASS states disconnected-connected-error-unavailable-connecting disabled-capability rotation-reduced-motion")
+    }
+    function brand() {
+      expect(VpnUi.Brand.dark === (fixture.theme === "dark"),"Palette follows host luminance")
+      expect(VpnUi.Brand.fontFamily !== Commons.Style.font.family,"Content is sans, bar remains native")
+      consumer.setDisplayMode("simple");wait(30)
+      click(byName("vpnChangeServer"));equal(consumer.currentTab,"servers");equal(consumer.mode,"advanced")
+      click(byName("vpnBack"));equal(consumer.mode,"simple")
+      fixture.servers=[];fixture.subscriptions=[];backend.servers=[];backend.subscriptions=[];backend.activeServer="";backend.serversLoaded=true;backend.subscriptionsLoaded=true;backend.apps={include:[],exclude:[],runningApps:[]};backend.appsLoaded=true;wait(25)
+      expect(!byName("vpnConnect").enabled,"First run cannot connect")
+      click(byName("vpnChangeServer"));expect(page("Subscriptions").showAddForm,"First-run opens real form")
+      var language=byName("vpnLanguage"),start=backend.locale
+      activate(language,Qt.Key_Space);expect(backend.locale!==start,"Language cycles")
+      backend.setLocale(fixture.locale);wait(20)
+      var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
+      consumer.open();wait(30);go("apps")
+      console.log("R6_PASS brand host-luminance sans change-server first-run language close")
+    }
     function prepareCapture() {
-      if(fixture.capture.indexOf("simple")===0) {consumer.setDisplayMode("simple");wait(25);if(fixture.capture==="simple-full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}}
+      if(fixture.capture==="home" || fixture.capture==="home-bottom" || fixture.capture==="first-run") {
+        consumer.setDisplayMode("simple");wait(25)
+        // Capture entry has no focused navigation item; native return-focus is tested separately.
+        consumer.forceActiveFocus();wait(10)
+        if(fixture.capture==="first-run") {
+          fixture.servers=[];fixture.subscriptions=[];backend.servers=[];backend.subscriptions=[];backend.activeServer="";backend.serversLoaded=true;backend.subscriptionsLoaded=true;backend.apps={include:[],exclude:[],runningApps:[]};backend.appsLoaded=true;wait(25)
+        }
+        byName("vpnContentViewport").contentY=0
+      }
+
+      else if(fixture.capture.indexOf("simple")===0) {consumer.setDisplayMode("simple");wait(25);if(fixture.capture==="simple-full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}}
       else if(fixture.capture==="connected") {backend.state="connected";wait(20)}
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}
       else if(fixture.capture==="subscription-invalid") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"invalid");activate(field(p,"subscriptions.urlPlaceholder"))}

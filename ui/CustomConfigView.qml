@@ -1,6 +1,4 @@
 import QtQuick
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -47,17 +45,17 @@ Item {
     })
   }
 
-  implicitWidth: parent ? parent.width : Style.space(480)
+  implicitWidth: parent ? parent.width : Brand.space(480)
   implicitHeight: column.implicitHeight
 
   Column {
     id: column
     width: parent.width
-    spacing: Style.space(10)
+    spacing: Brand.space(10)
 
     Row {
       width: parent.width
-      spacing: Style.space(8)
+      spacing: Brand.space(8)
 
       Button {
         id: importToggle
@@ -84,24 +82,24 @@ Item {
     Rectangle {
       visible: root.showImportForm
       width: parent.width
-      height: importCol.implicitHeight + Style.space(20)
-      radius: Style.cornerRadius
-      color: Style.hoverFill
-      border.color: Style.normalBorderColor
-      border.width: Style.normalBorderWidth
+      height: importCol.implicitHeight + Brand.space(20)
+      radius: Brand.cornerRadius
+      color: Brand.hoverFill
+      border.color: Brand.normalBorderColor
+      border.width: Brand.normalBorderWidth
 
       Column {
         id: importCol
         anchors.fill: parent
-        anchors.margins: Style.space(10)
-        spacing: Style.space(8)
+        anchors.margins: Brand.space(10)
+        spacing: Brand.space(8)
 
         Text {
           textFormat: Text.PlainText
           text: root.tr("custom.addTitle")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.title
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.title
         }
 
         Text {
@@ -109,9 +107,9 @@ Item {
           textFormat: Text.PlainText
           text: root.tr("custom.nameLabel")
           wrapMode: Text.WordWrap
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.caption
         }
         TextField {
           id: customNameInput
@@ -125,15 +123,15 @@ Item {
           width: parent.width
           textFormat: Text.PlainText
           text: root.tr("custom.jsonLabel")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.caption
         }
         Editor {
           id: customTextArea
           objectName: "vpnCustomJson"
           width: parent.width
-          height: Style.space(110)
+          height: Brand.space(110)
           enabled: !root.pending
           label: root.tr("custom.jsonLabel")
           placeholderText: root.tr("custom.jsonLabel")
@@ -141,7 +139,7 @@ Item {
         }
 
         Row {
-          spacing: Style.space(8)
+          spacing: Brand.space(8)
 
           Button {
             text: root.tr("action.import")
@@ -164,32 +162,32 @@ Item {
     Rectangle {
       visible: !root.service || !root.service.customConfigs || root.service.customConfigs.length === 0
       width: parent.width
-      height: Style.space(120)
-      radius: Style.cornerRadius
-      color: Style.normalFill
-      border.color: Style.normalBorderColor
+      height: Brand.space(120)
+      radius: Brand.cornerRadius
+      color: Brand.normalFill
+      border.color: Brand.normalBorderColor
       border.width: 1
 
       Column {
         anchors.centerIn: parent
-        spacing: Style.space(8)
+        spacing: Brand.space(8)
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰘦"
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.display
+          color: Brand.textPrimary
+          font.family: Brand.iconFamily
+          font.pixelSize: Brand.font.display
         }
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("custom.empty")
-          color: Commons.Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.bodySmall
+          color: Brand.textPrimary
+          font.family: Brand.font.family
+          font.pixelSize: Brand.font.bodySmall
         }
       }
     }
@@ -200,44 +198,44 @@ Item {
 
       Rectangle {
         width: column.width
-        height: customRow.implicitHeight + Style.space(16)
-        radius: Style.cornerRadius
-        color: modelData.selected ? Style.selectedFill : (cMouse.containsMouse ? Style.hoverFill : Style.normalFill)
-        border.color: modelData.selected ? Commons.Color.accent : Style.normalBorderColor
-        border.width: modelData.selected ? 1 : Style.normalBorderWidth
+        height: customRow.implicitHeight + Brand.space(16)
+        radius: Brand.cornerRadius
+        color: modelData.selected ? Brand.selectedFill : (cMouse.containsMouse ? Brand.hoverFill : Brand.normalFill)
+        border.color: modelData.selected ? Brand.accentFg : Brand.normalBorderColor
+        border.width: modelData.selected ? 1 : Brand.normalBorderWidth
 
         Row {
           id: customRow
           anchors.fill: parent
-          anchors.margins: Style.space(8)
-          spacing: Style.space(10)
+          anchors.margins: Brand.space(8)
+          spacing: Brand.space(10)
 
           Rectangle {
-            width: Style.space(18)
+            width: Brand.space(18)
             height: width
             radius: width / 2
             anchors.verticalCenter: parent.verticalCenter
             color: "transparent"
-            border.color: modelData.selected ? Commons.Color.accent : Commons.Color.foreground
+            border.color: modelData.selected ? Brand.accentFg : Brand.textPrimary
             border.width: 2
 
             Rectangle {
               visible: modelData.selected
-              width: Style.space(8)
+              width: Brand.space(8)
               height: width
               radius: width / 2
               anchors.centerIn: parent
-              color: Commons.Color.accent
+              color: Brand.accentFg
             }
           }
 
           Text {
             textFormat: Text.PlainText
-            width: parent.width - btnRow.width - Style.space(50)
+            width: parent.width - btnRow.width - Brand.space(50)
             text: modelData.name || modelData.id
-            color: Commons.Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
+            color: Brand.textPrimary
+            font.family: Brand.font.family
+            font.pixelSize: Brand.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
             elide: Text.ElideRight
           }
@@ -245,7 +243,7 @@ Item {
           Row {
             id: btnRow
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Style.space(6)
+            spacing: Brand.space(6)
 
             Button {
               text: root.tr("custom.activate")
@@ -266,7 +264,7 @@ Item {
         MouseArea {
           id: cMouse
           anchors.fill: parent
-          anchors.rightMargin: btnRow.width + Style.space(16)
+          anchors.rightMargin: btnRow.width + Brand.space(16)
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
           onClicked: if (root.service) root.service.selectCustom(modelData.id)

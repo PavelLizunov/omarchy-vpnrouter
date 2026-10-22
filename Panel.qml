@@ -29,7 +29,7 @@ Ui.Panel {
   }
 
   // User configuration and display mode
-  property string mode: setting("mode", "simple")
+  property string mode: "simple"
   property string currentTab: "servers"
 
   onOpenedChanged: {
@@ -37,6 +37,7 @@ Ui.Panel {
       if (service) {
         service.refreshSnapshot()
         service.listSubscriptions(0, 100)
+        service.getApps()
         if (mode === "advanced") {
           refreshTab(currentTab)
         } else {
@@ -88,14 +89,18 @@ Ui.Panel {
 
   function setDisplayMode(nextMode) {
     root.mode = nextMode
-    if (hostWidget && typeof hostWidget.updateSetting === "function") {
-      hostWidget.updateSetting("mode", nextMode)
-    }
+    flickableContent.contentY = 0
+    Qt.callLater(function() { if (nextMode === "advanced") backButton.forceActiveFocus(); else homeNavigation.restoreFocus(root.currentTab) })
     if (nextMode === "advanced") {
       refreshTab(currentTab)
     } else if (root.service) {
       root.service.listServers(0, 50)
     }
+  }
+
+  function openSection(tabId) {
+    root.currentTab = tabId
+    root.setDisplayMode("advanced")
   }
 
   function openSubscriptionForm() {
@@ -114,6 +119,12 @@ Ui.Panel {
       hostWidget.updateSetting("locale", next)
   }
 
+  readonly property var selectedServer: {
+    if (!service) return null
+    for (var server of service.servers) if (server.selected) return server
+    return null
+  }
+
   Ui.KeyboardPanel {
     id: panel
     anchorItem: root.anchorItem
@@ -121,240 +132,162 @@ Ui.Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(root.mode === "advanced" ? 540 : 440))
-    contentHeight: panel.fittedContentHeight(root.mode === "advanced" ? Style.space(640) : fixedHeader.implicitHeight + Style.space(12) + mainColumn.implicitHeight, Style.space(640))
+    contentWidth: panel.fittedContentWidth(Style.space(440))
+    contentHeight: panel.fittedContentHeight(Style.space(740), Style.space(764))
 
     FocusScope {
       id: keyCatcher
       anchors.fill: parent
       focus: true
       Keys.onEscapePressed: root.close()
-
-      Column {
-        id: fixedHeader
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        spacing: Style.space(12)
-        // 1. Header
-        VpnUi.Header {
-          id: header
-          width: parent.width
-          service: root.service
-          i18nRevision: root.i18nRevision
-          mode: root.mode
-          onModeChangeRequested: function(m) { root.setDisplayMode(m) }
-          onLocaleToggled: root.toggleLocale()
-          onCloseRequested: root.close()
-        }
-
-        // 2. Hero Connection Card
-        VpnUi.HeroCard {
-          width: parent.width
-          service: root.service
-          i18nRevision: root.i18nRevision
-          onConnectRequested: if (root.service) root.service.connect()
-          onDisconnectRequested: if (root.service) root.service.disconnect()
-          onCancelRequested: if (root.service) root.service.cancel()
-          onAddSubscriptionRequested: root.openSubscriptionForm()
-        }
-
-        VpnUi.Navigation {
-          id: navigation
-          visible: root.mode === "advanced"
-          width: parent.width
-          service: root.service
-          i18nRevision: root.i18nRevision
-          currentTab: root.currentTab
-          onTabSelected: function(tId) {
-            root.currentTab = tId
-            flickableContent.contentY = 0
-            root.refreshTab(tId)
-          }
-        }
-
+      Rectangle { anchors.fill: parent; color: VpnUi.Brand.surfaceApp; radius: VpnUi.Brand.cardRadius }
+      VpnUi.Header {
+        id: header
+        anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+        service: root.service
+        i18nRevision: root.i18nRevision
+        onLocaleToggled: root.toggleLocale()
+        onCloseRequested: root.close()
       }
-
-      Ui.PanelSeparator {
-        id: pageSeparator
-        objectName: "vpnPageSeparator"
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: fixedHeader.bottom
-        anchors.topMargin: Style.space(6)
+      Item {
+        id: sectionHeader
+        objectName: "vpnSectionHeader"
+        visible: root.mode === "advanced"
+        anchors.left: parent.left; anchors.right: parent.right; anchors.top: header.bottom
+        height: visible ? VpnUi.Brand.space(56) : 0
+        VpnUi.Button {
+          id: backButton
+          objectName: "vpnBack"
+          x: VpnUi.Brand.space(12)
+          anchors.verticalCenter: parent.verticalCenter
+          icon: "󰁍"
+          accessibleLabel: root.tr("home.back")
+          implicitWidth: VpnUi.Brand.space(36)
+          variant: "subtle"
+          onClicked: root.setDisplayMode("simple")
+        }
+        Text {
+          anchors.left: backButton.right; anchors.leftMargin: VpnUi.Brand.space(8)
+          anchors.right: parent.right; anchors.rightMargin: VpnUi.Brand.space(16)
+          anchors.verticalCenter: parent.verticalCenter
+          textFormat: Text.PlainText
+          text: root.tr("nav." + root.currentTab)
+          elide: Text.ElideRight
+          color: VpnUi.Brand.textPrimary
+          font.family: VpnUi.Brand.fontFamily
+          font.pixelSize: VpnUi.Brand.space(18)
+          font.weight: Font.DemiBold
+        }
+        Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: VpnUi.Brand.borderSubtle }
       }
-
       Flickable {
         id: flickableContent
         objectName: "vpnContentViewport"
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: pageSeparator.bottom
-        anchors.topMargin: Style.space(6)
-        anchors.bottom: parent.bottom
+        anchors.left: parent.left; anchors.right: parent.right
+        anchors.top: sectionHeader.bottom; anchors.bottom: parent.bottom
         contentWidth: width
-        contentHeight: mainColumn.implicitHeight + Style.space(24)
+        contentHeight: mainColumn.implicitHeight + VpnUi.Brand.space(32)
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         flickableDirection: Flickable.VerticalFlick
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-
         Column {
           id: mainColumn
-          width: flickableContent.width
-          spacing: Style.space(12)
-
-          // 3. Simple Mode View: Server Quick Selector & Routing Mode Switch
+          x: VpnUi.Brand.space(16); y: VpnUi.Brand.space(16)
+          width: flickableContent.width - VpnUi.Brand.space(32)
+          spacing: VpnUi.Brand.space(14)
           Column {
             visible: root.mode === "simple"
             width: parent.width
-            spacing: Style.space(10)
-
-            // Server Quick Selector Card
+            spacing: VpnUi.Brand.space(14)
+            VpnUi.HeroCard {
+              id: hero
+              width: parent.width
+              service: root.service
+              i18nRevision: root.i18nRevision
+              onConnectRequested: if (root.service) root.service.connect()
+              onDisconnectRequested: if (root.service) root.service.disconnect()
+              onCancelRequested: if (root.service) root.service.cancel()
+            }
             Rectangle {
               width: parent.width
-              height: simpleServerCol.implicitHeight + Style.space(16)
-              radius: Style.cornerRadius
-              color: Style.normalFill
-              border.color: Style.normalBorderColor
-              border.width: Style.normalBorderWidth
-
+              implicitHeight: connectionColumn.implicitHeight
+              color: VpnUi.Brand.surfaceBase
+              radius: VpnUi.Brand.cardRadius
+              border.color: VpnUi.Brand.borderDefault
               Column {
-                id: simpleServerCol
-                anchors.fill: parent
-                anchors.margins: Style.space(10)
-                spacing: Style.space(8)
-
-                RowLayout {
-                  width: parent.width
-
-                  Text {
-                    textFormat: Text.PlainText
-                    text: root.tr("simple.activeServer")
-                    color: Commons.Color.foreground
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.title
-                  }
-
-                  Item { Layout.fillWidth: true }
-
-                  VpnUi.Button {
-                    text: root.tr("action.refresh")
-                    variant: "subtle"
-                    onClicked: if (root.service) root.service.listServers(0, 50)
-                  }
-                }
-
-                // Server Items (top 5 quick select)
-                Repeater {
-                  model: (root.service && root.service.servers) ? root.service.servers.slice(0, 6) : []
-
+                id: connectionColumn
+                width: parent.width
+                Item {
+                  width: parent.width; height: VpnUi.Brand.space(70)
                   Rectangle {
-                    required property var modelData
-                    objectName: "vpnSimpleServer-" + modelData.id
-                    activeFocusOnTab: true
-                    Accessible.role: Accessible.RadioButton
-                    Accessible.name: modelData.name || root.tr("servers.fallbackName")
-                    Accessible.checked: modelData.selected === true
-                    Keys.onReturnPressed: if (root.service) root.service.selectServer(modelData.id)
-                    Keys.onEnterPressed: if (root.service) root.service.selectServer(modelData.id)
-                    Keys.onSpacePressed: if (root.service) root.service.selectServer(modelData.id)
-                    width: simpleServerCol.width
-                    height: Style.space(32)
-                    radius: Style.cornerRadius
-                    color: modelData.selected ? Style.selectedFill : (sMouse.containsMouse ? Style.hoverFill : "transparent")
-                    border.color: activeFocus ? Style.focusBorderColor : modelData.selected ? Commons.Color.accent : "transparent"
-                    border.width: activeFocus || modelData.selected ? Math.max(1, Style.focusBorderWidth) : 0
-
-                    Row {
-                      anchors.fill: parent
-                      anchors.margins: Style.space(6)
-                      spacing: Style.space(8)
-
-                      Rectangle {
-                        width: Style.space(14)
-                        height: width
-                        radius: width / 2
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: modelData.selected ? Commons.Color.accent : "transparent"
-                        border.color: Commons.Color.foreground
-                        border.width: 1
-                      }
-
-                      Text {
-                        textFormat: Text.PlainText
-                        width: parent.width - latLabel.width - Style.space(36)
-                        text: modelData.name || root.tr("servers.fallbackName")
-                        color: Commons.Color.foreground
-                        font.family: Style.font.family
-                        font.pixelSize: Style.font.bodySmall
-                        anchors.verticalCenter: parent.verticalCenter
-                        elide: Text.ElideRight
-                      }
-
-                      Text {
-                        textFormat: Text.PlainText
-                        id: latLabel
-                        text: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
-                        color: Commons.Color.foreground
-                        font.family: Style.font.family
-                        font.pixelSize: Style.font.caption
-                        anchors.verticalCenter: parent.verticalCenter
-                      }
+                    x: VpnUi.Brand.space(16); anchors.verticalCenter: parent.verticalCenter
+                    width: VpnUi.Brand.space(40); height: width; radius: VpnUi.Brand.space(10)
+                    color: VpnUi.Brand.accentBgSubtle
+                    Text { anchors.centerIn: parent; textFormat: Text.PlainText; text: "󰒋"; color: VpnUi.Brand.accentFg; font.family: VpnUi.Brand.iconFamily; font.pixelSize: VpnUi.Brand.space(20) }
+                  }
+                  Column {
+                    x: VpnUi.Brand.space(68); anchors.verticalCenter: parent.verticalCenter
+                    width: Math.max(0, changeServer.x-x-VpnUi.Brand.space(8))
+                    spacing: VpnUi.Brand.space(3)
+                    Text {
+                      objectName: "vpnHomeServerName"
+                      width: parent.width
+                      textFormat: Text.PlainText
+                      text: hero.needsSetup ? root.tr("home.addConfig") : root.selectedServer ? root.selectedServer.name : root.service && root.service.activeServer ? root.service.activeServer : root.tr("simple.noActiveServer")
+                      color: VpnUi.Brand.textPrimary
+                      font.family: VpnUi.Brand.fontFamily; font.pixelSize: VpnUi.Brand.space(12); font.weight: Font.DemiBold
+                      elide: Text.ElideRight
                     }
-
-                    MouseArea {
-                      id: sMouse
-                      anchors.fill: parent
-                      hoverEnabled: true
-                      cursorShape: Qt.PointingHandCursor
-                      onClicked: if (root.service) root.service.selectServer(modelData.id)
+                    Text {
+                      width: parent.width
+                      textFormat: Text.PlainText
+                      text: root.tr(root.service && root.service.configMode === "custom" ? "home.custom" : root.selectedServer && root.selectedServer.source === "subscription" ? "home.subscription" : "home.serverLink")
+                      color: VpnUi.Brand.textMuted
+                      font.family: VpnUi.Brand.fontFamily; font.pixelSize: VpnUi.Brand.space(11)
+                      elide: Text.ElideRight
                     }
+                  }
+                  VpnUi.Button {
+                    id: changeServer
+                    objectName: "vpnChangeServer"
+                    anchors.right: parent.right; anchors.rightMargin: VpnUi.Brand.space(14)
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: hero.needsSetup ? root.tr("firstRun.addSubscription") : root.tr("home.change")
+                    pill: true
+                    fontSize: VpnUi.Brand.space(11)
+                    implicitWidth: Math.max(VpnUi.Brand.space(80), contentWidthHint.implicitWidth+VpnUi.Brand.space(24))
+                    onClicked: { if (hero.needsSetup) root.openSubscriptionForm(); else root.openSection("servers") }
+                    Text { id: contentWidthHint; visible: false; text: changeServer.text; font.family: VpnUi.Brand.fontFamily; font.pixelSize: changeServer.fontSize }
+                  }
+                }
+                Rectangle { width: parent.width; height: 1; color: VpnUi.Brand.borderSubtle }
+                Item {
+                  width: parent.width
+                  height: summary.implicitHeight + VpnUi.Brand.space(30)
+                  VpnUi.RoutingSummary {
+                    id: summary
+                    x: VpnUi.Brand.space(16); y: VpnUi.Brand.space(14)
+                    width: parent.width - VpnUi.Brand.space(32)
+                    service: root.service
+                    i18nRevision: root.i18nRevision
                   }
                 }
               }
             }
-
-            // Quick Routing Mode Card
-            Rectangle {
+            VpnUi.Navigation {
+              id: homeNavigation
+              objectName: "vpnHomeNavigation"
               width: parent.width
-              height: quickRouteCol.implicitHeight + Style.space(16)
-              radius: Style.cornerRadius
-              color: Style.normalFill
-              border.color: Style.normalBorderColor
-              border.width: Style.normalBorderWidth
-
-              Column {
-                id: quickRouteCol
-                anchors.fill: parent
-                anchors.margins: Style.space(10)
-                spacing: Style.space(8)
-
-                VpnUi.RoutingControls {
-                  width: parent.width
-                  service: root.service
-                  i18nRevision: root.i18nRevision
-                }
-
-              }
-            }
-
-            // Switch to Advanced Mode Button
-            VpnUi.Button {
-              width: parent.width
-              text: "󰒓 " + root.tr("simple.switchAdvanced")
-              variant: "subtle"
-              onClicked: root.setDisplayMode("advanced")
+              service: root.service
+              i18nRevision: root.i18nRevision
+              onTabSelected: function(tabId) { root.openSection(tabId) }
             }
           }
-
-          // 4. Advanced Mode View: Tab Navigation + Dedicated Section View
           Column {
             visible: root.mode === "advanced"
             width: parent.width
-            spacing: Style.space(12)
-
-            // Section Views
+            spacing: VpnUi.Brand.space(12)
             VpnUi.ServersView {
               onAddSubscriptionRequested: root.openSubscriptionForm()
               visible: root.currentTab === "servers"
@@ -362,7 +295,6 @@ Ui.Panel {
               service: root.service
               i18nRevision: root.i18nRevision
             }
-
             VpnUi.SubscriptionsView {
               id: subscriptionsView
               visible: root.currentTab === "subscriptions"
@@ -370,14 +302,12 @@ Ui.Panel {
               service: root.service
               i18nRevision: root.i18nRevision
             }
-
             VpnUi.FreePoolView {
               visible: root.currentTab === "free"
               width: parent.width
               service: root.service
               i18nRevision: root.i18nRevision
             }
-
             VpnUi.AppsView {
               appLibrary: root.hostWidget && root.hostWidget.effectiveShell ? root.hostWidget.effectiveShell.appLibrary : null
               visible: root.currentTab === "apps"
@@ -385,35 +315,30 @@ Ui.Panel {
               service: root.service
               i18nRevision: root.i18nRevision
             }
-
             VpnUi.ProfilesView {
               visible: root.currentTab === "profiles"
               width: parent.width
               service: root.service
               i18nRevision: root.i18nRevision
             }
-
             VpnUi.RulesView {
               visible: root.currentTab === "rules"
               width: parent.width
               service: root.service
               i18nRevision: root.i18nRevision
             }
-
             VpnUi.CustomConfigView {
               visible: root.currentTab === "custom"
               width: parent.width
               service: root.service
               i18nRevision: root.i18nRevision
             }
-
             VpnUi.SettingsView {
               visible: root.currentTab === "settings"
               width: parent.width
               service: root.service
               i18nRevision: root.i18nRevision
             }
-
             VpnUi.DiagnosticsView {
               visible: root.currentTab === "diagnostics"
               width: parent.width

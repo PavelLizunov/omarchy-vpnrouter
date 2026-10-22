@@ -1,7 +1,5 @@
 import QtQuick
 import "../lib/Focus.js" as Focus
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
 
 Item {
   id: root
@@ -13,8 +11,8 @@ Item {
 
   signal clicked()
 
-  implicitWidth: Style.spacing.controlHeight
-  implicitHeight: Style.spacing.controlHeight
+  implicitWidth: Brand.spacing.controlHeight
+  implicitHeight: Brand.spacing.controlHeight
 
   activeFocusOnTab: true
   onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
@@ -28,28 +26,22 @@ Item {
   readonly property bool hot: mouseArea.containsMouse
   readonly property bool pressed: mouseArea.pressed
 
-  readonly property color iconColor: {
-    if (!root.enabled) return Commons.Color.foreground
-    if (variant === "danger") return hot ? Commons.Color.urgent : Qt.darker(Commons.Color.urgent, 1.2)
-    if (variant === "accent") return hot ? Commons.Color.accent : Qt.darker(Commons.Color.accent, 1.2)
-    if (hot || activeFocus) return Commons.Color.foreground
-    return Qt.darker(Commons.Color.foreground, 1.3)
-  }
+  readonly property color iconColor: variant === "danger" ? Brand.dangerFg : variant === "accent" ? Brand.accentFg : Brand.textSecondary
 
   readonly property color bgFill: {
-    if (pressed) return Style.pressedFill
-    if (hot || activeFocus) return Style.hoverFill
+    if (pressed) return Brand.pressedFill
+    if (hot || activeFocus) return Brand.hoverFill
     return "transparent"
   }
 
   Rectangle {
     anchors.fill: parent
-    radius: Style.cornerRadius
+    radius: Brand.cornerRadius
     color: root.bgFill
-    border.color: root.activeFocus ? Style.focusBorderColor : "transparent"
-    border.width: root.activeFocus ? Style.focusBorderWidth : 0
+    border.color: root.activeFocus ? Brand.focusBorderColor : "transparent"
+    border.width: root.activeFocus ? Brand.focusBorderWidth : 0
 
-    Behavior on color { ColorAnimation { duration: 150 } }
+    Behavior on color { ColorAnimation { duration: Brand.reduceMotion ? 0 : 120 } }
 
     Text {
       textFormat: Text.PlainText
@@ -57,8 +49,8 @@ Item {
       visible: !root.busy
       text: root.icon
       color: root.iconColor
-      font.family: Style.font.family
-      font.pixelSize: Style.font.iconSmall
+      font.family: Brand.iconFamily
+      font.pixelSize: Brand.font.iconSmall
     }
 
     Text {
@@ -67,10 +59,10 @@ Item {
       visible: root.busy
       text: "󰦞"
       color: root.iconColor
-      font.family: Style.font.family
-      font.pixelSize: Style.font.iconSmall
+      font.family: Brand.iconFamily
+      font.pixelSize: Brand.font.iconSmall
       NumberAnimation on rotation {
-        running: root.busy
+        running: root.busy && root.visible && !Brand.reduceMotion
         from: 0
         to: 360
         loops: Animation.Infinite
