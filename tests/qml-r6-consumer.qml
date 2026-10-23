@@ -365,8 +365,15 @@ Rectangle {
       console.log("R6_RESULT",fixture.suite,"PASS",JSON.stringify(geometry()))
     }
     function homeReturn() {
-      go("custom");consumer.setDisplayMode("simple");wait(40)
-      var target=byName("vpnTab-custom"),viewport=byName("vpnContentViewport")
+      go("custom")
+      var target=fixture.find(consumer,function(x){return x.objectName==="vpnTab-custom"}),viewport=byName("vpnContentViewport"),focusExtent=null
+      function recordExtent() {
+        if(target.activeFocus && focusExtent===null) focusExtent={height:viewport.contentHeight,bottom:target.mapToItem(viewport.contentItem,0,0).y+target.height}
+      }
+      target.activeFocusChanged.connect(recordExtent)
+      consumer.setDisplayMode("simple");wait(40)
+      target.activeFocusChanged.disconnect(recordExtent)
+      expect(focusExtent!==null && focusExtent.height>=focusExtent.bottom,"Restored row fits the content extent when focus arrives")
       target.forceActiveFocus();wait(40)
       var point=target.mapToItem(viewport,0,0)
       expect(point.y>=-1 && point.y+target.height<=viewport.height+1,"The final home row is initially revealed")

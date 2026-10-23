@@ -90,7 +90,12 @@ Ui.Panel {
   function setDisplayMode(nextMode) {
     root.mode = nextMode
     flickableContent.contentY = 0
-    Qt.callLater(function() { if (nextMode === "advanced") backButton.forceActiveFocus(); else homeNavigation.restoreFocus(root.currentTab) })
+    Qt.callLater(function() {
+      // Refresh the positioner extent before focus restoration clamps scrolling.
+      mainColumn.forceLayout()
+      if (nextMode === "advanced") backButton.forceActiveFocus()
+      else homeNavigation.restoreFocus(root.currentTab)
+    })
     if (nextMode === "advanced") {
       refreshTab(currentTab)
     } else if (root.service) {
