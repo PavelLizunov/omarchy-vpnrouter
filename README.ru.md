@@ -21,6 +21,24 @@
 
 ---
 
+## Открытие раздела сочетанием клавиш
+
+Значок панели и `omarchy-shell shell toggle io.github.pavellizunov.vpnrouter '{}'`
+открывают плагин. Для конкретного раздела используйте отдельный IPC target:
+
+```bash
+omarchy-shell io.github.pavellizunov.vpnrouter.ui open '{"page":"servers"}'
+omarchy-shell io.github.pavellizunov.vpnrouter.ui open '{"page":"servers","form":"import"}'
+omarchy-shell io.github.pavellizunov.vpnrouter.ui open '{"page":"subscriptions","form":"add"}'
+```
+
+Разделы: `home`, `servers`, `subscriptions`, `apps`, `rules`, `settings`,
+`diagnostics`, `free`, `profiles`, `custom`. Формы открывают локальный черновик
+без отправки данных. Неизвестные разделы/формы и payload длиннее 1024 символов
+возвращают `invalid`. Монитор выбирает хост по текущему фокусу. Omarchy 4.0.4
+отбрасывает payload при обычном summon для bar-widget; для разделов нужен этот target.
+Если в хосте нет `Commons.I18n`, автоматический язык определяется по `LANG`.
+
 ## Приложения, первый запуск и источники серверов
 
 Главная сохраняет название Virtual Penguin Network, оригинального маскота,

@@ -11,6 +11,34 @@ Item {
   id: root
 
   property var settings: ({})
+  property var shell: null
+  property var pendingNavigation: null
+
+  // A singleton target avoids per-monitor IPC ownership races. The host still
+  // chooses the focused bar instance; only navigation travels through the service.
+  IpcHandler {
+    enabled: !root.processDisabled
+    target: "io.github.pavellizunov.vpnrouter.ui"
+    function open(payloadJson: string): string { return root.requestNavigation(payloadJson) ? "ok" : "invalid" }
+  }
+
+  function requestNavigation(payloadJson) {
+    if (typeof payloadJson !== "string" || payloadJson.length > 1024) return false
+    var request
+    try { request = JSON.parse(payloadJson) } catch (e) { return false }
+    if (!request || typeof request !== "object" || Array.isArray(request)) return false
+    var pages = ["home", "servers", "subscriptions", "apps", "rules", "settings", "diagnostics", "free", "profiles", "custom"]
+    if (pages.indexOf(request.page) === -1) return false
+    if (request.form !== undefined && !(request.page === "servers" && request.form === "import") &&
+        !(request.page === "subscriptions" && request.form === "add")) return false
+    if (!root.shell || typeof root.shell.summon !== "function") return false
+    root.pendingNavigation = { page: request.page, form: request.form || "" }
+    if (root.shell.summon("io.github.pavellizunov.vpnrouter", "{}") !== true) {
+      root.pendingNavigation = null
+      return false
+    }
+    return true
+  }
 
   // ---- Service Lifecycle and Binary Resolution ------------------------------
   readonly property string helperPath: {

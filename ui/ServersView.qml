@@ -30,6 +30,13 @@ Item {
     importToggleBtn.forceActiveFocus()
   }
 
+  function openImportForm() {
+    if (root.pending) return
+    root.noticeKey = ""
+    root.showImportBox = true
+    Qt.callLater(function() { importArea.forceActiveFocus() })
+  }
+
   function submit() {
     if (!root.service || root.pending) return
     feedback.reveal()
@@ -74,7 +81,7 @@ Item {
         enabled: !root.pending
         onClicked: {
           if (root.showImportBox) root.cancelForm()
-          else { root.noticeKey = ""; root.showImportBox = true; Qt.callLater(function() { importArea.forceActiveFocus() }) }
+          else root.openImportForm()
         }
       }
     }

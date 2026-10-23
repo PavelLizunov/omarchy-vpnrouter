@@ -102,7 +102,14 @@ Ui.BarWidget {
     panelLoader.active = true
     Qt.callLater(function() {
       root.syncPanel()
-      if (root.panelItem) root.panelItem.open()
+      if (root.panelItem) {
+        var request = root.effectiveService ? root.effectiveService.pendingNavigation : null
+        if (request) {
+          root.effectiveService.pendingNavigation = null
+          root.panelItem.navigate(request.page, request.form)
+        }
+        root.panelItem.open()
+      }
     })
   }
 

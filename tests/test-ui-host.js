@@ -56,3 +56,25 @@ assert.strictEqual(systemLanguage({hostI18n: {}}, env), 'ru_RU.UTF-8');
 assert.strictEqual(systemLanguage({hostI18n: {language: 'en'}}, env), 'en');
 assert.strictEqual(systemLanguage({hostI18n: {language: 'ru'}}, env), 'ru');
 console.log('PASS: host language feature detection and LANG fallback');
+
+const navigate = body('Service.qml', 'requestNavigation', ['root', 'payloadJson']);
+const calls = [];
+const navRoot = {pendingNavigation: null, shell: {summon(id, payload) { calls.push([id, payload]); return true; }}};
+for (const invalid of ['{', 'null', '[]', '{}', '{"page":"connect"}', '{"page":"home","form":"add"}', 'x'.repeat(1025)]) {
+  assert.strictEqual(navigate(navRoot, invalid), false);
+  assert.strictEqual(navRoot.pendingNavigation, null);
+}
+assert.strictEqual(calls.length, 0, 'Invalid navigation must not open the shell');
+for (const page of ['home','servers','subscriptions','apps','rules','settings','diagnostics','free','profiles','custom']) {
+  assert.strictEqual(navigate(navRoot, JSON.stringify({page})), true);
+  assert.deepStrictEqual(navRoot.pendingNavigation, {page, form: ''});
+}
+for (const [page,form] of [['servers','import'],['subscriptions','add']]) {
+  assert.strictEqual(navigate(navRoot, JSON.stringify({page,form})), true);
+  assert.deepStrictEqual(navRoot.pendingNavigation, {page,form});
+}
+navRoot.shell.summon = () => false;
+assert.strictEqual(navigate(navRoot, '{"page":"servers"}'), false);
+assert.strictEqual(navRoot.pendingNavigation, null);
+assert.strictEqual(navigate({shell: null}, '{"page":"servers"}'), false);
+console.log('PASS: bounded navigation routes only to supported pages/forms through host summon');

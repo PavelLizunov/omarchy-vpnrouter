@@ -21,6 +21,24 @@ This repository provides the Omarchy Quattro shell plugin interface, packaging l
 
 ---
 
+## Open a section from a shortcut
+
+The bar icon and `omarchy-shell shell toggle io.github.pavellizunov.vpnrouter '{}'`
+open the panel. For a specific section, use the plugin's singleton navigation target:
+
+```bash
+omarchy-shell io.github.pavellizunov.vpnrouter.ui open '{"page":"servers"}'
+omarchy-shell io.github.pavellizunov.vpnrouter.ui open '{"page":"servers","form":"import"}'
+omarchy-shell io.github.pavellizunov.vpnrouter.ui open '{"page":"subscriptions","form":"add"}'
+```
+
+Pages: `home`, `servers`, `subscriptions`, `apps`, `rules`, `settings`,
+`diagnostics`, `free`, `profiles`, `custom`. Forms only open a local draft;
+they do not submit data. Unknown pages/forms and payloads over 1024 characters
+return `invalid`. The host chooses the focused monitor. Omarchy 4.0.4 drops
+payloads on the generic bar-widget summon route, so use this target for sections.
+On hosts without `Commons.I18n`, automatic language follows `LANG`.
+
 ## Apps, first run and server sources
 
 The home page keeps the Virtual Penguin Network title, original mascot, status

@@ -103,6 +103,13 @@ Ui.Panel {
     root.setDisplayMode("advanced")
   }
 
+  function navigate(page, form) {
+    if (page === "home") root.setDisplayMode("simple")
+    else root.openSection(page)
+    if (page === "subscriptions" && form === "add") root.openSubscriptionForm()
+    if (page === "servers" && form === "import") serversView.openImportForm()
+  }
+
   function openSubscriptionForm() {
     root.currentTab = "subscriptions"
     root.setDisplayMode("advanced")
@@ -289,6 +296,7 @@ Ui.Panel {
             width: parent.width
             spacing: Commons.Style.space(12)
             VpnUi.ServersView {
+              id: serversView
               onAddSubscriptionRequested: root.openSubscriptionForm()
               visible: root.currentTab === "servers"
               width: parent.width
