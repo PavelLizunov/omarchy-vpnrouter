@@ -1,6 +1,8 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Hyprland
@@ -20,7 +22,7 @@ Item {
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
-  implicitWidth: parent ? parent.width : Brand.space(480)
+  implicitWidth: parent ? parent.width : Commons.Style.space(480)
   implicitHeight: column.implicitHeight
   readonly property string routingMode: service ? service.routingMode : "split"
   readonly property string routingAppsMode: service ? service.routingAppsMode : "include"
@@ -58,7 +60,7 @@ Item {
   Column {
     id: column
     width: parent.width
-    spacing: Brand.space(10)
+    spacing: Commons.Style.space(10)
 
     RoutingControls {
       width: parent.width
@@ -71,9 +73,9 @@ Item {
       width: parent.width
       text: root.tr("apps.matchHint")
       wrapMode: Text.WordWrap
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.caption
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.caption
     }
 
     RowLayout {
@@ -95,9 +97,9 @@ Item {
     Text {
       textFormat: Text.PlainText
       text: root.tr("apps.configuredHeader", [root.configuredApps.length])
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.title
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.title
     }
     Text {
       textFormat: Text.PlainText
@@ -105,33 +107,33 @@ Item {
       width: parent.width
       text: root.tr("apps.empty")
       wrapMode: Text.WordWrap
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.bodySmall
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
     }
     Repeater {
       model: root.configuredApps
-      Rectangle {
+      Ui.BorderSurface {
         id: configuredRow
         required property string modelData
         width: column.width
-        height: Brand.spacing.controlHeight + Brand.space(8)
-        radius: Brand.cornerRadius
-        color: Brand.normalFill
-        border.color: Brand.normalBorderColor
-        border.width: Brand.normalBorderWidth
+        height: Commons.Style.spacing.controlHeight + Commons.Style.space(8)
+        radius: Commons.Style.cornerRadius
+        color: Commons.Style.normalFill
+        borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
+
         RowLayout {
           anchors.fill: parent
-          anchors.margins: Brand.space(4)
+          anchors.margins: Commons.Style.space(4)
           Text {
             textFormat: Text.PlainText
             Layout.fillWidth: true
-            Layout.leftMargin: Brand.space(6)
+            Layout.leftMargin: Commons.Style.space(6)
             text: configuredRow.modelData
             elide: Text.ElideRight
-            color: Brand.textPrimary
-            font.family: Brand.font.family
-            font.pixelSize: Brand.font.bodySmall
+            color: Commons.Color.popups.text
+            font.family: Commons.Style.font.family
+            font.pixelSize: Commons.Style.font.bodySmall
           }
           IconButton {
             icon: "󰅖"
@@ -145,9 +147,9 @@ Item {
     Text {
       textFormat: Text.PlainText
       text: root.tr("apps.runningHeader")
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.title
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.title
     }
     TextField {
       width: parent.width
@@ -161,55 +163,55 @@ Item {
       width: parent.width
       text: root.service && root.service.activeOperation === "apps.list" && !root.service.appsLoaded ? root.tr("list.loading") : !root.hasSuggestions ? root.tr("apps.legacyHint") : root.searchQuery.trim() ? root.tr("apps.noMatches") : root.tr("apps.runningEmpty")
       wrapMode: Text.WordWrap
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.bodySmall
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
     }
     Component {
       id: applicationRow
-      Rectangle {
+      Ui.BorderSurface {
         id: appDelegate
         required property var modelData
         objectName: "vpnAppRow-" + appDelegate.modelData.name
         width: column.width
-        height: appRow.implicitHeight + Brand.space(12)
-        radius: Brand.cornerRadius
-        color: Brand.normalFill
-        border.color: Brand.normalBorderColor
-        border.width: Brand.normalBorderWidth
+        height: appRow.implicitHeight + Commons.Style.space(12)
+        radius: Commons.Style.cornerRadius
+        color: Commons.Style.normalFill
+        borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
+
         RowLayout {
           id: appRow
           anchors.fill: parent
-          anchors.margins: Brand.space(6)
-          spacing: Brand.space(10)
+          anchors.margins: Commons.Style.space(6)
+          spacing: Commons.Style.space(10)
           Image {
-            Layout.preferredWidth: Brand.space(28)
-            Layout.preferredHeight: Brand.space(28)
+            Layout.preferredWidth: Commons.Style.space(28)
+            Layout.preferredHeight: Commons.Style.space(28)
             objectName: "vpnAppIcon-" + appDelegate.modelData.name
             source: root.appIconSource(appDelegate.modelData.icon)
-            sourceSize: Qt.size(Brand.space(28), Brand.space(28))
+            sourceSize: Qt.size(Commons.Style.space(28), Commons.Style.space(28))
             fillMode: Image.PreserveAspectFit
           }
           Column {
             Layout.fillWidth: true
-            spacing: Brand.space(2)
+            spacing: Commons.Style.space(2)
             Text {
               textFormat: Text.PlainText
               width: parent.width
               text: appDelegate.modelData.displayName
               elide: Text.ElideRight
-              color: Brand.textPrimary
-              font.family: Brand.font.family
-              font.pixelSize: Brand.font.bodySmall
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.bodySmall
             }
             Text {
               textFormat: Text.PlainText
               width: parent.width
               text: root.tr("apps.matchName", [appDelegate.modelData.name])
               elide: Text.ElideRight
-              color: Brand.textPrimary
-              font.family: Brand.font.family
-              font.pixelSize: Brand.font.caption
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.caption
             }
           }
           Button {

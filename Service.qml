@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.Commons 1.0
+import qs.Commons
 import qs.Commons as Commons
 import "lib/Protocol.js" as Protocol
 import "lib/Model.js" as Model

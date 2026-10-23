@@ -1,4 +1,5 @@
 import QtQuick
+import qs.Commons as Commons
 import "../lib/Focus.js" as Focus
 import "../lib/I18n.js" as I18n
 
@@ -65,13 +66,13 @@ Item {
     }, root.failure)
   }
 
-  implicitWidth: parent ? parent.width : Brand.space(480)
+  implicitWidth: parent ? parent.width : Commons.Style.space(480)
   implicitHeight: column.implicitHeight
 
   Column {
     id: column
     width: parent.width
-    spacing: Brand.space(10)
+    spacing: Commons.Style.space(10)
     Notice {
       id: feedback
       width: parent.width
@@ -84,9 +85,9 @@ Item {
       width: parent.width
       textFormat: Text.PlainText
       text: root.tr("rules.priority")
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.title
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.title
     }
     Choice {
       width: parent.width
@@ -103,15 +104,15 @@ Item {
     Text {
       textFormat: Text.PlainText
       text: root.tr("rules.textLabel")
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.bodySmall
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
     }
     Editor {
       id: rulesTextEdit
       objectName: "vpnRulesEditor"
       width: parent.width
-      height: Brand.space(140)
+      height: Commons.Style.space(140)
       enabled: !root.pending
       label: root.tr("rules.textLabel")
       text: root.service && root.service.rules ? root.service.rules.text : ""
@@ -119,7 +120,7 @@ Item {
     }
     Flow {
       width: parent.width
-      spacing: Brand.space(8)
+      spacing: Commons.Style.space(8)
       Button {
         text: root.tr("rules.saveBtn")
         variant: "primary"
@@ -152,7 +153,7 @@ Item {
       objectName: "vpnRulesExport"
       visible: root.exportedText !== ""
       width: parent.width
-      height: Brand.space(110)
+      height: Commons.Style.space(110)
       text: root.exportedText
       readOnly: true
       label: root.tr("rules.exportBtn")

@@ -1,5 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import QtQuick.Controls
 import "../lib/Focus.js" as Focus
 
@@ -10,24 +12,23 @@ FocusScope {
   property string label: ""
   property string placeholderText: ""
   signal submitted()
-  implicitHeight: Brand.space(100)
+  implicitHeight: Commons.Style.space(100)
   activeFocusOnTab: true
   onActiveFocusChanged: if (activeFocus) {
     edit.forceActiveFocus()
     Qt.callLater(function() { Focus.reveal(root) })
   }
-  Rectangle {
+  Ui.BorderSurface {
     anchors.fill: parent
-    color: Brand.normalFill
-    radius: Brand.space(6)
-    border.color: root.activeFocus ? Brand.focusBorderColor : Brand.normalBorderColor
-    border.width: root.activeFocus ? Math.max(1, Brand.focusBorderWidth) : Math.max(1, Brand.normalBorderWidth)
+    color: Commons.Style.controlFill(root.activeFocus, false, Commons.Color.popups.text, Commons.Color.accent)
+    radius: Commons.Style.cornerRadius
+    borderSpec: Commons.Border.controlSpec(root.activeFocus ? "focus" : "normal", Commons.Color.popups.text, Commons.Color.accent)
   }
   Flickable {
     id: viewport
     objectName: "vpnEditorViewport"
     anchors.fill: parent
-    anchors.margins: Brand.space(8)
+    anchors.margins: Commons.Style.space(8)
     clip: true
     contentWidth: width
     contentHeight: Math.max(height, edit.implicitHeight)
@@ -43,11 +44,11 @@ FocusScope {
       wrapMode: TextEdit.Wrap
       selectByMouse: true
       Accessible.name: root.label
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.bodySmall
-      color: Brand.textPrimary
-      selectionColor: Brand.accentFg
-      selectedTextColor: Brand.surfaceApp
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
+      color: Commons.Color.popups.text
+      selectionColor: Commons.Color.accent
+      selectedTextColor: Commons.Color.popups.background
       Keys.onTabPressed: function(event) {
         root.nextItemInFocusChain(true).forceActiveFocus(Qt.TabFocusReason)
         event.accepted = true
@@ -73,7 +74,7 @@ FocusScope {
         text: root.placeholderText
         textFormat: Text.PlainText
         wrapMode: Text.WordWrap
-        color: Brand.textPrimary
+        color: Commons.Color.popups.text
         font: edit.font
       }
     }

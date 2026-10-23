@@ -12,9 +12,10 @@ Rectangle {
   property string tab: "apps"
   property string suite: ""
   property string capture: ""
-  property string theme: "light"
+  property string theme: "catppuccin-latte"
   property string stateName: "disconnected"
   property int captureDelay: 400
+  property int settleDelay: 180
   property bool reducedMotion: false
   property string motionOutputPrefix: ""
   property bool scrollBottom: false
@@ -120,7 +121,6 @@ Rectangle {
   Timer {
     interval:80;running:true
     onTriggered: {
-      Commons.Color.background=fixture.theme === "dark" ? "#171a23" : "#faf4ed"
       Commons.Style.reduceMotion=fixture.reducedMotion
       backend.setLocale(fixture.locale);consumer.currentTab=fixture.tab;consumer.open();backend.getApps()
       if (fixture.stateName === "unavailable") {backend.backendMissing=true;backend.capabilities={connect:false}}
@@ -133,17 +133,16 @@ Rectangle {
     interval:fixture.captureDelay;running:true
     onTriggered: {
       try {
-        // Wait for the host adapter's startup read before injecting the fixture palette.
+        // Exercise the actual host TOML loaders; never inject a hand-written palette.
         checks.tryVerify(function() { return Commons.Color.colorsFile.loaded }, 2000, "Host palette startup loaded")
-        Commons.Color.background=fixture.theme === "dark" ? "#171a23" : "#faf4ed"
+        checks.tryVerify(function() { return Commons.Color.shellFile.loaded }, 2000, "Host shell tokens loaded")
         checks.wait(30)
         if(fixture.suite) checks.run()
         checks.prepareCapture()
-        Commons.Color.background=fixture.theme === "dark" ? "#171a23" : "#faf4ed"
-        checks.wait(180)
+        checks.wait(fixture.settleDelay)
         if (fixture.stateName === "error") {backend.lastError=backend.tr("error.timeout");checks.wait(20)}
-        checks.expect(VpnUi.Brand.dark === (fixture.theme === "dark"),"Capture palette matches declared theme")
-        console.log("R6_READY",JSON.stringify({suite:fixture.suite,capture:fixture.capture,requests:fixture.messages,geometry:checks.geometry(),theme:fixture.theme,dark:VpnUi.Brand.dark,font:VpnUi.Brand.fontFamily,arc:fixture.find(consumer,function(x){return x.objectName==="vpnConnectingArc"}).rotation}))
+        checks.equal(String(VpnUi.Brand.background), String(Commons.Color.popups.background), "Mascot uses popup luminance")
+        console.log("R6_READY",JSON.stringify({suite:fixture.suite,capture:fixture.capture,requests:fixture.messages,geometry:checks.geometry(),theme:fixture.theme,dark:VpnUi.Brand.dark,font:Commons.Style.font.family,background:String(Commons.Color.background),accent:String(Commons.Color.accent),urgent:String(Commons.Color.urgent),muted:String(Commons.Color.muted),popup:String(Commons.Color.popups.background),tokens:Commons.Color.shellValues,arc:fixture.find(consumer,function(x){return x.objectName==="vpnConnectingArc"}).rotation}))
       } catch(e) { console.error("R6_FAIL",fixture.suite,String(e),e.stack) }
       fixture.previewReady=true
     }
@@ -274,7 +273,7 @@ Rectangle {
     }
 
     function actions() {
-      go("profiles");var p=page("Profiles");activate(button(p,"profiles.refresh"));var selects=fixture.all(p,function(x){return x.clicked!==undefined && x.text===backend.tr("profiles.select") && x.enabled},[]);equal(selects.length,1);activate(selects[0],Qt.Key_Space);wait(20);equal(fixture.selectedProfile,"two");expect(backend.profiles[1].selected)
+      go("profiles");var p=page("Profiles");activate(button(p,"profiles.refresh"));var selects=fixture.all(p,function(x){return x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("profiles.select") && x.enabled},[]);equal(selects.length,1);activate(selects[0],Qt.Key_Space);wait(20);equal(fixture.selectedProfile,"two");expect(backend.profiles[1].selected)
       go("diagnostics");p=page("Diagnostics");activate(button(p,"diagnostics.checkBtn"));equal(backend.diagnosticsItems.length,2)
       fixture.holdMethod="diagnostics.export";activate(button(p,"diagnostics.exportBtn"));equal(backend.diagnosticsExportPath,"");fixture.release(false);wait(20);expect(backend.diagnosticsExportPath.endsWith("fixture.zip"));expect(fixture.find(p,function(x){return x.objectName==="vpnNoticeText" && x.text.indexOf(backend.diagnosticsExportPath)!==-1})!==null)
       fixture.failNext="diagnostics.export";activate(button(p,"diagnostics.exportBtn"));equal(backend.diagnosticsExportPath,"");activate(button(p,"diagnostics.exportBtn"));expect(backend.diagnosticsExportPath!=="");activate(fixture.find(p,function(x){return x.tooltipText===backend.tr("action.dismiss")}));equal(backend.diagnosticsExportPath,"")
@@ -311,13 +310,13 @@ Rectangle {
       click(button(p,"subscriptions.addTitle"));click(button(p,"action.add"));visibleNotice("form.required")
       fill(field(p,"subscriptions.namePlaceholder"),"Pointer fixture");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub")
       click(button(p,"action.add"));expect(!p.showAddForm);visibleNotice("subscriptions.added")
-      click(button(p,"subscriptions.addTitle"));var cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showAddForm)
+      click(button(p,"subscriptions.addTitle"));var cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showAddForm)
       go("servers");p=page("Servers");click(button(p,"action.import"));fill(byName("vpnServerImport"),"invalid")
       fixture.failNext="servers.import";click(button(p,"servers.importBtn"));visibleNotice("servers.invalidImport")
       fill(byName("vpnServerImport"),"vless://fixture@example.invalid:443");click(button(p,"servers.importBtn"));expect(!p.showImportBox)
-      click(button(p,"action.import"));cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showImportBox)
+      click(button(p,"action.import"));cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showImportBox)
       go("custom");p=page("CustomConfig");click(button(p,"custom.addTitle"));fill(field(p,"custom.nameLabel"),"Pointer config");fill(byName("vpnCustomJson"),"{}")
-      click(button(p,"action.import"));expect(!p.showImportForm);click(button(p,"custom.addTitle"));cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showImportForm)
+      click(button(p,"action.import"));expect(!p.showImportForm);click(button(p,"custom.addTitle"));cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showImportForm)
       go("rules");p=page("Rules");click(button(p,"rules.saveBtn"));visibleNotice("rules.saved");fill(byName("vpnRulesEditor"),'{"rules":[]}');click(button(p,"rules.importBtn"));visibleNotice("rules.importedSuccess");click(button(p,"rules.exportBtn"));equal(p.statusNotice,"rules.exportReady")
       go("settings");p=page("Settings");click(button(p,"settings.save"));visibleNotice("settings.saved");click(button(p,"settings.revert"));visibleNotice("settings.reverted")
       go("apps");var group=byName("vpnRoutingChoice"),options=fixture.all(group,function(x){return x.clicked!==undefined && x.selected!==undefined},[])
@@ -368,8 +367,8 @@ Rectangle {
       expect(!button.enabled,"Connect disabled without capability")
       backend.capabilities={connect:true};wait(20);expect(button.enabled,"Connect enabled only with capability")
       backend.state="connected";wait(20);equal(byName("vpnStateTitle").text,backend.tr("state.connected"));expect(button.enabled,"Disconnect available")
-      expect(String(hero.stateColor)===String(VpnUi.Brand.successSolid),"Success ring")
-      backend.state="error";backend.lastError=backend.tr("error.timeout");wait(20);expect(String(hero.stateColor)===String(VpnUi.Brand.dangerSolid),"Error ring");equal(hero.availability,backend.tr("error.timeout"),"Error reason is visible")
+      expect(String(hero.stateColor)===String(Commons.Color.accent),"Success ring")
+      backend.state="error";backend.lastError=backend.tr("error.timeout");wait(20);expect(String(hero.stateColor)===String(Commons.Color.urgent),"Error ring");equal(hero.availability,backend.tr("error.timeout"),"Error reason is visible")
       backend.state="unavailable";backend.backendMissing=true;backend.capabilities={connect:false};wait(20);expect(!button.enabled,"Missing backend cannot connect")
       expect(hero.availability.indexOf(backend.tr("backend.installHint"))!==-1,"Honest install hint")
       backend.backendMissing=false;backend.state="connecting";backend.lastError="";backend.busy=true;backend.activeOperation="connect";wait(30)
@@ -384,7 +383,11 @@ Rectangle {
           wait(30);expect(saved,"Offscreen frame saved");wait(150)
         }
       }
-      Commons.Style.reduceMotion=true;wait(25);start=arc.rotation;wait(130);equal(arc.rotation,start,"Reduced motion stops rotation")
+      // Startup FileViews schedule one delayed Hyprland token refresh. Let that
+      // read finish before testing the user's later reduced-motion preference.
+      wait(250)
+      tryVerify(function() {return !Commons.Style.refreshTimer.running && !Commons.Style.animationsProc.running},2000,"Host motion startup settled")
+      Commons.Style.reduceMotion=true;wait(25);expect(!hero.motionEnabled,"Hero sees host reducedMotion="+Commons.Style.reduceMotion);start=arc.rotation;wait(130);equal(arc.rotation,start,"Reduced motion stops rotation")
       Commons.Style.reduceMotion=false
       backend.activeOperation="";backend.busy=false;backend.state="disconnected";backend.capabilities={connect:true}
       consumer.openSection("apps");wait(30)
@@ -419,9 +422,9 @@ Rectangle {
       console.log("R6_PASS summary real-Text both-locales include-exclude 0-1-2-many CLDR-boundaries exact-keys stable-geometry")
     }
     function brand() {
-      expect(VpnUi.Brand.dark === (fixture.theme === "dark"),"Palette follows host luminance")
-      expect(VpnUi.Brand.fontFamily !== Commons.Style.font.family,"Content is sans, bar remains native")
+      equal(String(VpnUi.Brand.background), String(Commons.Color.popups.background),"Mascot follows host surface")
       consumer.setDisplayMode("simple");wait(30)
+      equal(byName("vpnStateTitle").font.family, Commons.Style.font.family,"Content inherits host font")
       click(byName("vpnChangeServer"));equal(consumer.currentTab,"servers");equal(consumer.mode,"advanced")
       click(byName("vpnBack"));equal(consumer.mode,"simple")
       fixture.servers=[];fixture.subscriptions=[];backend.servers=[];backend.subscriptions=[];backend.activeServer="";backend.serversLoaded=true;backend.subscriptionsLoaded=true;backend.apps={include:[],exclude:[],runningApps:[]};backend.appsLoaded=true;wait(25)
@@ -432,7 +435,7 @@ Rectangle {
       backend.setLocale(fixture.locale);wait(20)
       var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
       consumer.open();wait(30);go("apps")
-      console.log("R6_PASS brand host-luminance sans change-server first-run language close")
+      console.log("R6_PASS brand host-luminance host-font change-server first-run language close")
     }
     function prepareCapture() {
       if(fixture.capture==="home" || fixture.capture==="home-bottom" || fixture.capture==="first-run") {

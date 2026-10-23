@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.Commons as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -30,18 +31,18 @@ Column {
     var locale = root.service.effectiveLocale || I18n.getEffectiveLocale()
     return root.tr(key + "more." + I18n.cardinalCategory(remaining, locale), [labels[0], labels[1], remaining])
   }
-  spacing: Brand.space(10)
+  spacing: Commons.Style.space(10)
   Text {
     textFormat: Text.PlainText
     text: root.tr("home.route")
-    color: Brand.textSecondary
-    font.family: Brand.fontFamily; font.pixelSize: Brand.space(11)
+    color: Commons.Color.popups.text
+    font.family: Commons.Style.font.family; font.pixelSize: Commons.Style.font.bodySmall
   }
   Choice {
     id: segments
     objectName: "vpnHomeRoutingChoice"
     width: parent.width
-    pill: true
+
     label: root.tr("home.route")
     value: root.value
     options: [{value:"split",label:root.tr("home.apps"),icon:"󰀻"},
@@ -59,8 +60,8 @@ Column {
     maximumLineCount: 2
     elide: Text.ElideRight
     wrapMode: Text.WordWrap
-    color: Brand.textMuted
-    font.family: Brand.fontFamily; font.pixelSize: Brand.space(11)
+    color: Commons.Color.popups.text
+    font.family: Commons.Style.font.family; font.pixelSize: Commons.Style.font.bodySmall
     lineHeight: 1.4
   }
 }

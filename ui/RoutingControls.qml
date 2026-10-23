@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.Commons as Commons
 import "../lib/Focus.js" as Focus
 import "../lib/I18n.js" as I18n
 
@@ -9,7 +10,7 @@ Column {
   property int i18nRevision: service ? service.i18nRevision : 0
   readonly property string routingMode: service ? service.routingMode : "split"
   readonly property string routingAppsMode: service ? service.routingAppsMode : "include"
-  spacing: Brand.space(8)
+  spacing: Commons.Style.space(8)
 
   function tr(key, args) {
     var _ = root.i18nRevision
@@ -20,9 +21,9 @@ Column {
     width: parent.width
     textFormat: Text.PlainText
     text: root.tr("apps.routingMode")
-    color: Brand.textPrimary
-    font.family: Brand.font.family
-    font.pixelSize: Brand.font.title
+    color: Commons.Color.popups.text
+    font.family: Commons.Style.font.family
+    font.pixelSize: Commons.Style.font.title
   }
   Choice {
       width: parent.width
@@ -43,9 +44,9 @@ Column {
     width: parent.width
     textFormat: Text.PlainText
     text: root.tr("apps.appsMode")
-    color: Brand.textPrimary
-    font.family: Brand.font.family
-    font.pixelSize: Brand.font.bodySmall
+    color: Commons.Color.popups.text
+    font.family: Commons.Style.font.family
+    font.pixelSize: Commons.Style.font.bodySmall
   }
   Choice {
       width: parent.width

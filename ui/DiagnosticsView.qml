@@ -1,4 +1,6 @@
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import "../lib/I18n.js" as I18n
 import "../lib/Model.js" as Model
 
@@ -25,7 +27,7 @@ Item {
     }, function() { root.noticeError = true; root.noticeKey = "diagnostics.exportFailed" })
   }
 
-  implicitWidth: parent ? parent.width : Brand.space(480)
+  implicitWidth: parent ? parent.width : Commons.Style.space(480)
   implicitHeight: column.implicitHeight
 
   readonly property var items: (service && service.diagnosticsItems) ? service.diagnosticsItems : []
@@ -33,12 +35,12 @@ Item {
   Column {
     id: column
     width: parent.width
-    spacing: Brand.space(12)
+    spacing: Commons.Style.space(12)
 
     // Top action row
     Flow {
       width: parent.width
-      spacing: Brand.space(8)
+      spacing: Commons.Style.space(8)
 
       Button {
         icon: "󰓙"
@@ -65,35 +67,34 @@ Item {
     }
 
     // Empty state
-    Rectangle {
+    Ui.BorderSurface {
       visible: root.items.length === 0
       width: parent.width
-      height: Brand.space(120)
-      radius: Brand.cornerRadius
-      color: Brand.normalFill
-      border.color: Brand.normalBorderColor
-      border.width: 1
+      height: Commons.Style.space(120)
+      radius: Commons.Style.cornerRadius
+      color: Commons.Style.normalFill
+      borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
       Column {
         anchors.centerIn: parent
-        spacing: Brand.space(8)
+        spacing: Commons.Style.space(8)
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰓙"
-          color: Brand.textPrimary
-          font.family: Brand.iconFamily
-          font.pixelSize: Brand.font.display
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.display
         }
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("diagnostics.empty")
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.bodySmall
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.bodySmall
         }
       }
     }
@@ -102,57 +103,55 @@ Item {
     Repeater {
       model: root.items
 
-      Rectangle {
+      Ui.BorderSurface {
         width: column.width
-        height: diagRow.implicitHeight + Brand.space(16)
-        radius: Brand.cornerRadius
-        color: Brand.normalFill
-        border.color: Brand.normalBorderColor
-        border.width: Brand.normalBorderWidth
+        height: diagRow.implicitHeight + Commons.Style.space(16)
+        radius: Commons.Style.cornerRadius
+        color: Commons.Style.normalFill
+        borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
         Row {
           id: diagRow
           anchors.fill: parent
-          anchors.margins: Brand.space(8)
-          spacing: Brand.space(10)
+          anchors.margins: Commons.Style.space(8)
+          spacing: Commons.Style.space(10)
 
           // Status indicator badge
-          Rectangle {
+          Ui.BorderSurface {
             id: statusPill
-            width: Math.max(Brand.space(52), statusLabel.implicitWidth + Brand.space(16))
-            height: Brand.space(22)
-            radius: Brand.cornerRadius
+            width: Math.max(Commons.Style.space(52), statusLabel.implicitWidth + Commons.Style.space(16))
+            height: Commons.Style.space(22)
+            radius: Commons.Style.cornerRadius
             anchors.verticalCenter: parent.verticalCenter
 
             readonly property string st: Model.diagnosticSeverity(modelData)
-            color: Brand.normalFill
-            border.color: st === "fail" || st === "warn" ? Brand.dangerFg : Brand.normalBorderColor
-            border.width: 1
+            color: Commons.Style.normalFill
+            borderSpec: Commons.Border.controlSpec("normal", st === "fail" || st === "warn" ? Commons.Color.urgent : Commons.Color.popups.text, Commons.Color.accent)
 
             Text {
               textFormat: Text.PlainText
               id: statusLabel
               anchors.centerIn: parent
               text: root.tr("diagnostics.severity." + statusPill.st)
-              color: Brand.textPrimary
-              font.family: Brand.font.family
-              font.pixelSize: Brand.font.caption
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.caption
             }
           }
 
           Column {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - statusPill.width - Brand.space(20)
-            spacing: Brand.space(2)
+            width: parent.width - statusPill.width - Commons.Style.space(20)
+            spacing: Commons.Style.space(2)
 
             Text {
               textFormat: Text.PlainText
               width: parent.width
               text: modelData.name || root.tr("diagnostics.fallbackName")
               wrapMode: Text.WordWrap
-              color: Brand.textPrimary
-              font.family: Brand.font.family
-              font.pixelSize: Brand.font.bodySmall
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.bodySmall
             }
 
             Text {
@@ -160,9 +159,9 @@ Item {
               visible: modelData.message !== "" && modelData.message !== undefined
               width: parent.width
               text: Model.diagnosticIsUnconfigured(modelData) ? root.tr("diagnostics.notConfigured") : modelData.message || ""
-              color: Brand.textPrimary
-              font.family: Brand.font.family
-              font.pixelSize: Brand.font.caption
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.caption
               wrapMode: Text.WordWrap
             }
           }

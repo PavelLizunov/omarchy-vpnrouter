@@ -1,4 +1,6 @@
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -43,7 +45,7 @@ Item {
     })
   }
 
-  implicitWidth: parent ? parent.width : Brand.space(480)
+  implicitWidth: parent ? parent.width : Commons.Style.space(480)
   implicitHeight: column.implicitHeight
 
   readonly property var filteredServers: Model.groupedServers(service ? service.servers : [], searchQuery)
@@ -51,16 +53,16 @@ Item {
   Column {
     id: column
     width: parent.width
-    spacing: Brand.space(10)
+    spacing: Commons.Style.space(10)
 
     // Top action bar
     Row {
       width: parent.width
-      spacing: Brand.space(8)
+      spacing: Commons.Style.space(8)
 
       TextField {
         id: searchField
-        width: parent.width - importToggleBtn.width - Brand.space(8)
+        width: parent.width - importToggleBtn.width - Commons.Style.space(8)
         placeholderText: root.tr("servers.searchPlaceholder")
         onTextChanged: root.searchQuery = text
       }
@@ -87,34 +89,33 @@ Item {
     }
 
     // Collapsible Import Form
-    Rectangle {
+    Ui.BorderSurface {
       visible: root.showImportBox
       width: parent.width
-      height: importCol.implicitHeight + Brand.space(20)
-      radius: Brand.cornerRadius
-      color: Brand.hoverFill
-      border.color: Brand.normalBorderColor
-      border.width: Brand.normalBorderWidth
+      height: importCol.implicitHeight + Commons.Style.space(20)
+      radius: Commons.Style.cornerRadius
+      color: Commons.Style.hoverFill
+      borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
       Column {
         id: importCol
         anchors.fill: parent
-        anchors.margins: Brand.space(10)
-        spacing: Brand.space(8)
+        anchors.margins: Commons.Style.space(10)
+        spacing: Commons.Style.space(8)
 
         Text {
           textFormat: Text.PlainText
           text: root.tr("servers.importTitle")
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.title
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.title
         }
 
         Editor {
           id: importArea
           objectName: "vpnServerImport"
           width: parent.width
-          height: Brand.space(90)
+          height: Commons.Style.space(90)
           enabled: !root.pending
           label: root.tr("servers.importTitle")
           placeholderText: root.tr("servers.importPlaceholder")
@@ -122,7 +123,7 @@ Item {
         }
 
         Row {
-          spacing: Brand.space(8)
+          spacing: Commons.Style.space(8)
 
           Button {
             text: root.tr("servers.importBtn")
@@ -150,34 +151,33 @@ Item {
       }
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.bodySmall
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
     }
 
     // Empty state
-    Rectangle {
+    Ui.BorderSurface {
       visible: root.filteredServers.length === 0
       width: parent.width
-      height: emptyColumn.implicitHeight + Brand.space(32)
-      radius: Brand.cornerRadius
-      color: Brand.normalFill
-      border.color: Brand.normalBorderColor
-      border.width: 1
+      height: emptyColumn.implicitHeight + Commons.Style.space(32)
+      radius: Commons.Style.cornerRadius
+      color: Commons.Style.normalFill
+      borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
       Column {
         id: emptyColumn
-        width: parent.width - Brand.space(24)
+        width: parent.width - Commons.Style.space(24)
         anchors.centerIn: parent
-        spacing: Brand.space(8)
+        spacing: Commons.Style.space(8)
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰒋"
-          color: Brand.textPrimary
-          font.family: Brand.iconFamily
-          font.pixelSize: Brand.font.display
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.display
         }
 
         Text {
@@ -187,9 +187,9 @@ Item {
           horizontalAlignment: Text.AlignHCenter
           wrapMode: Text.WordWrap
           text: root.service && root.service.activeOperation === "servers.list" && !root.service.serversLoaded ? root.tr("list.loading") : root.searchQuery.trim() ? root.tr("servers.noMatches") : root.tr("servers.empty")
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.bodySmall
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.bodySmall
         }
         Button {
           anchors.horizontalCenter: parent.horizontalCenter
@@ -207,19 +207,19 @@ Item {
 
       Column {
         width: column.width
-        spacing: Brand.space(6)
+        spacing: Commons.Style.space(6)
         Text {
           textFormat: Text.PlainText
           visible: index === 0 || Model.serverSourceKey(root.filteredServers[index - 1]) !== Model.serverSourceKey(modelData)
           width: parent.width
           text: Model.serverSourceLabel(modelData, root.service ? root.service.subscriptions : [], ({ t: root.tr }))
           wrapMode: Text.WordWrap
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.caption
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.caption
           font.weight: Font.DemiBold
         }
-        Rectangle {
+        Ui.CursorSurface {
           id: serverRowRect
           objectName: "vpnServerRow-" + modelData.id
           activeFocusOnTab: true
@@ -230,11 +230,14 @@ Item {
           Accessible.name: modelData.name || root.tr("servers.unnamed")
           Accessible.checked: modelData.selected === true
           width: column.width
-          height: rowContent.implicitHeight + Brand.space(14)
-          radius: Brand.space(6)
-          color: modelData.selected ? Brand.selectedFill : (rowMouse.containsMouse ? Brand.hoverFill : Brand.normalFill)
-          border.color: activeFocus ? Brand.focusBorderColor : modelData.selected ? Brand.accentBorder : Brand.normalBorderColor
-          border.width: modelData.selected ? 1 : Brand.normalBorderWidth
+          height: rowContent.implicitHeight + Commons.Style.space(14)
+          radius: Commons.Style.cornerRadius
+          current: modelData.selected === true
+          hasCursor: rowMouse.containsMouse || activeFocus
+          foreground: Commons.Color.popups.text
+          borderSpec: activeFocus ? Commons.Border.controlSpec("focus", foreground, accent)
+            : hasCursor ? Commons.Border.controlSpec("hover-cursor", foreground, accent)
+            : Commons.Border.controlSpec(current ? "selected" : "normal", foreground, accent)
 
           // Row selection MouseArea in its own background/selection domain (z: 0)
           // Bounded to cover the row up to rowActions so it never overlaps the action buttons
@@ -245,7 +248,7 @@ Item {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.right: parent.right
-            anchors.rightMargin: rowActions.width + Brand.space(16)
+            anchors.rightMargin: rowActions.width + Commons.Style.space(16)
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: {
@@ -257,63 +260,63 @@ Item {
             id: rowContent
             z: 1
             anchors.fill: parent
-            anchors.margins: Brand.space(8)
-            spacing: Brand.space(10)
+            anchors.margins: Commons.Style.space(8)
+            spacing: Commons.Style.space(10)
 
             // Selection Radio / Check indicator
             Rectangle {
-              width: Brand.space(18)
+              width: Commons.Style.space(18)
               height: width
               radius: width / 2
               anchors.verticalCenter: parent.verticalCenter
               color: "transparent"
-              border.color: Brand.textPrimary
+              border.color: Commons.Color.popups.text
               border.width: 2
 
               Rectangle {
                 visible: modelData.selected === true
-                width: Brand.space(8)
+                width: Commons.Style.space(8)
                 height: width
                 radius: width / 2
                 anchors.centerIn: parent
-                color: Brand.accentFg
+                color: Commons.Color.accent
               }
             }
 
             // Name & Protocol
             Column {
               anchors.verticalCenter: parent.verticalCenter
-              width: parent.width - rowActions.width - Brand.space(60)
-              spacing: Brand.space(2)
+              width: parent.width - rowActions.width - Commons.Style.space(60)
+              spacing: Commons.Style.space(2)
 
               Text {
                 textFormat: Text.PlainText
                 width: parent.width
                 text: modelData.name || root.tr("servers.unnamed")
-                color: modelData.selected ? Brand.accentFg : Brand.textPrimary
+                color: Commons.Color.popups.text
                 font.weight: Font.DemiBold
-                font.family: Brand.font.family
-                font.pixelSize: Brand.font.bodySmall
+                font.family: Commons.Style.font.family
+                font.pixelSize: Commons.Style.font.bodySmall
                 elide: Text.ElideRight
               }
 
               Row {
-                spacing: Brand.space(6)
+                spacing: Commons.Style.space(6)
 
                 Rectangle {
-                  height: Brand.space(16)
-                  width: protoLabel.implicitWidth + Brand.space(8)
+                  height: Commons.Style.space(16)
+                  width: protoLabel.implicitWidth + Commons.Style.space(8)
                   radius: height / 2
-                  color: Brand.pillNeutralBg
+                  color: Commons.Style.normalFill
 
                   Text {
                     textFormat: Text.PlainText
                     id: protoLabel
                     anchors.centerIn: parent
                     text: Model.protocolDisplay(modelData.protocol, ({ t: root.tr }))
-                    color: Brand.pillNeutralFg
-                    font.family: Brand.font.family
-                    font.pixelSize: Brand.font.caption
+                    color: Commons.Color.popups.text
+                    font.family: Commons.Style.font.family
+                    font.pixelSize: Commons.Style.font.caption
                   }
                 }
 
@@ -330,7 +333,7 @@ Item {
               id: rowActions
               z: 2
               anchors.verticalCenter: parent.verticalCenter
-              spacing: Brand.space(4)
+              spacing: Commons.Style.space(4)
 
               IconButton {
                 icon: "󰓅"

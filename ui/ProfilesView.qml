@@ -1,4 +1,6 @@
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -13,17 +15,17 @@ Item {
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
-  implicitWidth: parent ? parent.width : Brand.space(480)
+  implicitWidth: parent ? parent.width : Commons.Style.space(480)
   implicitHeight: column.implicitHeight
 
   Column {
     id: column
     width: parent.width
-    spacing: Brand.space(10)
+    spacing: Commons.Style.space(10)
 
     Row {
       width: parent.width
-      spacing: Brand.space(8)
+      spacing: Commons.Style.space(8)
 
       Button {
         icon: "󰓦"
@@ -34,35 +36,34 @@ Item {
     }
 
     // Empty state
-    Rectangle {
+    Ui.BorderSurface {
       visible: !root.service || !root.service.profiles || root.service.profiles.length === 0
       width: parent.width
-      height: Brand.space(120)
-      radius: Brand.cornerRadius
-      color: Brand.normalFill
-      border.color: Brand.normalBorderColor
-      border.width: 1
+      height: Commons.Style.space(120)
+      radius: Commons.Style.cornerRadius
+      color: Commons.Style.normalFill
+      borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
       Column {
         anchors.centerIn: parent
-        spacing: Brand.space(8)
+        spacing: Commons.Style.space(8)
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰘮"
-          color: Brand.textPrimary
-          font.family: Brand.iconFamily
-          font.pixelSize: Brand.font.display
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.display
         }
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("profiles.empty")
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.bodySmall
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.bodySmall
         }
       }
     }
@@ -71,47 +72,47 @@ Item {
     Repeater {
       model: root.service ? root.service.profiles : []
 
-      Rectangle {
+      Ui.CursorSurface {
         width: column.width
-        height: profileRow.implicitHeight + Brand.space(16)
-        radius: Brand.cornerRadius
-        color: modelData.selected ? Brand.selectedFill : (profMouse.containsMouse ? Brand.hoverFill : Brand.normalFill)
-        border.color: modelData.selected ? Brand.accentFg : Brand.normalBorderColor
-        border.width: modelData.selected ? 1 : Brand.normalBorderWidth
+        height: profileRow.implicitHeight + Commons.Style.space(16)
+        radius: Commons.Style.cornerRadius
+        current: modelData.selected === true
+        hasCursor: profMouse.containsMouse || activeFocus
+        foreground: Commons.Color.popups.text
 
         Row {
           id: profileRow
           anchors.fill: parent
-          anchors.margins: Brand.space(8)
-          spacing: Brand.space(10)
+          anchors.margins: Commons.Style.space(8)
+          spacing: Commons.Style.space(10)
 
           // Selection Radio
           Rectangle {
-            width: Brand.space(18)
+            width: Commons.Style.space(18)
             height: width
             radius: width / 2
             anchors.verticalCenter: parent.verticalCenter
             color: "transparent"
-            border.color: modelData.selected ? Brand.accentFg : Brand.textPrimary
+            border.color: modelData.selected ? Commons.Color.accent : Commons.Color.popups.text
             border.width: 2
 
             Rectangle {
               visible: modelData.selected
-              width: Brand.space(8)
+              width: Commons.Style.space(8)
               height: width
               radius: width / 2
               anchors.centerIn: parent
-              color: Brand.accentFg
+              color: Commons.Color.accent
             }
           }
 
           Text {
             textFormat: Text.PlainText
-            width: parent.width - actBtn.width - Brand.space(50)
+            width: parent.width - actBtn.width - Commons.Style.space(50)
             text: modelData.name || modelData.id
-            color: Brand.textPrimary
-            font.family: Brand.font.family
-            font.pixelSize: Brand.font.bodySmall
+            color: Commons.Color.popups.text
+            font.family: Commons.Style.font.family
+            font.pixelSize: Commons.Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
             elide: Text.ElideRight
           }
@@ -129,7 +130,7 @@ Item {
         MouseArea {
           id: profMouse
           anchors.fill: parent
-          anchors.rightMargin: actBtn.width + Brand.space(16)
+          anchors.rightMargin: actBtn.width + Commons.Style.space(16)
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
           onClicked: if (root.service) root.service.selectProfiles([modelData.id])

@@ -23,11 +23,13 @@ This repository provides the Omarchy Quattro shell plugin interface, packaging l
 
 ## Apps, first run and server sources
 
-The home page uses the Virtual Penguin Network desktop palette, original mascot,
-status ring, connection button and routing segments. Content follows the shell's
-background lightness and spacing scale, using Inter when installed, then Segoe UI,
-Noto Sans, Liberation Sans or DejaVu Sans. The Omarchy panel retains its frame and
-lifecycle. Original mascot PNGs in `assets/` are copied without modifying the art.
+The home page keeps the Virtual Penguin Network title, original mascot, status
+ring, connection button and routing segments. All colours, typography, spacing
+and control geometry come from the installed Omarchy `Color`, `Style`, `Border`
+and `Ui` components. Connected/connecting use the theme accent, errors and
+unavailable states use urgent, and neutral state marks use muted. Popup background
+luminance selects the original black or white mascot PNG; the asset bytes do not
+change. The Omarchy panel owns fitting and lifecycle.
 
 When the server and subscription lists are both empty, **Add a subscription** in
 the connection card or Servers section opens the Subscriptions form. Opening the
@@ -239,8 +241,25 @@ availability reasons, first-run navigation and form validation.
 `tests/qml-r6-consumer.qml` loads the real Panel, Service and locale files with
 `processDisabled=true` and inert protocol responses. With the external `qml-render`
 tool and a layer-shell-to-Item adapter, it checks actual Qt mouse/key events and
-captures home and every section in both desktop palettes. It does not test the
+captures the real consumer with installed Omarchy themes. It does not test the
 compositor, VPN or network operations.
+
+`node tests/test-ui-theme.js` rejects hex colours and fixed font families in
+production QML/JS, and checks every `ui/qmldir` export. With the external
+[qml-preview-mcp](https://github.com/PavelLizunov/qml-preview-mcp) renderer available, run the full offscreen
+interaction and theme matrix without starting Quickshell:
+
+```bash
+bwrap --unshare-net --bind / / --dev /dev --proc /proc -- \
+  python3 -B tests/render-theme-matrix.py --evidence-dir /tmp/vpnrouter-theme-review
+```
+
+The runner generates theme files with Omarchy's installed template generator in
+private directories. The renderer reads them through unchanged host `Color`
+startup FileViews in an isolated HOME. It captures Catppuccin Latte, Tokyo Night
+and Hackerman in EN/RU, six home states, Servers, Settings and home navigation.
+The built-in Bluetooth reference uses inert device fixtures. Only the layer-shell
+window is adapted to an Item; host controls and plugin content are real QML.
 
 ### Isolated QML Component Tests (Offscreen Shim)
 The automated QML test runner executes isolated syntax, component loading, and UI model tests offscreen:

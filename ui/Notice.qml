@@ -1,8 +1,10 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import "../lib/Focus.js" as Focus
 
-Rectangle {
+Ui.BorderSurface {
   id: root
   property string text: ""
   property bool error: false
@@ -17,17 +19,16 @@ Rectangle {
     })
   }
   onTextChanged: root.reveal()
-  implicitHeight: Math.max(message.implicitHeight, dismiss.implicitHeight) + Brand.space(12)
-  color: Brand.normalFill
-  radius: Brand.cornerRadius
-  border.color: message.activeFocus ? Brand.focusBorderColor : error ? Brand.dangerFg : Brand.normalBorderColor
-  border.width: Math.max(1, Brand.normalBorderWidth)
+  implicitHeight: Math.max(message.implicitHeight, dismiss.implicitHeight) + Commons.Style.space(12)
+  color: Commons.Style.normalFill
+  radius: Commons.Style.cornerRadius
+  borderSpec: Commons.Border.controlSpec(message.activeFocus ? "focus" : "normal", error ? Commons.Color.urgent : Commons.Color.popups.text, Commons.Color.accent)
   TextEdit {
     id: message
     objectName: "vpnNoticeText"
     onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(message) })
-    x: Brand.space(8); y: Brand.space(6)
-    width: parent.width - dismiss.width - Brand.space(24)
+    x: Commons.Style.space(8); y: Commons.Style.space(6)
+    width: parent.width - dismiss.width - Commons.Style.space(24)
     height: implicitHeight
     text: root.text
     textFormat: TextEdit.PlainText
@@ -35,16 +36,16 @@ Rectangle {
     selectByMouse: true
     activeFocusOnTab: true
     wrapMode: TextEdit.WrapAnywhere
-    color: Brand.textPrimary
-    selectionColor: Brand.accentFg
-    selectedTextColor: Brand.surfaceApp
-    font.family: Brand.font.family
-    font.pixelSize: Brand.font.bodySmall
+    color: Commons.Color.popups.text
+    selectionColor: Commons.Color.accent
+    selectedTextColor: Commons.Color.popups.background
+    font.family: Commons.Style.font.family
+    font.pixelSize: Commons.Style.font.bodySmall
   }
   IconButton {
     id: dismiss
     anchors.right: parent.right
-    anchors.rightMargin: Brand.space(6)
+    anchors.rightMargin: Commons.Style.space(6)
     anchors.verticalCenter: parent.verticalCenter
     icon: "󰅖"
     tooltipText: root.dismissLabel

@@ -1,4 +1,6 @@
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -14,18 +16,18 @@ Item {
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
-  implicitWidth: parent ? parent.width : Brand.space(480)
+  implicitWidth: parent ? parent.width : Commons.Style.space(480)
   implicitHeight: column.implicitHeight
 
   Column {
     id: column
     width: parent.width
-    spacing: Brand.space(10)
+    spacing: Commons.Style.space(10)
 
     // Header action row
     Row {
       width: parent.width
-      spacing: Brand.space(8)
+      spacing: Commons.Style.space(8)
 
       Button {
         icon: "󰓦"
@@ -44,41 +46,40 @@ Item {
       }
       textFormat: Text.PlainText
       wrapMode: Text.WordWrap
-      color: Brand.textPrimary
-      font.family: Brand.font.family
-      font.pixelSize: Brand.font.bodySmall
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
     }
 
     // Empty state
-    Rectangle {
+    Ui.BorderSurface {
       visible: !root.service || !root.service.freeServers || root.service.freeServers.length === 0
       width: parent.width
-      height: Brand.space(120)
-      radius: Brand.cornerRadius
-      color: Brand.normalFill
-      border.color: Brand.normalBorderColor
-      border.width: 1
+      height: Commons.Style.space(120)
+      radius: Commons.Style.cornerRadius
+      color: Commons.Style.normalFill
+      borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
       Column {
         anchors.centerIn: parent
-        spacing: Brand.space(8)
+        spacing: Commons.Style.space(8)
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰇧"
-          color: Brand.textPrimary
-          font.family: Brand.iconFamily
-          font.pixelSize: Brand.font.display
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.display
         }
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("free.empty")
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.bodySmall
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.bodySmall
         }
       }
     }
@@ -87,61 +88,60 @@ Item {
     Repeater {
       model: root.service ? root.service.freeServers : []
 
-      Rectangle {
+      Ui.BorderSurface {
         width: column.width
-        height: rowItem.implicitHeight + Brand.space(14)
-        radius: Brand.cornerRadius
-        color: Brand.normalFill
-        border.color: Brand.normalBorderColor
-        border.width: Brand.normalBorderWidth
+        height: rowItem.implicitHeight + Commons.Style.space(14)
+        radius: Commons.Style.cornerRadius
+        color: Commons.Style.normalFill
+        borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
         Row {
           id: rowItem
           anchors.fill: parent
-          anchors.margins: Brand.space(8)
-          spacing: Brand.space(10)
+          anchors.margins: Commons.Style.space(8)
+          spacing: Commons.Style.space(10)
 
           Text {
             textFormat: Text.PlainText
             text: "󰇧"
-            color: Brand.accentFg
-            font.family: Brand.iconFamily
-            font.pixelSize: Brand.font.icon
+            color: Commons.Color.accent
+            font.family: Commons.Style.font.family
+            font.pixelSize: Commons.Style.font.icon
             anchors.verticalCenter: parent.verticalCenter
           }
 
           Column {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - freeActions.width - Brand.space(50)
-            spacing: Brand.space(2)
+            width: parent.width - freeActions.width - Commons.Style.space(50)
+            spacing: Commons.Style.space(2)
 
             Text {
               textFormat: Text.PlainText
               width: parent.width
               text: modelData.name || root.tr("free.fallbackName")
-              color: Brand.textPrimary
-              font.family: Brand.font.family
-              font.pixelSize: Brand.font.bodySmall
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.bodySmall
               elide: Text.ElideRight
             }
 
             Row {
-              spacing: Brand.space(6)
+              spacing: Commons.Style.space(6)
 
               Rectangle {
-                height: Brand.space(16)
-                width: protoBadge.implicitWidth + Brand.space(8)
-                radius: Brand.cornerRadius
-                color: Brand.hoverFill
+                height: Commons.Style.space(16)
+                width: protoBadge.implicitWidth + Commons.Style.space(8)
+                radius: Commons.Style.cornerRadius
+                color: Commons.Style.hoverFill
 
                 Text {
                   textFormat: Text.PlainText
                   id: protoBadge
                   anchors.centerIn: parent
                   text: Model.protocolDisplay(modelData.protocol, ({ t: root.tr }))
-                  color: Brand.textPrimary
-                  font.family: Brand.font.family
-                  font.pixelSize: Brand.font.caption
+                  color: Commons.Color.popups.text
+                  font.family: Commons.Style.font.family
+                  font.pixelSize: Commons.Style.font.caption
                 }
               }
 
@@ -156,7 +156,7 @@ Item {
           Row {
             id: freeActions
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Brand.space(4)
+            spacing: Commons.Style.space(4)
 
             IconButton {
               icon: "󰓅"

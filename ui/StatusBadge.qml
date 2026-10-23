@@ -1,6 +1,6 @@
 import QtQuick
-import qs.Commons 1.0
-import qs.Commons 1.0 as Commons
+import qs.Commons
+import qs.Commons as Commons
 import "../lib/Model.js" as Model
 import "../lib/I18n.js" as I18n
 
@@ -23,14 +23,14 @@ Item {
         return Commons.Color.accent
       case "connecting":
       case "disconnecting":
-        return Style.resolveStateColor("urgent", Commons.Color.foreground, Commons.Color.accent, Commons.Color.urgent)
+        return Commons.Color.accent
+      case "unavailable":
       case "error":
         return Commons.Color.urgent
       case "disconnected":
-        return Commons.Color.foreground
-      case "unavailable":
+        return Commons.Color.muted
       default:
-        return Qt.darker(Commons.Color.foreground, 1.4)
+        return Commons.Color.muted
     }
   }
 
@@ -47,8 +47,8 @@ Item {
     border.color: Qt.rgba(root.statusColor.r, root.statusColor.g, root.statusColor.b, 0.3)
     border.width: 1
 
-    Behavior on border.color { ColorAnimation { duration: 150 } }
-    Behavior on color { ColorAnimation { duration: 150 } }
+    Behavior on border.color { ColorAnimation { duration: Style.duration(150) } }
+    Behavior on color { ColorAnimation { duration: Style.duration(150) } }
 
     Row {
       id: badgeRow
@@ -65,7 +65,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
 
         NumberAnimation on opacity {
-          running: root.state === "connecting" || root.state === "disconnecting"
+          running: (root.state === "connecting" || root.state === "disconnecting") && root.visible && !Style.reduceMotion
           from: 0.3
           to: 1.0
           duration: 600

@@ -1,9 +1,11 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import "../lib/I18n.js" as I18n
 import "../lib/Focus.js" as Focus
 
-Rectangle {
+Ui.BorderSurface {
   id: root
   property var service: null
   property int i18nRevision: service ? service.i18nRevision : 0
@@ -25,14 +27,14 @@ Rectangle {
     {id:"settings",icon:"󰒓"}, {id:"diagnostics",icon:"󰓙"},
     {id:"free",icon:"󰇧"}, {id:"profiles",icon:"󰘮"}, {id:"custom",icon:"󰘦"}
   ]
-  implicitHeight: rows.implicitHeight + Brand.space(8)
-  radius: Brand.cardRadius
+  implicitHeight: rows.implicitHeight + Commons.Style.space(8)
+  radius: Commons.Style.cornerRadius
   color: "transparent"
-  border.color: Brand.borderDefault
+  borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
   Column {
     id: rows
-    width: parent.width - Brand.space(8)
-    x: Brand.space(4); y: Brand.space(4)
+    width: parent.width - Commons.Style.space(8)
+    x: Commons.Style.space(4); y: Commons.Style.space(4)
     Repeater {
       id: entries
       model: root.tabs
@@ -42,7 +44,7 @@ Rectangle {
         required property int index
         objectName: "vpnTab-" + modelData.id
         width: rows.width
-        height: Brand.space(56)
+        height: Commons.Style.space(56)
         activeFocusOnTab: true
         onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { entry.reveal() })
         function reveal() { Focus.reveal(entry) }
@@ -51,32 +53,32 @@ Rectangle {
         Keys.onReturnPressed: root.tabSelected(modelData.id)
         Keys.onEnterPressed: root.tabSelected(modelData.id)
         Keys.onSpacePressed: root.tabSelected(modelData.id)
-        Rectangle {
+        Ui.CursorSurface {
           anchors.fill: parent
-          radius: Brand.space(10)
-          color: mouse.pressed ? Brand.accentBgMuted : mouse.containsMouse || entry.activeFocus ? Brand.accentBgSubtle : "transparent"
-          border.color: entry.activeFocus ? Brand.accentSolid : "transparent"
-          border.width: entry.activeFocus ? 2 : 0
+          hasCursor: mouse.containsMouse || entry.activeFocus
+          foreground: Commons.Color.popups.text
+          borderSpec: entry.activeFocus ? Commons.Border.controlSpec("focus", foreground, accent)
+            : hasCursor ? Commons.Border.controlSpec("hover-cursor", foreground, accent) : Commons.Border.none()
         }
         Text {
-          x: Brand.space(12); anchors.verticalCenter: parent.verticalCenter
+          x: Commons.Style.space(12); anchors.verticalCenter: parent.verticalCenter
           textFormat: Text.PlainText
           text: entry.modelData.icon
-          color: Brand.textSecondary
-          font.family: Brand.iconFamily
-          font.pixelSize: Brand.space(18)
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.heading
         }
         Column {
-          x: Brand.space(42); anchors.verticalCenter: parent.verticalCenter
-          width: parent.width - Brand.space(72)
-          spacing: Brand.space(2)
+          x: Commons.Style.space(42); anchors.verticalCenter: parent.verticalCenter
+          width: parent.width - Commons.Style.space(72)
+          spacing: Commons.Style.space(2)
           Text {
             width: parent.width
             textFormat: Text.PlainText
             text: root.tr("nav." + entry.modelData.id)
-            color: Brand.textPrimary
-            font.family: Brand.fontFamily
-            font.pixelSize: Brand.space(12)
+            color: Commons.Color.popups.text
+            font.family: Commons.Style.font.family
+            font.pixelSize: Commons.Style.font.body
             font.weight: Font.DemiBold
             elide: Text.ElideRight
           }
@@ -84,23 +86,23 @@ Rectangle {
             width: parent.width
             textFormat: Text.PlainText
             text: root.tr("nav.hint." + entry.modelData.id)
-            color: Brand.textMuted
-            font.family: Brand.fontFamily
-            font.pixelSize: Brand.space(10)
+            color: Commons.Color.popups.text
+            font.family: Commons.Style.font.family
+            font.pixelSize: Commons.Style.font.caption
             elide: Text.ElideRight
           }
         }
         Text {
-          anchors.right: parent.right; anchors.rightMargin: Brand.space(12)
+          anchors.right: parent.right; anchors.rightMargin: Commons.Style.space(12)
           anchors.verticalCenter: parent.verticalCenter
-          text: "›"; color: Brand.textMuted
-          font.family: Brand.fontFamily; font.pixelSize: Brand.space(22)
+          text: "›"; color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family; font.pixelSize: Commons.Style.font.display
         }
         Rectangle {
           visible: entry.index < root.tabs.length - 1
-          x: Brand.space(42); y: parent.height-1
-          width: parent.width-x-Brand.space(12); height: 1
-          color: Brand.borderSubtle
+          x: Commons.Style.space(42); y: parent.height-1
+          width: parent.width-x-Commons.Style.space(12); height: 1
+          color: Commons.Style.normalBorderColor
         }
         MouseArea {
           id: mouse

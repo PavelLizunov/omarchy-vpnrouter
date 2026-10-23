@@ -1,4 +1,6 @@
 import QtQuick
+import qs.Ui as Ui
+import qs.Commons as Commons
 import "../lib/I18n.js" as I18n
 
 Item {
@@ -52,18 +54,18 @@ Item {
     }, function() { root.pending = false; root.errorKey = "subscriptions.addFailed" })
   }
 
-  implicitWidth: parent ? parent.width : Brand.space(480)
+  implicitWidth: parent ? parent.width : Commons.Style.space(480)
   implicitHeight: column.implicitHeight
 
   Column {
     id: column
     width: parent.width
-    spacing: Brand.space(10)
+    spacing: Commons.Style.space(10)
 
     // Top action bar
     Flow {
       width: parent.width
-      spacing: Brand.space(8)
+      spacing: Commons.Style.space(8)
 
       Button {
         id: addToggle
@@ -91,27 +93,26 @@ Item {
     }
 
     // Add Subscription Form
-    Rectangle {
+    Ui.BorderSurface {
       visible: root.showAddForm
       width: parent.width
-      height: addFormCol.implicitHeight + Brand.space(20)
-      radius: Brand.cornerRadius
-      color: Brand.hoverFill
-      border.color: Brand.normalBorderColor
-      border.width: Brand.normalBorderWidth
+      height: addFormCol.implicitHeight + Commons.Style.space(20)
+      radius: Commons.Style.cornerRadius
+      color: Commons.Style.hoverFill
+      borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
       Column {
         id: addFormCol
         anchors.fill: parent
-        anchors.margins: Brand.space(10)
-        spacing: Brand.space(8)
+        anchors.margins: Commons.Style.space(10)
+        spacing: Commons.Style.space(8)
 
         Text {
           textFormat: Text.PlainText
           text: root.tr("subscriptions.addTitle")
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.title
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.title
         }
 
         Text {
@@ -119,9 +120,9 @@ Item {
           width: parent.width
           text: root.tr("subscriptions.nameLabel")
           wrapMode: Text.WordWrap
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.caption
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.caption
         }
 
         TextField {
@@ -138,9 +139,9 @@ Item {
           width: parent.width
           text: root.tr("subscriptions.urlLabel")
           wrapMode: Text.WordWrap
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.caption
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.caption
         }
 
         TextField {
@@ -155,7 +156,7 @@ Item {
         }
 
         Row {
-          spacing: Brand.space(8)
+          spacing: Commons.Style.space(8)
 
           Button {
             text: root.tr("action.add")
@@ -175,35 +176,34 @@ Item {
     }
 
     // Empty state
-    Rectangle {
+    Ui.BorderSurface {
       visible: !root.service || !root.service.subscriptions || root.service.subscriptions.length === 0
       width: parent.width
-      height: Brand.space(120)
-      radius: Brand.cornerRadius
-      color: Brand.normalFill
-      border.color: Brand.normalBorderColor
-      border.width: 1
+      height: Commons.Style.space(120)
+      radius: Commons.Style.cornerRadius
+      color: Commons.Style.normalFill
+      borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
       Column {
         anchors.centerIn: parent
-        spacing: Brand.space(8)
+        spacing: Commons.Style.space(8)
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: "󰌹"
-          color: Brand.textPrimary
-          font.family: Brand.iconFamily
-          font.pixelSize: Brand.font.display
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.display
         }
 
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.tr("subscriptions.empty")
-          color: Brand.textPrimary
-          font.family: Brand.font.family
-          font.pixelSize: Brand.font.bodySmall
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.bodySmall
         }
       }
     }
@@ -212,22 +212,22 @@ Item {
     Repeater {
       model: root.service ? root.service.subscriptions : []
 
-      Rectangle {
+      Ui.BorderSurface {
         width: column.width
-        height: subRow.implicitHeight + Brand.space(16)
-        radius: Brand.cornerRadius
-        color: Brand.normalFill
-        border.color: Brand.normalBorderColor
-        border.width: Brand.normalBorderWidth
+        height: subRow.implicitHeight + Commons.Style.space(16)
+        radius: Commons.Style.cornerRadius
+        color: Commons.Style.normalFill
+        borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
         Row {
           id: subRow
           anchors.fill: parent
-          anchors.margins: Brand.space(8)
-          spacing: Brand.space(10)
+          anchors.margins: Commons.Style.space(8)
+          spacing: Commons.Style.space(10)
 
           // Enable toggle
           Toggle {
+            id: subscriptionToggle
             anchors.verticalCenter: parent.verticalCenter
             checked: modelData.enabled !== false
             onToggled: function(val) {
@@ -238,25 +238,25 @@ Item {
           // Details
           Column {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - actionsCol.width - Brand.space(60)
-            spacing: Brand.space(2)
+            width: parent.width - actionsCol.width - subscriptionToggle.width - parent.spacing * 2
+            spacing: Commons.Style.space(2)
 
             Text {
               textFormat: Text.PlainText
               width: parent.width
               text: modelData.name || root.tr("subscriptions.fallbackName")
-              color: Brand.textPrimary
-              font.family: Brand.font.family
-              font.pixelSize: Brand.font.bodySmall
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.bodySmall
               elide: Text.ElideRight
             }
 
             Text {
               textFormat: Text.PlainText
               text: typeof modelData.serverCount === "number" ? root.tr("subscriptions.serversCount", [modelData.serverCount]) : root.tr("subscriptions.countUnknown")
-              color: Brand.textPrimary
-              font.family: Brand.font.family
-              font.pixelSize: Brand.font.caption
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.caption
             }
           }
 
@@ -264,7 +264,7 @@ Item {
           Row {
             id: actionsCol
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Brand.space(4)
+            spacing: Commons.Style.space(4)
 
             IconButton {
               icon: "󰓦"
