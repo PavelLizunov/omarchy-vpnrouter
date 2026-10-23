@@ -156,7 +156,8 @@ def render(name, theme, properties, reference=False, width=440, height=764):
 try:
     if args.mode in ['all', 'check']:
         suites = ['brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
-                  'servers', 'custom', 'rules', 'settings', 'actions', 'keyboard', 'pointerForms']
+                  'servers', 'custom', 'rules', 'settings', 'actions', 'keyboard', 'pointerForms',
+                  'layoutFit', 'focusCues', 'homeReturn']
         if args.suites:
             suites = args.suites.split(',')
         for locale in ['en', 'ru']:

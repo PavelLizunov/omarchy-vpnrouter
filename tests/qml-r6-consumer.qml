@@ -341,6 +341,7 @@ Rectangle {
       else if(fixture.suite==="states") { states() }
       else if(fixture.suite==="layoutFit") { layoutFit() }
       else if(fixture.suite==="focusCues") { focusCues() }
+      else if(fixture.suite==="homeReturn") { homeReturn() }
       else if(fixture.suite==="geometry") {
         var tabs=["servers","subscriptions","apps","rules","settings","diagnostics","free","profiles","custom"]
         for(var i=0;i<tabs.length;i++) {
@@ -362,6 +363,21 @@ Rectangle {
       if(focus) focus.forceActiveFocus();keyClick(Qt.Key_Escape);wait(10);expect(!consumer.opened,"Escape closes panel from form focus")
       consumer.open();wait(40)
       console.log("R6_RESULT",fixture.suite,"PASS",JSON.stringify(geometry()))
+    }
+    function homeReturn() {
+      go("custom");consumer.setDisplayMode("simple");wait(40)
+      var target=byName("vpnTab-custom"),viewport=byName("vpnContentViewport")
+      target.forceActiveFocus();wait(40)
+      var point=target.mapToItem(viewport,0,0)
+      expect(point.y>=-1 && point.y+target.height<=viewport.height+1,"The final home row is initially revealed")
+      consumer.setDisplayMode("simple");wait(40)
+      expect(target.activeFocus,"Repeated home entry retains the selected row")
+      point=target.mapToItem(viewport,0,0)
+      expect(point.y>=-1 && point.y+target.height<=viewport.height+1,"Repeated home entry reveals an already-focused row")
+      consumer.openSection("servers");wait(35);consumer.setDisplayMode("simple");wait(40)
+      target=byName("vpnTab-servers");point=target.mapToItem(viewport,0,0)
+      expect(target.activeFocus && point.y>=-1 && point.y+target.height<=viewport.height+1,"Changing section restores its visible home row")
+      console.log("R6_PASS homeReturn repeated-home reveal-already-focused changed-section")
     }
     function focusCues() {
       function cue(owner) {
