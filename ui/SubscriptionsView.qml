@@ -46,7 +46,9 @@ Item {
     if (!url) { root.errorKey = "form.required"; return }
     // An empty name falls back to the URL's host.
     var rest = url.indexOf("://") >= 0 ? url.slice(url.indexOf("://") + 3) : url
-    var name = subNameInput.text.trim() || rest.split("/")[0].split("?")[0].split("#")[0].split(":")[0]
+    var host = rest.split(/[/?#]/)[0].replace(/^.*@/, "")
+    host = host.charAt(0) === "[" ? host.slice(1, host.indexOf("]")) : host.split(":")[0]
+    var name = subNameInput.text.trim() || host
     if (name.length > 256) { root.errorKey = "form.nameTooLong"; return }
     if (url.length > 2048 || !/^https?:\/\/[^\s/?#]+(?:[/?#][^\s]*)?$/i.test(url)) { root.errorKey = "subscriptions.invalidUrl"; return }
     root.errorKey = ""
