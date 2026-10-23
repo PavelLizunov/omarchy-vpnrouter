@@ -54,6 +54,7 @@ Item {
   property var unavailableReasonCode: null
   property bool serversLoaded: false
   property bool subscriptionsLoaded: false
+  property bool snapshotLoaded: false
   property bool starting: false
   property int retryCount: 0
   property int retryBackoffMs: 2000
@@ -367,6 +368,7 @@ Item {
   function backendStarted() {
     root.helperPresent = true
     root.backendMissing = false
+    root.snapshotLoaded = false
     root.starting = false
     // Starting a wrapper is not a successful handshake.
     Qt.callLater(function() { if (backendProc.running) root.refreshSnapshot() })
@@ -383,6 +385,7 @@ Item {
     root.appsLoaded = false
     root.serversLoaded = false
     root.subscriptionsLoaded = false
+    root.snapshotLoaded = false
     root.busy = false
     root.activeOperation = ""
     root.activeRequestId = ""
@@ -519,6 +522,7 @@ Item {
     root.capabilities = norm.capabilities
     root.unavailableReason = norm.unavailableReason
     root.unavailableReasonCode = norm.unavailableReasonCode || null
+    root.snapshotLoaded = true
   }
 
   // ---- Dispatch and Queue ---------------------------------------------------

@@ -52,6 +52,7 @@ function reply(result, isError = false) {
   root.handleResponse(request.id, isError, isError ? null : result, isError ? result : null);
 }
 root.applySnapshot(snapshot);
+assert.strictEqual(root.snapshotLoaded, true, "Snapshot receipt is explicit, even if revision could be empty");
 assert.strictEqual(root.unavailableReason, snapshot.unavailableReason);
 assert.strictEqual(Model.normalizeSnapshot({...snapshot, unavailableReason: null}).unavailableReason, '');
 assert.strictEqual(Model.normalizeSnapshot({...snapshot, unavailableReason: {}}).unavailableReason, '');
@@ -63,7 +64,10 @@ assert.strictEqual(written.length, 0, 'Unavailable connect must never be dispatc
 const delays = [];
 for (let i = 0; i < 5; i++) {
   root.backendStarted();
+  assert.strictEqual(root.snapshotLoaded, false, "A new process needs a fresh snapshot");
+  root.snapshotLoaded = true;
   root.backendExited(1);
+  assert.strictEqual(root.snapshotLoaded, false, "Exit invalidates displayed status readiness");
   delays.push(timer.interval);
 }
 assert.deepStrictEqual(delays, [2000, 3000, 4500, 6750, 10125]);

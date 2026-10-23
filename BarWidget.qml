@@ -41,6 +41,7 @@ Ui.BarWidget {
   }
 
   readonly property string vpnState: effectiveService ? effectiveService.state : "unavailable"
+  readonly property bool isStarting: Model.backendStarting(effectiveService)
   readonly property bool isConnected: vpnState === "connected"
   readonly property bool isBusy: effectiveService ? (effectiveService.busy || vpnState === "connecting" || vpnState === "disconnecting") : false
   readonly property bool isError: effectiveService ? (effectiveService.isError || vpnState === "error") : false
@@ -57,14 +58,14 @@ Ui.BarWidget {
   // Settings
   readonly property bool showLatencySetting: setting("showLatency", true) !== false
 
-  readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
+  readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : isStarting ? "starting" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
   // Material Design shield family from the host bar's Nerd Font.
-  readonly property string stateIcon: ({ disconnected: "\u{f0499}", connecting: "\u{f11a3}", connected: "\u{f0cc8}", error: "\u{f0ecd}", unavailable: "\u{f099c}", missing: "\u{f0add}" })[visualState]
+  readonly property string stateIcon: ({ starting: "\u{f0499}", disconnected: "\u{f0499}", connecting: "\u{f11a3}", connected: "\u{f0cc8}", error: "\u{f0ecd}", unavailable: "\u{f099c}", missing: "\u{f0add}" })[visualState]
   readonly property color inkColor: visualState === "connected" ? Commons.Color.accent : visualState === "connecting" ? Commons.Color.accent : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? Commons.Color.urgent : Commons.Color.muted
 
   readonly property string barTooltip: {
     var _ = i18nRevision
-    var label = visualState === "missing" ? root.tr("backend.notInstalled") : root.tr("state." + vpnState)
+    var label = visualState === "missing" ? root.tr("backend.notInstalled") : visualState === "starting" ? root.tr("backend.starting") : root.tr("state." + vpnState)
     var title = root.tr("bar.state", [label])
     var server = activeServerName || (activeServerItem ? activeServerItem.name : "")
     if (server) title += "\n" + root.tr("bar.server", [server])

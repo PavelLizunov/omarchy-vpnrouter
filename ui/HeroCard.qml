@@ -22,18 +22,22 @@ Column {
   readonly property bool connected: !!service && service.isConnected
   readonly property bool busy: !!service && (service.isConnecting || service.isDisconnecting || service.activeOperation === "connect" || service.activeOperation === "disconnect")
   readonly property bool operationBusy: !!service && service.busy
-  readonly property bool missing: !service || service.backendMissing || service.state === "unavailable"
+  readonly property bool initializing: Model.backendStarting(service)
+  readonly property bool missing: !service || service.backendMissing || (service.state === "unavailable" && !initializing)
   readonly property bool failed: !!service && (service.state === "error" || service.state === "conflict")
-  readonly property bool canConnect: !!service && service.capabilities && service.capabilities.connect === true && !missing
-  readonly property bool needsSetup: !!service && service.serversLoaded && service.subscriptionsLoaded && !service.servers.length && !service.subscriptions.length && !connected && !busy && !missing && service.configMode !== "custom"
+  readonly property bool canConnect: !!service && service.capabilities && service.capabilities.connect === true && !missing && !initializing
+  readonly property bool needsSetup: !!service && service.serversLoaded && service.subscriptionsLoaded && !service.servers.length && !service.subscriptions.length && !connected && !busy && !missing && !initializing && service.configMode !== "custom"
   readonly property color stateColor: connected ? Commons.Color.accent : busy ? Commons.Color.accent : failed || missing ? Commons.Color.urgent : Commons.Color.muted
   readonly property string availability: availabilityText()
   function availabilityText() {
     var _ = root.i18nRevision
     if (root.connected) return ""
     if (root.service && root.service.backendMissing) return root.tr("backend.notInstalled") + "\n" + root.tr("backend.installHint")
-    if (!root.service || root.service.state === "unavailable") return root.tr("backend.notRunning")
+    if (!root.service) return root.tr("backend.statusUnavailable")
     if (root.service.lastError) return root.service.lastError
+    if (root.initializing) return root.tr("backend.startingDetail")
+    if (root.service.state === "unavailable")
+      return root.service.helperPresent ? Model.unavailableText(root.service, ({t:root.tr})) : root.tr("backend.notRunning")
     if (!root.canConnect && !root.busy && !root.needsSetup) return Model.unavailableText(root.service, ({t:root.tr}))
     return ""
   }
@@ -106,7 +110,7 @@ Column {
     objectName: "vpnStateTitle"
     width: parent.width
     textFormat: Text.PlainText
-    text: root.failed ? root.tr("home.error") : root.needsSetup ? root.tr("home.addConfig") : root.service && root.service.state === "disconnected" ? root.tr("home.disconnected") : root.tr("state." + (root.service ? root.service.state : "unavailable"))
+    text: root.initializing ? root.tr("backend.starting") : root.failed ? root.tr("home.error") : root.needsSetup ? root.tr("home.addConfig") : root.service && root.service.state === "disconnected" ? root.tr("home.disconnected") : root.tr("state." + (root.service ? root.service.state : "unavailable"))
     horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.WordWrap
     color: root.connected ? Commons.Color.accent : root.failed || root.missing ? Commons.Color.urgent : Commons.Color.popups.text

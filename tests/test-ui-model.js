@@ -128,4 +128,22 @@ console.log("=== Testing Model.js ===");
   console.log("✓ Snapshot normalization and configMode enum/string mapping passed");
 }
 
+
+// Service startup is UI availability, never a VPN handshake.
+for (const [state, expected] of [
+  [{state: "unavailable", helperPresent: true, snapshotLoaded: true, revision: ""}, false],
+  [{state: "unavailable", helperPresent: true, snapshotLoaded: false, revision: "old"}, true],
+  [null, false], [{state: "unavailable", starting: true}, true],
+  [{state: "unavailable", helperPresent: true, revision: "", lastError: ""}, true],
+  [{state: "unavailable", helperPresent: true, revision: "", lastError: "timeout"}, false],
+  [{state: "unavailable", helperPresent: true, revision: "known"}, false],
+  [{state: "unavailable", starting: true, backendMissing: true}, false],
+  [{state: "unavailable", helperPresent: false, starting: false}, false],
+  [{state: "unavailable", starting: true, lastError: "retrying"}, true],
+  [{state: "connected", starting: true}, false],
+  [{state: "connecting", helperPresent: true, revision: ""}, false],
+  [{state: "unavailable", starting: "true"}, false]
+]) assert.strictEqual(Model.backendStarting(state), expected, JSON.stringify(state));
+console.log("PASS: initial backend startup, timeout, known snapshot and missing/stopped cases");
+
 console.log("ALL MODEL TESTS PASSED!\n");

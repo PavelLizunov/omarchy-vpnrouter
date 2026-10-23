@@ -119,6 +119,7 @@ Rectangle {
   }
   function release(error) { var request=fixture.held;fixture.held=null;fixture.holdMethod="";fixture.complete(request,error) }
   Vpn.Service { id: backend; processDisabled:true;fakeBackend:fixture.respond }
+  Vpn.BarWidget { id: barStateProbe; service: backend; settings: ({locale: fixture.locale}); visible: false }
   Vpn.Panel { id: consumer;objectName:"consumer";width:parent.width;height:parent.height;mode:"advanced";service:backend }
   Timer {
     interval:80;running:true
@@ -514,6 +515,27 @@ Rectangle {
       backend.state="connected";wait(20);equal(byName("vpnStateTitle").text,backend.tr("state.connected"));expect(button.enabled,"Disconnect available")
       expect(String(hero.stateColor)===String(Commons.Color.accent),"Success ring")
       backend.state="error";backend.lastError=backend.tr("error.timeout");wait(20);expect(String(hero.stateColor)===String(Commons.Color.urgent),"Error ring");equal(hero.availability,backend.tr("error.timeout"),"Error reason is visible")
+      backend.state="unavailable";backend.backendMissing=false;backend.helperPresent=true;backend.starting=false;backend.revision="";backend.snapshotLoaded=false;backend.capabilities={connect:false};backend.lastError=backend.tr("error.timeout");wait(20)
+      equal(hero.availability,backend.tr("error.timeout"),"Unavailable state preserves the actual timeout reason")
+      expect(!hero.initializing && barStateProbe.visualState==="unavailable","Timeout is not indefinite startup")
+      backend.lastError="";wait(20)
+      expect(hero.initializing,"Running helper without a snapshot is initializing")
+      equal(byName("vpnStateTitle").text,backend.tr("backend.starting"),"Startup has its own title")
+      equal(hero.availability,backend.tr("backend.startingDetail"),"Startup describes local status reading")
+      expect(!hero.busy && !arc.visible,"Service startup never simulates a VPN handshake")
+      var savedServers=backend.servers,savedSubscriptions=backend.subscriptions
+      backend.servers=[];backend.subscriptions=[];wait(15);expect(!hero.needsSetup,"Startup does not show a premature empty-configuration prompt")
+      backend.servers=savedServers;backend.subscriptions=savedSubscriptions
+      equal(barStateProbe.visualState,"starting","The actual bar binding recognizes startup")
+      equal(String(barStateProbe.inkColor),String(Commons.Color.muted),"Startup bar is neutral")
+      equal(String(hero.stateColor),String(Commons.Color.muted),"Startup hero is neutral")
+      backend.capabilities={connect:true};wait(20);expect(!button.enabled,"Startup never enables Connect from stale capability")
+      backend.starting=true;backend.helperPresent=false;wait(20);expect(hero.initializing,"Process startup is covered too")
+      backend.starting=false;backend.helperPresent=true;backend.revision="";backend.snapshotLoaded=true;backend.unavailableReasonCode="runtime-capabilities";wait(20)
+      equal(hero.availability,backend.tr("backend.reason.runtime-capabilities"),"A known unavailable snapshot shows its reason")
+      expect(!hero.initializing,"A known unavailable snapshot does not look like startup")
+      backend.unavailableReasonCode=null;backend.helperPresent=false;wait(20)
+      equal(hero.availability,backend.tr("backend.notRunning"),"Stopped helper retains its distinct message")
       backend.state="unavailable";backend.backendMissing=true;backend.capabilities={connect:false};wait(20);expect(!button.enabled,"Missing backend cannot connect")
       expect(hero.availability.indexOf(backend.tr("backend.installHint"))!==-1,"Honest install hint")
       backend.backendMissing=false;backend.state="connecting";backend.lastError="";backend.busy=true;backend.activeOperation="connect";wait(30)

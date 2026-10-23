@@ -81,6 +81,9 @@ In split mode, **Only selected apps use VPN / All except selected** chooses the
 app list's meaning. The home page exposes Selected apps / All traffic;
 Applications also controls the include/exclude policy.
 
+The home page distinguishes service startup from a VPN connection. If reading
+status fails, it keeps the reported error visible.
+
 Subscription URLs are masked by default. Import forms keep input on failure and
 clear it after success or Cancel; empty/invalid input produces inline feedback.
 Each open form has one submit/cancel row; Cancel returns focus to Add or Import.
