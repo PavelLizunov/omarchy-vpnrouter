@@ -175,3 +175,15 @@ for (const file of ['BarWidget.qml', 'Panel.qml',
   assert(!/(?<![.\w])Color\./.test(read(file)), `${file}: ambiguous shell palette`);
   assert(!/\w+Commons\.Color/.test(read(file)), `${file}: preserve existing color property names`);
 }
+
+// A read-only refresh must never imitate a VPN connection attempt.
+const busySource = read('ui/HeroCard.qml').match(/readonly property bool busy: (.*)/)[1];
+const isConnectionBusy = new Function('service', `return (${busySource})`);
+for (const method of ['snapshot','servers.list','subscriptions.list','apps.list','settings.get']) {
+  assert.strictEqual(isConnectionBusy({busy:true,isConnecting:false,isDisconnecting:false,activeOperation:method}),false);
+}
+assert.strictEqual(isConnectionBusy({busy:true,isConnecting:true,activeOperation:'connect'}),true);
+assert.strictEqual(isConnectionBusy({busy:true,isDisconnecting:true,activeOperation:'disconnect'}),true);
+assert.strictEqual(binding('ui/HeroCard.qml', /enabled: (.*)/,
+  {connected:false,canConnect:true,busy:false,operationBusy:true,needsSetup:false}),false);
+console.log('PASS: collection refresh has no connection arc and keeps Connect admission disabled');

@@ -78,3 +78,17 @@ assert.strictEqual(navigate(navRoot, '{"page":"servers"}'), false);
 assert.strictEqual(navRoot.pendingNavigation, null);
 assert.strictEqual(navigate({shell: null}, '{"page":"servers"}'), false);
 console.log('PASS: bounded navigation routes only to supported pages/forms through host summon');
+
+const openBar = body('BarWidget.qml', 'open', ['root','panelLoader','Qt']);
+const lifecycle = [];
+const panel = {navigate(page,form) { lifecycle.push(['navigate',page,form]); },open() { lifecycle.push(['open']); }};
+const opener = {effectiveService: {pendingNavigation:{page:'servers',form:'import'}},panelItem:panel,syncPanel() { lifecycle.push(['sync']); }};
+const panelLoader = {active:false};
+openBar(opener,panelLoader,{callLater(fn) { fn(); }});
+assert.strictEqual(panelLoader.active,true);
+assert.strictEqual(opener.effectiveService.pendingNavigation,null);
+assert.deepStrictEqual(lifecycle,[['sync'],['navigate','servers','import'],['open']]);
+lifecycle.length=0;
+openBar(opener,panelLoader,{callLater(fn) { fn(); }});
+assert.deepStrictEqual(lifecycle,[['sync'],['open']], 'Normal reopen must not replay a consumed route');
+console.log('PASS: actual bar open consumes navigation once before panel lifecycle');

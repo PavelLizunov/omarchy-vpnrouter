@@ -1080,8 +1080,15 @@ function createSettingsViewSim(service, overrides) {
   const settingsQml = fs.readFileSync(settingsQmlPath, "utf8");
 
   assert(settingsQml.includes("enabled: root.hasDnsLockdownCap"), "dnsLeak toggle must bind enabled to hasDnsLockdownCap");
-  assert(settingsQml.includes('description: !root.hasDnsLockdownCap ? root.tr("settings.dnsLeakUnsupported") : ""'),
-    "dnsLeak toggle must show localized unsupported description when disabled");
+  const dnsDescription = settingsQml.match(/description: (.*settings\.dnsLeakUnsupported.*)/);
+  assert(dnsDescription, "DNS lockdown description must exist");
+  const describeDns = new Function('root', 'return ' + dnsDescription[1]);
+  for (const supported of [false, true]) {
+    const text = describeDns({hasDnsLockdownCap: supported, tr: key => key});
+    assert(text.includes('settings.dnsLeakDesc'), "DNS behavior explanation is always visible");
+    assert.strictEqual(text.includes('settings.dnsLeakUnsupported'), !supported,
+      "Unsupported wording follows the capability");
+  }
   assert(!settingsQml.includes("selectDnsMode"), "Settings must not keep a DNS mode selector");
   assert(settingsQml.includes("dnsMode is profile data"), "Settings must say why dnsMode is not sent");
 

@@ -338,6 +338,7 @@ Rectangle {
       else if(fixture.suite==="summary") { summary() }
       else if(fixture.suite==="brand") { brand() }
       else if(fixture.suite==="states") { states() }
+      else if(fixture.suite==="layoutFit") { layoutFit() }
       else if(fixture.suite==="geometry") {
         var tabs=["servers","subscriptions","apps","rules","settings","diagnostics","free","profiles","custom"]
         for(var i=0;i<tabs.length;i++) {
@@ -360,12 +361,43 @@ Rectangle {
       consumer.open();wait(40)
       console.log("R6_RESULT",fixture.suite,"PASS",JSON.stringify(geometry()))
     }
+    function layoutFit() {
+      var originalWidth=fixture.width
+      fixture.width=400
+      fixture.free=[];fixture.subscriptions=[];fixture.profiles=[];fixture.configs=[]
+      backend.freeServers=[];backend.subscriptions=[];backend.profiles=[];backend.customConfigs=[];backend.diagnosticsItems=[]
+      for (var entry of [["free","FreePool","free.empty"],["subscriptions","Subscriptions","subscriptions.empty"],["profiles","Profiles","profiles.empty"],["custom","CustomConfig","custom.empty"]]) {
+        go(entry[0])
+        var text=fixture.find(page(entry[1]),function(x){return x.text===backend.tr(entry[2])})
+        expect(text!==null,"Empty-state text exists: "+entry[0])
+        expect(text.width<=page(entry[1]).width-30,"Empty-state width stays inside card: "+entry[0])
+        expect(text.contentWidth<=text.width+1,"Empty-state message wraps: "+entry[0])
+        expect(text.parent.implicitHeight+30<=text.parent.parent.height+1,"Empty-state card contains text: "+entry[0])
+      }
+      for (var tab of ["apps","rules"]) {
+        go(tab)
+        var choices=fixture.all(consumer,function(x){return x.visible && typeof x.naturalRowWidth==="function"},[])
+        for(var choice of choices) {
+          var buttons=fixture.all(choice,function(x){return String(x.objectName).indexOf("vpnChoice-")===0},[])
+          for(var option of buttons) expect(option.width+1>=option.implicitWidth,"Native choice label has room: "+option.text+" width="+option.width+" natural="+option.implicitWidth+" stacked="+choice.stacked+" available="+choice.width+" total="+choice.naturalRowWidth())
+          if(choice.stacked) {
+            choice.forceActiveFocus();choice.focusedIndex=0;keyClick(Qt.Key_Down);equal(choice.focusedIndex,1,"Stacked choices accept Down")
+          }
+        }
+      }
+      fixture.width=originalWidth
+      console.log("R6_PASS layoutFit wrapped-empty-states native-choice-width vertical-key-navigation")
+    }
     function states() {
       consumer.setDisplayMode("simple");wait(35)
       var hero=byName("vpnHero"),button=byName("vpnConnect"),arc=fixture.find(consumer,function(x){return x.objectName==="vpnConnectingArc"})
       backend.state="disconnected";backend.backendMissing=false;backend.capabilities={connect:false};wait(20)
       expect(!button.enabled,"Connect disabled without capability")
       backend.capabilities={connect:true};wait(20);expect(button.enabled,"Connect enabled only with capability")
+      backend.busy=true;backend.activeOperation="servers.list";wait(20)
+      expect(!hero.busy && !arc.visible,"Collection reads must not show VPN connection progress")
+      expect(!button.enabled,"Backend operation still gates Connect admission")
+      backend.busy=false;backend.activeOperation="";wait(20)
       backend.state="connected";wait(20);equal(byName("vpnStateTitle").text,backend.tr("state.connected"));expect(button.enabled,"Disconnect available")
       expect(String(hero.stateColor)===String(Commons.Color.accent),"Success ring")
       backend.state="error";backend.lastError=backend.tr("error.timeout");wait(20);expect(String(hero.stateColor)===String(Commons.Color.urgent),"Error ring");equal(hero.availability,backend.tr("error.timeout"),"Error reason is visible")

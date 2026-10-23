@@ -20,7 +20,8 @@ Column {
   }
   readonly property bool motionEnabled: !Commons.Style.reduceMotion
   readonly property bool connected: !!service && service.isConnected
-  readonly property bool busy: !!service && (service.busy || service.isConnecting || service.isDisconnecting)
+  readonly property bool busy: !!service && (service.isConnecting || service.isDisconnecting || service.activeOperation === "connect" || service.activeOperation === "disconnect")
+  readonly property bool operationBusy: !!service && service.busy
   readonly property bool missing: !service || service.backendMissing || service.state === "unavailable"
   readonly property bool failed: !!service && (service.state === "error" || service.state === "conflict")
   readonly property bool canConnect: !!service && service.capabilities && service.capabilities.connect === true && !missing
@@ -116,7 +117,7 @@ Column {
   Text {
     width: parent.width
     textFormat: Text.PlainText
-    text: root.connected ? root.tr("home.active") : root.needsSetup ? root.tr("home.addHint") : root.busy ? root.tr("home.connecting") : root.availability || root.tr(root.failed ? "error.generic" : "home.direct")
+    text: root.busy ? root.tr(root.service.isDisconnecting || root.service.activeOperation === "disconnect" ? "home.disconnecting" : "home.connecting") : root.connected ? root.tr("home.active") : root.needsSetup ? root.tr("home.addHint") : root.availability || root.tr(root.failed ? "error.generic" : "home.direct")
     horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.WordWrap
     color: Commons.Color.popups.text
@@ -134,7 +135,7 @@ Column {
     icon: "⏻"
     text: root.busy ? root.tr("home.wait") : root.connected ? root.tr("action.disconnect") : root.tr("action.connect")
     variant: root.busy ? "normal" : root.connected ? "danger" : "solid"
-    enabled: !root.busy && (root.connected || root.canConnect) && !root.needsSetup
+    enabled: !root.busy && !root.operationBusy && (root.connected || root.canConnect) && !root.needsSetup
     onClicked: { if (root.connected) root.disconnectRequested(); else root.connectRequested() }
   }
   Button {

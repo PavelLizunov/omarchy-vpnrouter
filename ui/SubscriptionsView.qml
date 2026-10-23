@@ -179,12 +179,14 @@ Item {
     Ui.BorderSurface {
       visible: !root.service || !root.service.subscriptions || root.service.subscriptions.length === 0
       width: parent.width
-      height: Commons.Style.space(120)
+      height: Math.max(Commons.Style.space(120), emptyContent.implicitHeight + Commons.Style.space(32))
       radius: Commons.Style.cornerRadius
       color: Commons.Style.normalFill
       borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
 
       Column {
+        id: emptyContent
+        width: parent.width - Commons.Style.space(32)
         anchors.centerIn: parent
         spacing: Commons.Style.space(8)
 
@@ -200,6 +202,9 @@ Item {
         Text {
           textFormat: Text.PlainText
           anchors.horizontalCenter: parent.horizontalCenter
+          width: parent.width
+          horizontalAlignment: Text.AlignHCenter
+          wrapMode: Text.WordWrap
           text: root.tr("subscriptions.empty")
           color: Commons.Color.popups.text
           font.family: Commons.Style.font.family

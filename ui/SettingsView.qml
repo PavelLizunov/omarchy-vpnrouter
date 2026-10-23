@@ -212,6 +212,7 @@ Item {
         Toggle {
           width: parent.width
           label: root.tr("settings.bypassRu")
+          description: root.tr("settings.bypassRuDesc")
           checked: root.bypassRuVal
           onToggled: function(val) { root.bypassRuVal = val }
         }
@@ -226,7 +227,7 @@ Item {
         Toggle {
           width: parent.width
           label: root.tr("settings.dnsLeak")
-          description: !root.hasDnsLockdownCap ? root.tr("settings.dnsLeakUnsupported") : ""
+          description: root.tr("settings.dnsLeakDesc") + (!root.hasDnsLockdownCap ? "\n" + root.tr("settings.dnsLeakUnsupported") : "")
           enabled: root.hasDnsLockdownCap
           checked: root.hasDnsLockdownCap && root.dnsLeakVal
           onToggled: function(val) {
