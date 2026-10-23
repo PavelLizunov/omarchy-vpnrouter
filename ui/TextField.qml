@@ -15,15 +15,15 @@ FocusScope {
   signal accepted()
   signal cleared()
   function clear() { input.clear(); showPassword = false; cleared() }
+  function focusInput() { input.forceActiveFocus() }
   implicitWidth: Commons.Style.spacing.dropdownWidth
   implicitHeight: Math.max(Commons.Style.spacing.controlHeight, input.implicitHeight)
-  activeFocusOnTab: true
-  onActiveFocusChanged: if (activeFocus) { input.forceActiveFocus(); Qt.callLater(function() { Focus.reveal(root) }) }
+  onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
   Ui.TextField {
     id: input
     anchors.fill: parent
     focus: true
-    activeFocusOnTab: false
+    activeFocusOnTab: true
     placeholderText: root.placeholderText
     echoMode: root.echoMode
     foreground: Commons.Color.popups.text

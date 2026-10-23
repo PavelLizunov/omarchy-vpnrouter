@@ -66,7 +66,7 @@ Item {
         variant: root.showImportForm ? "subtle" : "primary"
         onClicked: {
           if (root.showImportForm) root.cancelForm()
-          else { root.noticeKey = ""; root.showImportForm = true; Qt.callLater(function() { customNameInput.forceActiveFocus() }) }
+          else { root.noticeKey = ""; root.showImportForm = true; Qt.callLater(function() { customNameInput.focusInput() }) }
         }
       }
     }

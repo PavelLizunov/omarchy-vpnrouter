@@ -23,7 +23,7 @@ Item {
     if (root.pending) return
     root.errorKey = ""; root.successNotice = ""
     root.showAddForm = true
-    Qt.callLater(function() { subNameInput.forceActiveFocus() })
+    Qt.callLater(function() { subNameInput.focusInput() })
   }
 
   function cancelForm() {
@@ -130,7 +130,7 @@ Item {
           enabled: !root.pending
           width: parent.width
           placeholderText: root.tr("subscriptions.namePlaceholder")
-          onAccepted: subUrlInput.forceActiveFocus()
+          onAccepted: subUrlInput.focusInput()
         }
 
         // Secret URL field (password masked)

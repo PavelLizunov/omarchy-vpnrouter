@@ -162,9 +162,10 @@ Rectangle {
     }
     function field(parent,placeholder) {var x=fixture.find(parent,function(x){return x.placeholderText===backend.tr(placeholder) && x.isPassword!==undefined});expect(x!==null,placeholder);return x}
     function go(tab) {consumer.openSection(tab);byName("vpnContentViewport").contentY=0;wait(35)}
-    function activate(item,key) {item.forceActiveFocus();wait(5);keyClick(key || Qt.Key_Return);wait(45)}
+    function focusInput(item) {if(typeof item.focusInput==="function") item.focusInput();else item.forceActiveFocus()}
+    function activate(item,key) {focusInput(item);wait(5);keyClick(key || Qt.Key_Return);wait(45)}
     function click(item) {item.forceActiveFocus();wait(5);mouseClick(item);wait(45)}
-    function fill(item,text) {item.text=text;item.forceActiveFocus();wait(5)}
+    function fill(item,text) {item.text=text;focusInput(item);wait(5)}
     function count(method) {return fixture.messages.filter(function(m){return m===method}).length}
     function geometry() {
       var frame=fixture.find(consumer,function(x){return x.contentWidth!==undefined && x.availableHeight!==undefined})
@@ -381,6 +382,16 @@ Rectangle {
       var eye=fixture.find(url,function(x){return x.tooltipText===backend.tr("subscriptions.showUrl")})
       expect(eye!==null && cue(eye).visible,"Secret-eye action identifies keyboard focus")
       expect(!cue(url).visible,"The eye action does not also mark the whole field")
+      keyClick(Qt.Key_Tab);wait(15)
+      expect(button(p,"action.add").activeFocus,"Tab leaves the secret field for Add")
+      keyClick(Qt.Key_Backtab);wait(15)
+      expect(cue(eye).visible,"Shift+Tab returns to the secret-eye action")
+      keyClick(Qt.Key_Backtab);wait(15)
+      expect(cue(url).visible,"Shift+Tab returns from the eye to the URL input")
+      keyClick(Qt.Key_Backtab);wait(15)
+      expect(cue(name).visible,"Shift+Tab returns from URL to Name")
+      keyClick(Qt.Key_Return);wait(15)
+      expect(cue(url).visible,"Enter in Name explicitly focuses URL text")
       click(button(p,"action.cancel"))
       var toggle=fixture.find(p,function(x){return x.compact===true && x.toggled!==undefined})
       expect(toggle!==null && toggle.Accessible.name.length>0,"Compact subscription toggle has a name")
