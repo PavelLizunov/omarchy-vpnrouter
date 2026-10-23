@@ -110,13 +110,22 @@ Item {
     return I18n.t(key, args)
   }
 
+  // Omarchy 4.0.4 has no Commons.I18n singleton.
+  readonly property var hostI18n: typeof Commons.I18n !== "undefined" ? Commons.I18n : null
+
+  function systemLanguage() {
+    return root.hostI18n && typeof root.hostI18n.language === "string"
+      ? root.hostI18n.language : Quickshell.env("LANG")
+  }
+
   Connections {
-    target: Commons.I18n
+    target: root.hostI18n
+    ignoreUnknownSignals: true
     function onLanguageChanged() { root.setLocale(root.locale) }
   }
 
   function setLocale(loc) {
-    var userLang = Commons.I18n.language
+    var userLang = root.systemLanguage()
     I18n.setLocale(loc, userLang)
     root.locale = loc
     root.effectiveLocale = I18n.getEffectiveLocale()
@@ -127,7 +136,7 @@ Item {
   }
 
   onSettingsChanged: {
-    var userLang = Commons.I18n.language
+    var userLang = root.systemLanguage()
     var configuredLocale = settings && settings.locale ? settings.locale : "auto"
     I18n.setLocale(configuredLocale, userLang)
     root.locale = configuredLocale
@@ -172,7 +181,7 @@ Item {
   }
 
   Component.onCompleted: {
-    var userLang = Commons.I18n.language
+    var userLang = root.systemLanguage()
     var configuredLocale = settings && settings.locale ? settings.locale : "auto"
     I18n.setLocale(configuredLocale, userLang)
     root.locale = configuredLocale

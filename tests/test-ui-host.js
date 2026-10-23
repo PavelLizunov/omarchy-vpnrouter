@@ -47,3 +47,12 @@ const snapshotRoot = {};
 applySnapshot(snapshotRoot, {}, {normalizeSnapshot: () => ({errorCode: null})});
 assert.strictEqual(snapshotRoot.errorCode, '', 'Absent error must remain an empty QML string');
 console.log('PASS: actual QML host context, locale, panel switching and absent error');
+
+// Old hosts omit Commons.I18n entirely; startup must still resolve LANG.
+const systemLanguage = body('Service.qml', 'systemLanguage', ['root', 'Quickshell']);
+const env = {env(name) { assert.strictEqual(name, 'LANG'); return 'ru_RU.UTF-8'; }};
+assert.strictEqual(systemLanguage({hostI18n: null}, env), 'ru_RU.UTF-8');
+assert.strictEqual(systemLanguage({hostI18n: {}}, env), 'ru_RU.UTF-8');
+assert.strictEqual(systemLanguage({hostI18n: {language: 'en'}}, env), 'en');
+assert.strictEqual(systemLanguage({hostI18n: {language: 'ru'}}, env), 'ru');
+console.log('PASS: host language feature detection and LANG fallback');

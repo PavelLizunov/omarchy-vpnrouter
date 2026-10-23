@@ -160,7 +160,8 @@ console.log("ALL I18N TESTS PASSED!\n");
   I18n.setCatalogs(enJson, ruJson);
   const service = { i18nRevision: 0, settings: {} };
   const commons = { I18n: { language: 'ru' } };
-  for (const name of ['tr', 'setLocale']) {
+  service.hostI18n = commons.I18n;
+  for (const name of ['tr', 'systemLanguage', 'setLocale']) {
     const f = qmlFunction(serviceSource, name);
     service[name] = new Function('root', 'Commons', 'I18n', `return function(${f.args}) {${f.body}}`)(service, commons, I18n);
   }
@@ -186,6 +187,11 @@ console.log("ALL I18N TESTS PASSED!\n");
   commons.I18n.language = 'en';
   service.setLocale(service.locale);
   assert.strictEqual(service.effectiveLocale, 'en', 'Auto tracks subsequent shell changes');
+  service.hostI18n = null;
+  const language = qmlFunction(serviceSource, 'systemLanguage');
+  service.systemLanguage = new Function('root', 'Quickshell', `return function() {${language.body}}`)(service, {env: () => 'ru_RU.UTF-8'});
+  service.setLocale('auto');
+  assert.strictEqual(service.effectiveLocale, 'ru', 'Old host resolves auto from LANG');
   const panelSource = fs.readFileSync(path.join(__dirname, '../Panel.qml'), 'utf8');
   const toggle = qmlFunction(panelSource, 'toggleLocale');
   const saved = [];
