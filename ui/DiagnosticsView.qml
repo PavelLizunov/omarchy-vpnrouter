@@ -109,6 +109,8 @@ Item {
       model: root.items
 
       Ui.BorderSurface {
+        id: diagnosticResult
+        readonly property bool messageOnly: modelData.name === "HealthCheck" && typeof modelData.message === "string" && modelData.message.length > 0
         width: column.width
         height: diagRow.implicitHeight + Commons.Style.space(16)
         radius: Commons.Style.cornerRadius
@@ -153,6 +155,7 @@ Item {
               textFormat: Text.PlainText
               width: parent.width
               text: modelData.name || root.tr("diagnostics.fallbackName")
+              visible: !diagnosticResult.messageOnly
               wrapMode: Text.WordWrap
               color: Commons.Color.popups.text
               font.family: Commons.Style.font.family
@@ -166,7 +169,7 @@ Item {
               text: Model.diagnosticIsUnconfigured(modelData) ? root.tr("diagnostics.notConfigured") : modelData.message || ""
               color: Commons.Color.popups.text
               font.family: Commons.Style.font.family
-              font.pixelSize: Commons.Style.font.caption
+              font.pixelSize: diagnosticResult.messageOnly ? Commons.Style.font.bodySmall : Commons.Style.font.caption
               wrapMode: Text.WordWrap
             }
           }

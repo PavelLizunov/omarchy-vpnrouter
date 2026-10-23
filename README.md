@@ -98,6 +98,9 @@ it preserves unsaved edits and does not create a file. Diagnostics export shows
 the service's full selectable, wrapping output path and clears stale feedback
 before a retry.
 
+Diagnostic rows keep each result message and severity. Repeated `HealthCheck`
+headings are omitted when a message is present; descriptive check names remain.
+
 ## Display language
 
 The panel follows the Omarchy shell language (`Commons.I18n.language`) by default.
