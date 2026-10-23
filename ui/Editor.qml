@@ -24,6 +24,7 @@ FocusScope {
     radius: Commons.Style.cornerRadius
     borderSpec: Commons.Border.controlSpec(root.activeFocus ? "focus" : "normal", Commons.Color.popups.text, Commons.Color.accent)
   }
+  FocusCue { focused: root.activeFocus }
   Flickable {
     id: viewport
     objectName: "vpnEditorViewport"

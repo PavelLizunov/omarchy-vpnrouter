@@ -233,6 +233,7 @@ Item {
           // Enable toggle
           Toggle {
             id: subscriptionToggle
+            accessibleLabel: root.tr("subscriptions.accessibleToggle", [modelData.name || root.tr("subscriptions.fallbackName")])
             anchors.verticalCenter: parent.verticalCenter
             checked: modelData.enabled !== false
             onToggled: function(val) {

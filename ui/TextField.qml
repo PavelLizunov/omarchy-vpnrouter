@@ -42,4 +42,5 @@ FocusScope {
     Accessible.checked: root.showPassword
     onClicked: root.showPassword = !root.showPassword
   }
+  FocusCue { focused: root.activeFocus && !eye.activeFocus }
 }

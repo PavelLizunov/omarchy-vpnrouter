@@ -73,6 +73,7 @@ Item {
         Accessible.name: modelData.label
         Accessible.checked: selected
         onClicked: { root.forceActiveFocus(); root.focusedIndex=index; root.choose(index) }
+        FocusCue { focused: root.activeFocus && root.focusedIndex === option.index }
       }
     }
   }

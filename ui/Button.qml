@@ -40,4 +40,5 @@ Item {
     opacity: root.enabled ? 1 : 0.5
     onClicked: { root.forceActiveFocus(); root.clicked() }
   }
+  FocusCue { focused: root.activeFocus && !root.busy }
 }

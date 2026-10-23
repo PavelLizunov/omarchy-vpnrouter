@@ -339,6 +339,7 @@ Rectangle {
       else if(fixture.suite==="brand") { brand() }
       else if(fixture.suite==="states") { states() }
       else if(fixture.suite==="layoutFit") { layoutFit() }
+      else if(fixture.suite==="focusCues") { focusCues() }
       else if(fixture.suite==="geometry") {
         var tabs=["servers","subscriptions","apps","rules","settings","diagnostics","free","profiles","custom"]
         for(var i=0;i<tabs.length;i++) {
@@ -360,6 +361,50 @@ Rectangle {
       if(focus) focus.forceActiveFocus();keyClick(Qt.Key_Escape);wait(10);expect(!consumer.opened,"Escape closes panel from form focus")
       consumer.open();wait(40)
       console.log("R6_RESULT",fixture.suite,"PASS",JSON.stringify(geometry()))
+    }
+    function focusCues() {
+      function cue(owner) {
+        var mark=fixture.find(owner,function(x){return x.objectName==="vpnFocusCue" && x.parent===owner})
+        expect(mark!==null,"Focus cue exists")
+        return mark
+      }
+      go("subscriptions");var p=page("Subscriptions")
+      click(button(p,"subscriptions.addTitle"))
+      var name=field(p,"subscriptions.namePlaceholder"),url=field(p,"subscriptions.urlPlaceholder")
+      name.forceActiveFocus();wait(15)
+      expect(cue(name).visible,"Name field identifies focus")
+      equal(String(cue(name).color),String(Commons.Color.accent),"Focus cue inherits theme accent")
+      equal(cue(name).width,Commons.Style.space(2),"Focus cue uses theme spacing")
+      keyClick(Qt.Key_Tab);wait(15)
+      expect(!cue(name).visible && cue(url).visible,"Tab transfers focus cue")
+      keyClick(Qt.Key_Tab);wait(15)
+      var eye=fixture.find(url,function(x){return x.tooltipText===backend.tr("subscriptions.showUrl")})
+      expect(eye!==null && cue(eye).visible,"Secret-eye action identifies keyboard focus")
+      expect(!cue(url).visible,"The eye action does not also mark the whole field")
+      click(button(p,"action.cancel"))
+      var toggle=fixture.find(p,function(x){return x.compact===true && x.toggled!==undefined})
+      expect(toggle!==null && toggle.Accessible.name.length>0,"Compact subscription toggle has a name")
+      go("apps")
+      var choices=fixture.all(page("Apps"),function(x){return typeof x.naturalRowWidth==="function"},[])
+      var choice=choices[0];choice.forceActiveFocus();wait(15)
+      var marks=fixture.all(choice,function(x){return x.objectName==="vpnFocusCue" && x.visible},[])
+      equal(marks.length,1,"Only the current option receives a focus cue")
+      keyClick(Qt.Key_Right);wait(15)
+      marks=fixture.all(choice,function(x){return x.objectName==="vpnFocusCue" && x.visible},[])
+      equal(marks.length,1,"Arrow focus moves without adding a second cue")
+      go("settings")
+      var descriptions=fixture.all(page("Settings"),function(x){return x.objectName==="vpnToggleDescription" && x.visible},[])
+      expect(descriptions.length>=3,"Setting explanations remain visible")
+      for(var text of descriptions) {
+        equal(String(text.color),String(Commons.Color.popups.text),"Description uses readable theme text")
+        expect(text.contentWidth<=text.width+1,"Description wraps within its width")
+      }
+      var text=descriptions[0],toggle=text.parent.parent,checked=toggle.checked,before=count("settings.set")
+      mouseClick(text);wait(15);expect(toggle.checked!==checked,"Description click still toggles the local draft")
+      expect(cue(toggle).visible,"Description click focuses the complete native setting")
+      mouseClick(text);wait(15);equal(toggle.checked,checked,"Description click can restore the draft")
+      equal(count("settings.set"),before,"Description click does not save settings")
+      console.log("R6_PASS focusCues theme-accent tab-transfer eye choice named-toggle readable-wrapped-descriptions")
     }
     function layoutFit() {
       var originalWidth=fixture.width
@@ -485,6 +530,8 @@ Rectangle {
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}
       else if(fixture.capture==="subscription-invalid") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"invalid");activate(field(p,"subscriptions.urlPlaceholder"))}
       else if(fixture.capture==="subscription-form") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub")}
+      else if(fixture.capture==="rules-focus") {go("rules");byName("vpnRulesEditor").forceActiveFocus();wait(20)}
+      else if(fixture.capture==="settings-focus") {go("settings");fixture.find(page("Settings"),function(x){return x.toggled!==undefined && typeof x.description==="string" && x.description.length>0 && x.enabled}).forceActiveFocus();wait(20)}
       else if(fixture.capture==="rules-invalid") {go("rules");fill(byName("vpnRulesEditor"),"invalid rule");fixture.failNext="rules.set";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(35)}
       else if(fixture.capture==="server-invalid") {go("servers");click(button(page("Servers"),"action.import"));fill(byName("vpnServerImport"),"invalid server");fixture.failNext="servers.import";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(35)}
       else if(fixture.capture==="custom-invalid") {go("custom");click(button(page("CustomConfig"),"custom.addTitle"));fill(field(page("CustomConfig"),"custom.nameLabel"),"Fixture config");fill(byName("vpnCustomJson"),"{");keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20)}

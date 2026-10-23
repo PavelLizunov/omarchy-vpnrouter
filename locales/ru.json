@@ -159,6 +159,7 @@
   "error.busy": "Служба выполняет другую операцию",
   "servers.fallbackName": "Сервер",
   "servers.unnamed": "Сервер без имени",
+  "subscriptions.accessibleToggle": "Подписка: {0}",
   "subscriptions.fallbackName": "Подписка",
   "free.fallbackName": "Бесплатный сервер",
   "diagnostics.fallbackName": "Проверка",

@@ -159,6 +159,7 @@
   "error.busy": "The service is busy with another operation",
   "servers.fallbackName": "Server",
   "servers.unnamed": "Unnamed Server",
+  "subscriptions.accessibleToggle": "Subscription: {0}",
   "subscriptions.fallbackName": "Subscription",
   "free.fallbackName": "Free Server",
   "diagnostics.fallbackName": "Check",

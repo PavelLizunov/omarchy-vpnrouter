@@ -5,6 +5,7 @@ Choice 1.0 Choice.qml
 CustomConfigView 1.0 CustomConfigView.qml
 DiagnosticsView 1.0 DiagnosticsView.qml
 Editor 1.0 Editor.qml
+FocusCue 1.0 FocusCue.qml
 FreePoolView 1.0 FreePoolView.qml
 Header 1.0 Header.qml
 HeroCard 1.0 HeroCard.qml

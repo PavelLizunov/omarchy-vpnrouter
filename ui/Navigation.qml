@@ -111,6 +111,7 @@ Ui.BorderSurface {
           cursorShape: Qt.PointingHandCursor
           onClicked: { entry.forceActiveFocus(); root.tabSelected(entry.modelData.id) }
         }
+        FocusCue { focused: entry.activeFocus }
       }
     }
   }
