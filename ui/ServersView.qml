@@ -330,6 +330,7 @@ Item {
                 }
 
                 LatencyPill {
+                  visible: known
                   latency: modelData.latencyMs
                   label: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                   anchors.verticalCenter: parent.verticalCenter

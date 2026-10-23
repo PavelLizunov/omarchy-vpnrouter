@@ -34,6 +34,8 @@ Ui.Panel {
 
   onOpenedChanged: {
     if (opened) {
+      // A fresh open shows the connection status, not the last scroll position.
+      if (mode === "simple") flickableContent.contentY = 0
       if (service) {
         service.refreshSnapshot()
         service.listSubscriptions(0, 100)
@@ -87,14 +89,14 @@ Ui.Panel {
     }
   }
 
-  function setDisplayMode(nextMode) {
+  function setDisplayMode(nextMode, keepTop) {
     root.mode = nextMode
     flickableContent.contentY = 0
     Qt.callLater(function() {
       // Refresh the positioner extent before focus restoration clamps scrolling.
       mainColumn.forceLayout()
       if (nextMode === "advanced") backButton.forceActiveFocus()
-      else homeNavigation.restoreFocus(root.currentTab)
+      else if (!keepTop) homeNavigation.restoreFocus(root.currentTab)
     })
     if (nextMode === "advanced") {
       refreshTab(currentTab)
@@ -109,7 +111,7 @@ Ui.Panel {
   }
 
   function navigate(page, form) {
-    if (page === "home") root.setDisplayMode("simple")
+    if (page === "home") root.setDisplayMode("simple", true)
     else root.openSection(page)
     if (page === "subscriptions" && form === "add") root.openSubscriptionForm()
     if (page === "servers" && form === "import") serversView.openImportForm()

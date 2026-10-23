@@ -13,6 +13,7 @@ Item {
   signal toggled(bool nextState)
   implicitWidth: compact ? track.implicitWidth : Commons.Style.space(240)
   implicitHeight: compact ? track.implicitHeight : content.implicitHeight
+  opacity: enabled ? 1 : 0.5
   activeFocusOnTab: true
   onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
   Accessible.role: Accessible.CheckBox
