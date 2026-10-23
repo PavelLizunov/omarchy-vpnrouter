@@ -23,7 +23,7 @@ Item {
     if (root.pending) return
     root.errorKey = ""; root.successNotice = ""
     root.showAddForm = true
-    Qt.callLater(function() { subNameInput.focusInput() })
+    Qt.callLater(function() { subUrlInput.focusInput() })
   }
 
   function restoreEntryFocus() {
@@ -42,9 +42,11 @@ Item {
     if (!root.service || root.pending) return
     feedback.reveal()
     root.successNotice = ""
-    if (!subNameInput.text.trim() || !subUrlInput.text.trim()) { root.errorKey = "form.required"; return }
-    var name = subNameInput.text.trim()
     var url = subUrlInput.text.trim()
+    if (!url) { root.errorKey = "form.required"; return }
+    // An empty name falls back to the URL's host.
+    var rest = url.indexOf("://") >= 0 ? url.slice(url.indexOf("://") + 3) : url
+    var name = subNameInput.text.trim() || rest.split("/")[0].split("?")[0].split("#")[0].split(":")[0]
     if (name.length > 256) { root.errorKey = "form.nameTooLong"; return }
     if (url.length > 2048 || !/^https?:\/\/[^\s/?#]+(?:[/?#][^\s]*)?$/i.test(url)) { root.errorKey = "subscriptions.invalidUrl"; return }
     root.errorKey = ""
@@ -120,24 +122,6 @@ Item {
           font.pixelSize: Commons.Style.font.title
         }
 
-        Text {
-          textFormat: Text.PlainText
-          width: parent.width
-          text: root.tr("subscriptions.nameLabel")
-          wrapMode: Text.WordWrap
-          color: Commons.Color.popups.text
-          font.family: Commons.Style.font.family
-          font.pixelSize: Commons.Style.font.caption
-        }
-
-        TextField {
-          id: subNameInput
-          enabled: !root.pending
-          width: parent.width
-          placeholderText: root.tr("subscriptions.namePlaceholder")
-          onAccepted: subUrlInput.focusInput()
-        }
-
         // Secret URL field (password masked)
         Text {
           textFormat: Text.PlainText
@@ -157,6 +141,24 @@ Item {
           passwordToggleLabel: root.tr("subscriptions.showUrl")
           passwordHideLabel: root.tr("subscriptions.hideUrl")
           placeholderText: root.tr("subscriptions.urlPlaceholder")
+          onAccepted: subNameInput.focusInput()
+        }
+
+        Text {
+          textFormat: Text.PlainText
+          width: parent.width
+          text: root.tr("subscriptions.nameLabel")
+          wrapMode: Text.WordWrap
+          color: Commons.Color.popups.text
+          font.family: Commons.Style.font.family
+          font.pixelSize: Commons.Style.font.caption
+        }
+
+        TextField {
+          id: subNameInput
+          enabled: !root.pending
+          width: parent.width
+          placeholderText: root.tr("subscriptions.namePlaceholder")
           onAccepted: root.submit()
         }
 

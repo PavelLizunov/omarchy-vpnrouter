@@ -247,7 +247,7 @@ Ui.Panel {
                       objectName: "vpnHomeServerName"
                       width: parent.width
                       textFormat: Text.PlainText
-                      text: hero.needsSetup ? root.tr("home.addConfig") : root.selectedServer ? root.selectedServer.name : root.service && root.service.activeServer ? root.service.activeServer : root.tr("simple.noActiveServer")
+                      text: hero.needsSetup ? root.tr("simple.noActiveServer") : root.selectedServer ? root.selectedServer.name : root.service && root.service.activeServer ? root.service.activeServer : root.tr("simple.noActiveServer")
                       color: Commons.Color.popups.text
                       font.family: Commons.Style.font.family; font.pixelSize: Commons.Style.font.body; font.weight: Font.DemiBold
                       elide: Text.ElideRight
@@ -256,6 +256,7 @@ Ui.Panel {
                       width: parent.width
                       textFormat: Text.PlainText
                       text: root.tr(root.service && root.service.configMode === "custom" ? "home.custom" : root.selectedServer && root.selectedServer.source === "subscription" ? "home.subscription" : "home.serverLink")
+                      visible: !hero.needsSetup
                       color: Commons.Color.popups.text
                       font.family: Commons.Style.font.family; font.pixelSize: Commons.Style.font.bodySmall
                       elide: Text.ElideRight
