@@ -18,7 +18,7 @@ Ui.BorderSurface {
   function restoreFocus(tabId) {
     for (var i = 0; i < entries.count; i++) {
       var item = entries.itemAt(i)
-      if (item && item.modelData.id === tabId) { item.forceActiveFocus(); item.reveal(); return }
+      if (item && item.modelData.id === tabId) { item.forceActiveFocus(); Qt.callLater(item.reveal); return }
     }
   }
   readonly property var tabs: [
