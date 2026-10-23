@@ -92,3 +92,14 @@ lifecycle.length=0;
 openBar(opener,panelLoader,{callLater(fn) { fn(); }});
 assert.deepStrictEqual(lifecycle,[['sync'],['open']], 'Normal reopen must not replay a consumed route');
 console.log('PASS: actual bar open consumes navigation once before panel lifecycle');
+
+const languages = [];
+navRoot.shell.summon = () => true;
+navRoot.setLocale = locale => languages.push(locale);
+for (const locale of ['en','ru','auto']) {
+  assert.strictEqual(navigate(navRoot, JSON.stringify({page:'home',locale})),true);
+}
+assert.deepStrictEqual(languages,['en','ru','auto']);
+assert.strictEqual(navigate(navRoot,'{"page":"home","locale":"unknown"}'),false);
+assert.strictEqual(languages.length,3);
+console.log('PASS: session-only locale preview validates values without saving host configuration');

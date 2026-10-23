@@ -31,12 +31,14 @@ Item {
     if (pages.indexOf(request.page) === -1) return false
     if (request.form !== undefined && !(request.page === "servers" && request.form === "import") &&
         !(request.page === "subscriptions" && request.form === "add")) return false
+    if (request.locale !== undefined && ["auto", "en", "ru"].indexOf(request.locale) === -1) return false
     if (!root.shell || typeof root.shell.summon !== "function") return false
     root.pendingNavigation = { page: request.page, form: request.form || "" }
     if (root.shell.summon("io.github.pavellizunov.vpnrouter", "{}") !== true) {
       root.pendingNavigation = null
       return false
     }
+    if (request.locale !== undefined) root.setLocale(request.locale)
     return true
   }
 

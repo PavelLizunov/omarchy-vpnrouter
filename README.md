@@ -15,7 +15,7 @@ Native QML and Quickshell plugin for Omarchy Quattro, providing desktop shell in
 
 This repository provides the Omarchy Quattro shell plugin interface, packaging lifecycle, and launcher wrapper.
 
-- **Backend contract:** The plugin follows `VPNRouter.Headless` at `29dcca1a29a670f0a45cf44a72fa639231427040` in upstream [PR #616](https://github.com/PavelLizunov/VPNRouter/pull/616). Optional round-four metadata is documented below. The current UI is verified offscreen; the running shell retained some older QML components during the bounded live check. Full current-version live loading, VPN connection and traffic routing still need acceptance.
+- **Backend contract:** The plugin follows `VPNRouter.Headless` at `29dcca1a29a670f0a45cf44a72fa639231427040` in upstream [PR #616](https://github.com/PavelLizunov/VPNRouter/pull/616). Optional round-four metadata is documented below. UI checks include the running test VM with Omarchy 4.0.4 / Quickshell 0.3.1 and offscreen rendering against the newer installed host. VPN connection and traffic routing remain unverified.
 - **Availability:** Connect stays disabled unless the backend reports `capabilities.connect=true`. The hero translates optional `unavailableReasonCode` values and falls back to `unavailableReason` for older peers. A missing backend shows an installation hint for `vpnrouter-headless` and stops automatic retries. Other process failures retry after 2–30 seconds; only a successful snapshot response resets the delay.
 - **Verification:** Server and free-pool verification show success, latency or failure details in their respective views. Kill switch and DNS lockdown remain unavailable on Linux; a saved DNS-lockdown preference is neither shown as active nor resubmitted when unsupported.
 
@@ -37,6 +37,8 @@ Pages: `home`, `servers`, `subscriptions`, `apps`, `rules`, `settings`,
 they do not submit data. Unknown pages/forms and payloads over 1024 characters
 return `invalid`. The host chooses the focused monitor. Omarchy 4.0.4 drops
 payloads on the generic bar-widget summon route, so use this target for sections.
+An optional `"locale":"en"`, `"ru"` or `"auto"` previews the panel language
+for this shell session without saving shell configuration.
 On hosts without `Commons.I18n`, automatic language follows `LANG`.
 
 ## Apps, first run and server sources
