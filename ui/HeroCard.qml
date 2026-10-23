@@ -51,12 +51,22 @@ Column {
       anchors.horizontalCenter: parent.horizontalCenter
       width: Commons.Style.space(136); height: width; radius: width / 2
       color: root.connected ? Commons.Style.selectedAccentFill : root.busy ? Commons.Style.normalFill : root.failed || root.missing ? Commons.Util.alpha(Commons.Color.urgent, Commons.Style.selectedFillAlpha) : "transparent"
-      Rectangle {
+      // The ring leaves a gap at the bottom for the state badge; theme popup
+      // surfaces can be translucent, so covering the line is not enough.
+      Shape {
+        id: ring
+        objectName: "vpnStateRing"
         anchors.centerIn: parent
-        width: Commons.Style.space(114); height: width; radius: width / 2
-        color: "transparent"
-        border.width: Commons.Style.space(3)
-        border.color: root.stateColor
+        width: Commons.Style.space(114); height: width
+        readonly property real radius: width / 2 - Commons.Style.space(3) / 2
+        readonly property real gapHalfAngle: Math.asin(Math.min(1, (badge.width / 2 + Commons.Style.space(4)) / radius)) * 180 / Math.PI
+        ShapePath {
+          strokeColor: root.stateColor
+          strokeWidth: Commons.Style.space(3)
+          fillColor: "transparent"
+          capStyle: ShapePath.RoundCap
+          PathAngleArc { centerX: ring.width/2; centerY: ring.height/2; radiusX: ring.radius; radiusY: ring.radius; startAngle: 90 + ring.gapHalfAngle; sweepAngle: 360 - 2 * ring.gapHalfAngle }
+        }
       }
       Shape {
         id: spinner
@@ -89,17 +99,18 @@ Column {
         }
       }
       Rectangle {
+        id: badge
+        objectName: "vpnStateBadge"
         anchors.horizontalCenter: parent.horizontalCenter
-        y: parent.height - height + Commons.Style.space(6)
-        width: Commons.Style.space(34); height: width; radius: width / 2
+        anchors.verticalCenter: ring.bottom
+        anchors.verticalCenterOffset: -Commons.Style.space(3) / 2
+        width: Commons.Style.space(30); height: width; radius: width / 2
         color: root.connected || root.busy || root.failed || root.missing ? root.stateColor : Commons.Style.normalFill
-        border.width: Commons.Style.space(3)
-        border.color: Commons.Color.popups.background
         Text {
           anchors.centerIn: parent
           textFormat: Text.PlainText
           text: root.connected ? "\u{f0cc8}" : root.failed || root.missing ? "\u{f0ecd}" : "\u{f0499}"
-          color: root.connected || root.busy || root.failed || root.missing ? Commons.Color.popups.background : Commons.Color.muted
+          color: root.connected || root.busy || root.failed || root.missing ? Commons.Color.popups.background : Commons.Color.popups.text
           font.family: Commons.Style.font.family
           font.pixelSize: Commons.Style.font.heading
         }
