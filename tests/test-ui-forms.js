@@ -83,3 +83,13 @@ const base = () => ({pending: false, tr: key => key});
   root.exportText(); fail({code: 'transport_error'}); assert.equal(root.exportedText, ''); assert.equal(root.statusNotice, 'form.failed');
 }
 console.log('PASS: production form handlers validate, retain drafts on failure, prevent duplicate submission, clear on success/cancel, and preserve exported drafts/CIDRs');
+for(const [value,expected] of [['https://example.invalid:8443/sub?fixture=yes','example.invalid'],
+  ['https://opaque-fixture-token@example.invalid/sub','example.invalid'],
+  ['https://fixture-user:fixture-password@example.invalid/sub','example.invalid'],
+  ['https://[2001:db8::1]:8443/sub','2001:db8::1']]) {
+  const name=input(''),url=input(value);let label;
+  const root=load('ui/SubscriptionsView.qml',{...base(),service:{addSubscription(n) {label=n;}}},
+    {subNameInput:name,subUrlInput:url,addToggle:input('')});
+  root.submit();assert.equal(label,expected,'Default name is a host, never userinfo, query or port');
+}
+console.log('PASS: optional subscription names strip URL userinfo and preserve IPv6 hosts');
