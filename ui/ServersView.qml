@@ -22,12 +22,16 @@ Item {
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
+  function restoreEntryFocus() {
+    Qt.callLater(function() { if (root.visible) importToggleBtn.forceActiveFocus() })
+  }
+
   function cancelForm() {
     if (root.pending) return
     importArea.text = ""
     root.noticeKey = ""
     root.showImportBox = false
-    importToggleBtn.forceActiveFocus()
+    root.restoreEntryFocus()
   }
 
   function openImportForm() {
@@ -45,7 +49,7 @@ Item {
     root.service.importServers(importArea.text.trim(), function() {
       root.pending = false; root.noticeKey = "servers.imported"
       importArea.text = ""; root.showImportBox = false
-      importToggleBtn.forceActiveFocus()
+      root.restoreEntryFocus()
     }, function(err) {
       root.pending = false; root.noticeError = true
       root.noticeKey = err && err.code === "invalid_argument" ? "servers.invalidImport" : "form.failed"
@@ -64,6 +68,7 @@ Item {
 
     // Top action bar
     Row {
+      visible: !root.showImportBox
       width: parent.width
       spacing: Commons.Style.space(8)
 
@@ -76,13 +81,10 @@ Item {
 
       Button {
         id: importToggleBtn
-        text: root.showImportBox ? root.tr("action.cancel") : "+ " + root.tr("action.import")
-        variant: root.showImportBox ? "subtle" : "normal"
+        text: "+ " + root.tr("action.import")
+        variant: "normal"
         enabled: !root.pending
-        onClicked: {
-          if (root.showImportBox) root.cancelForm()
-          else root.openImportForm()
-        }
+        onClicked: root.openImportForm()
       }
     }
 
@@ -165,7 +167,7 @@ Item {
 
     // Empty state
     Ui.BorderSurface {
-      visible: root.filteredServers.length === 0
+      visible: !root.showImportBox && root.filteredServers.length === 0
       width: parent.width
       height: emptyColumn.implicitHeight + Commons.Style.space(32)
       radius: Commons.Style.cornerRadius

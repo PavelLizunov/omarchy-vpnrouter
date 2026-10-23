@@ -83,6 +83,7 @@ Applications also controls the include/exclude policy.
 
 Subscription URLs are masked by default. Import forms keep input on failure and
 clear it after success or Cancel; empty/invalid input produces inline feedback.
+Each open form has one submit/cancel row; Cancel returns focus to Add or Import.
 Settings provide **Revert changes**, which restores the last values returned by
 the service. Invalid CIDRs are sent intact for service validation rather than
 silently removed. Multiline editors scroll internally; Enter adds a line,

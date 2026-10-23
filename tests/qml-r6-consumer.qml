@@ -306,24 +306,32 @@ Rectangle {
       consumer.open();wait(25);click(button(page("Subscriptions"),"action.cancel"))
       console.log("R6_PASS keyboard multiline-enter tab-backtab long-caret-inner-scroll focus-reveal escape-editor escape-secret")
     }
+    function editingLayout(parent,emptyKey) {
+      var cancels=fixture.all(parent,function(x){return x.visible && x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("action.cancel")},[])
+      equal(cancels.length,1,"An open form has one visible Cancel action")
+      expect(fixture.find(parent,function(x){return x.visible && x.text===backend.tr(emptyKey)})===null,"An open form does not compete with its empty-state card")
+    }
     function pointerForms() {
+      fixture.subscriptions=[]
       go("subscriptions");var p=page("Subscriptions")
-      click(button(p,"subscriptions.addTitle"));click(button(p,"action.add"));visibleNotice("form.required")
+      click(button(p,"subscriptions.addTitle"));editingLayout(p,"subscriptions.empty");click(button(p,"action.add"));visibleNotice("form.required")
       fill(field(p,"subscriptions.namePlaceholder"),"Pointer fixture");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub")
       click(button(p,"action.add"));expect(!p.showAddForm);visibleNotice("subscriptions.added")
-      click(button(p,"subscriptions.addTitle"));var cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showAddForm)
-      go("servers");p=page("Servers");click(button(p,"action.import"));fill(byName("vpnServerImport"),"invalid")
+      click(button(p,"subscriptions.addTitle"));click(button(p,"action.cancel"));expect(!p.showAddForm);expect(button(p,"subscriptions.addTitle").activeFocus,"Cancel returns focus to Add Subscription")
+      fixture.servers=[]
+      go("servers");p=page("Servers");click(button(p,"action.import"));editingLayout(p,"servers.empty");fill(byName("vpnServerImport"),"invalid")
       fixture.failNext="servers.import";click(button(p,"servers.importBtn"));visibleNotice("servers.invalidImport")
       fill(byName("vpnServerImport"),"vless://fixture@example.invalid:443");click(button(p,"servers.importBtn"));expect(!p.showImportBox)
-      click(button(p,"action.import"));cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showImportBox)
-      go("custom");p=page("CustomConfig");click(button(p,"custom.addTitle"));fill(field(p,"custom.nameLabel"),"Pointer config");fill(byName("vpnCustomJson"),"{}")
-      click(button(p,"action.import"));expect(!p.showImportForm);click(button(p,"custom.addTitle"));cancels=fixture.all(p,function(x){return x.visible && x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("action.cancel")},[]);click(cancels[cancels.length-1]);expect(!p.showImportForm)
+      click(button(p,"action.import"));click(button(p,"action.cancel"));expect(!p.showImportBox);expect(button(p,"action.import").activeFocus,"Cancel returns focus to Import Server")
+      fixture.configs=[]
+      go("custom");p=page("CustomConfig");click(button(p,"custom.addTitle"));editingLayout(p,"custom.empty");fill(field(p,"custom.nameLabel"),"Pointer config");fill(byName("vpnCustomJson"),"{}")
+      click(button(p,"action.import"));expect(!p.showImportForm);click(button(p,"custom.addTitle"));click(button(p,"action.cancel"));expect(!p.showImportForm);expect(button(p,"custom.addTitle").activeFocus,"Cancel returns focus to Import Configuration")
       go("rules");p=page("Rules");click(button(p,"rules.saveBtn"));visibleNotice("rules.saved");fill(byName("vpnRulesEditor"),'{"rules":[]}');click(button(p,"rules.importBtn"));visibleNotice("rules.importedSuccess");click(button(p,"rules.exportBtn"));equal(p.statusNotice,"rules.exportReady")
       go("settings");p=page("Settings");click(button(p,"settings.save"));visibleNotice("settings.saved");click(button(p,"settings.revert"));visibleNotice("settings.reverted")
       go("apps");var group=byName("vpnRoutingChoice"),options=fixture.all(group,function(x){return x.clicked!==undefined && x.selected!==undefined},[])
       click(options[1]);equal(backend.routingMode,"full");click(options[0]);equal(backend.routingMode,"split")
       group=byName("vpnAppRuleChoice");options=fixture.all(group,function(x){return x.clicked!==undefined && x.selected!==undefined},[]);click(options[1]);equal(backend.routingAppsMode,"exclude");click(options[0]);equal(backend.routingAppsMode,"include")
-      console.log("R6_PASS pointerForms submit-cancel-both-buttons every-form native-routing-options")
+      console.log("R6_PASS pointerForms submit-single-cancel no-competing-empty-card focus-return every-form native-routing-options")
     }
     function run() {
       var initial=JSON.stringify(geometry())
@@ -564,6 +572,7 @@ Rectangle {
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}
       else if(fixture.capture==="subscription-invalid") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"invalid");activate(field(p,"subscriptions.urlPlaceholder"))}
       else if(fixture.capture==="subscription-form") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub")}
+      else if(fixture.capture==="subscription-pending") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub");fixture.holdMethod="subscriptions.add";activate(field(p,"subscriptions.urlPlaceholder"));expect(p.pending,"Pending form capture uses the actual held request")}
       else if(fixture.capture==="rules-focus") {go("rules");byName("vpnRulesEditor").forceActiveFocus();wait(20)}
       else if(fixture.capture==="settings-focus") {go("settings");fixture.find(page("Settings"),function(x){return x.toggled!==undefined && typeof x.description==="string" && x.description.length>0 && x.enabled}).forceActiveFocus();wait(20)}
       else if(fixture.capture==="rules-invalid") {go("rules");fill(byName("vpnRulesEditor"),"invalid rule");fixture.failNext="rules.set";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(35)}

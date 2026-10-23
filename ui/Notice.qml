@@ -35,8 +35,8 @@ Ui.BorderSurface {
     readOnly: true
     selectByMouse: true
     activeFocusOnTab: true
-    wrapMode: TextEdit.WrapAnywhere
-    color: Commons.Color.popups.text
+    wrapMode: TextEdit.Wrap
+    color: root.error ? Commons.Color.urgent : Commons.Color.popups.text
     selectionColor: Commons.Color.accent
     selectedTextColor: Commons.Color.popups.background
     font.family: Commons.Style.font.family

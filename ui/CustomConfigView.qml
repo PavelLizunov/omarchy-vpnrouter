@@ -19,11 +19,15 @@ Item {
     return root.service && typeof root.service.tr === "function" ? root.service.tr(key, args) : I18n.t(key, args)
   }
 
+  function restoreEntryFocus() {
+    Qt.callLater(function() { if (root.visible) importToggle.forceActiveFocus() })
+  }
+
   function cancelForm() {
     if (root.pending) return
     customNameInput.clear(); customTextArea.text = ""
     root.noticeKey = ""; root.showImportForm = false
-    importToggle.forceActiveFocus()
+    root.restoreEntryFocus()
   }
 
   function submit() {
@@ -40,7 +44,7 @@ Item {
     root.service.importCustom(customNameInput.text.trim(), text, function() {
       root.pending = false; root.noticeKey = "custom.imported"
       customNameInput.clear(); customTextArea.text = ""; root.showImportForm = false
-      importToggle.forceActiveFocus()
+      root.restoreEntryFocus()
     }, function(err) {
       root.pending = false; root.noticeError = true
       root.noticeKey = err && err.code === "invalid_argument" ? "custom.invalidConfig" : "form.failed"
@@ -56,17 +60,18 @@ Item {
     spacing: Commons.Style.space(10)
 
     Row {
+      visible: !root.showImportForm
       width: parent.width
       spacing: Commons.Style.space(8)
 
       Button {
         id: importToggle
         enabled: !root.pending
-        text: root.showImportForm ? root.tr("action.cancel") : "+ " + root.tr("custom.addTitle")
-        variant: root.showImportForm ? "subtle" : "primary"
+        text: "+ " + root.tr("custom.addTitle")
+        variant: "primary"
         onClicked: {
-          if (root.showImportForm) root.cancelForm()
-          else { root.noticeKey = ""; root.showImportForm = true; Qt.callLater(function() { customNameInput.focusInput() }) }
+          root.noticeKey = ""; root.showImportForm = true
+          Qt.callLater(function() { customNameInput.focusInput() })
         }
       }
     }
@@ -161,7 +166,7 @@ Item {
 
     // Empty state
     Ui.BorderSurface {
-      visible: !root.service || !root.service.customConfigs || root.service.customConfigs.length === 0
+      visible: !root.showImportForm && (!root.service || !root.service.customConfigs || root.service.customConfigs.length === 0)
       width: parent.width
       height: Math.max(Commons.Style.space(120), emptyContent.implicitHeight + Commons.Style.space(32))
       radius: Commons.Style.cornerRadius

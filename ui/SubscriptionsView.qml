@@ -26,12 +26,16 @@ Item {
     Qt.callLater(function() { subNameInput.focusInput() })
   }
 
+  function restoreEntryFocus() {
+    Qt.callLater(function() { if (root.visible) addToggle.forceActiveFocus() })
+  }
+
   function cancelForm() {
     if (root.pending) return
     subUrlInput.clear(); subNameInput.clear()
     root.errorKey = ""
     root.showAddForm = false
-    addToggle.forceActiveFocus()
+    root.restoreEntryFocus()
   }
 
   function submit() {
@@ -50,7 +54,7 @@ Item {
       subUrlInput.clear(); subNameInput.clear()
       root.showAddForm = false
       root.successNotice = "subscriptions.added"
-      addToggle.forceActiveFocus()
+      root.restoreEntryFocus()
     }, function() { root.pending = false; root.errorKey = "subscriptions.addFailed" })
   }
 
@@ -64,15 +68,16 @@ Item {
 
     // Top action bar
     Flow {
+      visible: !root.showAddForm
       width: parent.width
       spacing: Commons.Style.space(8)
 
       Button {
         id: addToggle
         enabled: !root.pending
-        text: root.showAddForm ? root.tr("action.cancel") : "+ " + root.tr("subscriptions.addTitle")
-        variant: root.showAddForm ? "subtle" : "primary"
-        onClicked: { if (root.showAddForm) root.cancelForm(); else root.openForm() }
+        text: "+ " + root.tr("subscriptions.addTitle")
+        variant: "primary"
+        onClicked: root.openForm()
       }
 
       Button {
@@ -177,7 +182,7 @@ Item {
 
     // Empty state
     Ui.BorderSurface {
-      visible: !root.service || !root.service.subscriptions || root.service.subscriptions.length === 0
+      visible: !root.showAddForm && (!root.service || !root.service.subscriptions || root.service.subscriptions.length === 0)
       width: parent.width
       height: Math.max(Commons.Style.space(120), emptyContent.implicitHeight + Commons.Style.space(32))
       radius: Commons.Style.cornerRadius
