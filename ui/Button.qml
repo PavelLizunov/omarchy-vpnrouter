@@ -8,6 +8,7 @@ Item {
   id: root
   property string text: ""
   property string icon: ""
+  property string tooltipText: ""
   property string variant: "normal"
   property bool busy: false
 
@@ -28,6 +29,7 @@ Item {
     anchors.fill: parent
     enabled: root.enabled && !root.busy
     text: root.text
+    tooltipText: root.tooltipText
     iconText: root.busy ? "\u{f0772}" : root.icon
     iconSpinning: root.busy
     fontSize: root.fontSize

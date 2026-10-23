@@ -42,6 +42,7 @@ Ui.BorderSurface {
     font.family: Commons.Style.font.family
     font.pixelSize: Commons.Style.font.bodySmall
   }
+  FocusCue { focused: message.activeFocus }
   IconButton {
     id: dismiss
     anchors.right: parent.right

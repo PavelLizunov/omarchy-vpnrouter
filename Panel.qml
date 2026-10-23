@@ -174,6 +174,7 @@ Ui.Panel {
           anchors.verticalCenter: parent.verticalCenter
           icon: "󰁍"
           accessibleLabel: root.tr("home.back")
+          tooltipText: accessibleLabel
           implicitWidth: Commons.Style.space(36)
           variant: "subtle"
           onClicked: root.setDisplayMode("simple")

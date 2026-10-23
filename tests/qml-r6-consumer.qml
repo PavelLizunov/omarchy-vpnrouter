@@ -1,6 +1,7 @@
 // OFFSCREEN ONLY: real consumers and Service/locales; every request is inert.
 import QtQuick
 import QtTest
+import QtQuick.Controls as Controls
 import qs.Commons as Commons
 import ".." as Vpn
 import "../ui" as VpnUi
@@ -19,6 +20,7 @@ Rectangle {
   property bool reducedMotion: false
   property string motionOutputPrefix: ""
   property bool scrollBottom: false
+  property var controlOverlay: Controls.Overlay.overlay
   property bool previewReady: false
   property var messages: []
   property string failNext: ""
@@ -394,6 +396,22 @@ Rectangle {
       expect(target.activeFocus && point.y>=-1 && point.y+target.height<=viewport.height+1,"Changing section restores its visible home row")
       console.log("R6_PASS homeReturn repeated-home reveal-already-focused changed-section")
     }
+    function visibleTooltip(label) {
+      return fixture.controlOverlay && fixture.find(fixture.controlOverlay,function(x){return x.visible && x.text===label})
+    }
+    function hoverTooltip(item,label,leave) {
+      var nativeButton=fixture.find(item,function(x){return x.iconText!==undefined && x.tooltipText!==undefined})
+      expect(nativeButton!==null,"Hint uses the native Button")
+      equal(nativeButton.tooltipText,label,"Localized hint reaches the native Button")
+      mouseMove(item,item.width/2,item.height/2)
+      for(var n=0;n<60 && !visibleTooltip(label);n++) wait(25)
+      expect(visibleTooltip(label),"Actual native tooltip opens on hover: "+label)
+      if(leave!==false) {
+        mouseMove(fixture,1,1)
+        for(var n=0;n<30 && visibleTooltip(label);n++) wait(25)
+        expect(!visibleTooltip(label),"Native tooltip closes after pointer leaves")
+      }
+    }
     function focusCues() {
       function cue(owner) {
         var mark=fixture.find(owner,function(x){return x.objectName==="vpnFocusCue" && x.parent===owner})
@@ -412,6 +430,7 @@ Rectangle {
       keyClick(Qt.Key_Tab);wait(15)
       var eye=fixture.find(url,function(x){return x.tooltipText===backend.tr("subscriptions.showUrl")})
       expect(eye!==null && cue(eye).visible,"Secret-eye action identifies keyboard focus")
+      hoverTooltip(eye,backend.tr("subscriptions.showUrl"))
       expect(!cue(url).visible,"The eye action does not also mark the whole field")
       keyClick(Qt.Key_Tab);wait(15)
       expect(button(p,"action.add").activeFocus,"Tab leaves the secret field for Add")
@@ -423,7 +442,14 @@ Rectangle {
       expect(cue(name).visible,"Shift+Tab returns from URL to Name")
       keyClick(Qt.Key_Return);wait(15)
       expect(cue(url).visible,"Enter in Name explicitly focuses URL text")
+      activate(url);visibleNotice("form.required")
+      var notice=fixture.find(p,function(x){return x.objectName==="vpnNoticeText" && x.visible})
+      expect(notice.activeFocus && cue(notice.parent).visible,"Selectable error feedback identifies its keyboard focus")
+      keyClick(Qt.Key_Tab);wait(15)
+      expect(!cue(notice.parent).visible,"Feedback focus cue clears when Tab leaves")
       click(button(p,"action.cancel"))
+      for(var hint of [["vpnClose","action.close"],["vpnBack","home.back"],["vpnLanguage","language.change"]])
+        hoverTooltip(byName(hint[0]),backend.tr(hint[1]))
       var toggle=fixture.find(p,function(x){return x.compact===true && x.toggled!==undefined})
       expect(toggle!==null && toggle.Accessible.name.length>0,"Compact subscription toggle has a name")
       go("apps")
@@ -446,7 +472,7 @@ Rectangle {
       expect(cue(toggle).visible,"Description click focuses the complete native setting")
       mouseClick(text);wait(15);equal(toggle.checked,checked,"Description click can restore the draft")
       equal(count("settings.set"),before,"Description click does not save settings")
-      console.log("R6_PASS focusCues theme-accent tab-transfer eye choice named-toggle readable-wrapped-descriptions")
+      console.log("R6_PASS focusCues native-hover-hints notice-focus theme-accent tab-transfer eye choice named-toggle readable-wrapped-descriptions")
     }
     function layoutFit() {
       var originalWidth=fixture.width
@@ -572,6 +598,7 @@ Rectangle {
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}
       else if(fixture.capture==="subscription-invalid") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"invalid");activate(field(p,"subscriptions.urlPlaceholder"))}
       else if(fixture.capture==="subscription-form") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub")}
+      else if(fixture.capture==="subscription-tooltip") {consumer.openSubscriptionForm();wait(30);var p=page("Subscriptions"),url=field(p,"subscriptions.urlPlaceholder"),eye=fixture.find(url,function(x){return x.tooltipText===backend.tr("subscriptions.showUrl")});hoverTooltip(eye,backend.tr("subscriptions.showUrl"),false)}
       else if(fixture.capture==="subscription-pending") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub");fixture.holdMethod="subscriptions.add";activate(field(p,"subscriptions.urlPlaceholder"));expect(p.pending,"Pending form capture uses the actual held request")}
       else if(fixture.capture==="rules-focus") {go("rules");byName("vpnRulesEditor").forceActiveFocus();wait(20)}
       else if(fixture.capture==="settings-focus") {go("settings");fixture.find(page("Settings"),function(x){return x.toggled!==undefined && typeof x.description==="string" && x.description.length>0 && x.enabled}).forceActiveFocus();wait(20)}

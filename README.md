@@ -87,7 +87,8 @@ Each open form has one submit/cancel row; Cancel returns focus to Add or Import.
 Settings provide **Revert changes**, which restores the last values returned by
 the service. Invalid CIDRs are sent intact for service validation rather than
 silently removed. Multiline editors scroll internally; Enter adds a line,
-Ctrl+Enter submits, and Tab leaves the editor.
+Ctrl+Enter submits, and Tab leaves the editor. Icon actions use localized native
+hover hints; selectable feedback shows the theme accent edge when focused.
 
 Rules export returns saved rules as selectable text in a separate read-only area;
 it preserves unsaved edits and does not create a file. Diagnostics export shows

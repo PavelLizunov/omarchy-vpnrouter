@@ -77,6 +77,7 @@ Rectangle {
       objectName: "vpnLanguage"
       text: root.service && root.service.locale === "auto" ? root.tr("language.auto") : root.service ? root.service.effectiveLocale.toUpperCase() : "EN"
       accessibleLabel: root.tr("language.change")
+      tooltipText: accessibleLabel
       implicitWidth: Commons.Style.space(40)
       variant: "subtle"
       onClicked: root.localeToggled()
