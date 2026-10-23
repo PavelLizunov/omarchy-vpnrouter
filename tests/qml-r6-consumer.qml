@@ -186,17 +186,17 @@ Rectangle {
       go("subscriptions");var p=page("Subscriptions")
       click(button(p,"subscriptions.addTitle"));expect(p.showAddForm)
       var name=field(p,"subscriptions.namePlaceholder"),url=field(p,"subscriptions.urlPlaceholder")
-      name.forceActiveFocus();keyClick(Qt.Key_Tab);wait(5);expect(url.activeFocus,"Tab name → URL")
-      var before=count("subscriptions.add");activate(url);equal(count("subscriptions.add"),before);visibleNotice("form.required")
-      fill(name,"Fixture subscription");fill(url,"not-a-url");activate(url);equal(count("subscriptions.add"),before);visibleNotice("subscriptions.invalidUrl");expect(p.showAddForm)
+      url.forceActiveFocus();keyClick(Qt.Key_Return);wait(5);expect(name.activeFocus,"Return URL → optional Name")
+      var before=count("subscriptions.add");activate(name);equal(count("subscriptions.add"),before);visibleNotice("form.required")
+      fill(name,"Fixture subscription");fill(url,"not-a-url");activate(name);equal(count("subscriptions.add"),before);visibleNotice("subscriptions.invalidUrl");expect(p.showAddForm)
       equal(url.echoMode,TextInput.Password);url.forceActiveFocus();keyClick(Qt.Key_Tab);wait(5);keyClick(Qt.Key_Space);wait(5);equal(url.echoMode,TextInput.Normal,"Eye keyboard reveals")
       keyClick(Qt.Key_Return);wait(5);equal(url.echoMode,TextInput.Password)
       click(button(p,"action.cancel"));expect(!p.showAddForm);equal(url.text,"");equal(name.text,"");expect(!url.showPassword)
       click(button(p,"subscriptions.addTitle"));fill(name,"Fixture subscription");fill(url,"https://example.invalid/sub")
-      fixture.holdMethod="subscriptions.add";activate(url);expect(p.pending);expect(p.showAddForm);equal(url.text,"https://example.invalid/sub");visibleNotice("operation.pending")
-      activate(url);equal(count("subscriptions.add"),before+1,"Pending cannot duplicate")
+      fixture.holdMethod="subscriptions.add";activate(name);expect(p.pending);expect(p.showAddForm);equal(url.text,"https://example.invalid/sub");visibleNotice("operation.pending")
+      activate(name);equal(count("subscriptions.add"),before+1,"Pending cannot duplicate")
       fixture.release(true);wait(35);expect(!p.pending);expect(p.showAddForm);visibleNotice("subscriptions.addFailed");equal(url.text,"https://example.invalid/sub")
-      activate(url);expect(!p.showAddForm);equal(url.text,"");equal(name.text,"");visibleNotice("subscriptions.added")
+      activate(name);expect(!p.showAddForm);equal(url.text,"");equal(name.text,"");visibleNotice("subscriptions.added")
       console.log("R6_PASS subscriptions empty invalid-url masking cancel pending failure-retention retry-success")
     }
     function serversImport() {
@@ -422,28 +422,28 @@ Rectangle {
       go("subscriptions");var p=page("Subscriptions")
       click(button(p,"subscriptions.addTitle"))
       var name=field(p,"subscriptions.namePlaceholder"),url=field(p,"subscriptions.urlPlaceholder")
-      name.forceActiveFocus();wait(15)
-      expect(cue(name).visible,"Name field identifies focus")
-      equal(String(cue(name).color),String(Commons.Color.accent),"Focus cue inherits theme accent")
-      equal(cue(name).width,Commons.Style.space(2),"Focus cue uses theme spacing")
-      keyClick(Qt.Key_Tab);wait(15)
-      expect(!cue(name).visible && cue(url).visible,"Tab transfers focus cue")
+      url.forceActiveFocus();wait(15)
+      expect(cue(url).visible,"URL field identifies focus")
+      equal(String(cue(url).color),String(Commons.Color.accent),"Focus cue inherits theme accent")
+      equal(cue(url).width,Commons.Style.space(2),"Focus cue uses theme spacing")
       keyClick(Qt.Key_Tab);wait(15)
       var eye=fixture.find(url,function(x){return x.tooltipText===backend.tr("subscriptions.showUrl")})
       expect(eye!==null && cue(eye).visible,"Secret-eye action identifies keyboard focus")
       hoverTooltip(eye,backend.tr("subscriptions.showUrl"))
       expect(!cue(url).visible,"The eye action does not also mark the whole field")
       keyClick(Qt.Key_Tab);wait(15)
-      expect(button(p,"action.add").activeFocus,"Tab leaves the secret field for Add")
+      expect(cue(name).visible,"Tab leaves the secret field for optional Name")
+      keyClick(Qt.Key_Tab);wait(15)
+      expect(button(p,"action.add").activeFocus,"Tab leaves Name for Add")
+      keyClick(Qt.Key_Backtab);wait(15)
+      expect(cue(name).visible,"Shift+Tab returns to Name")
       keyClick(Qt.Key_Backtab);wait(15)
       expect(cue(eye).visible,"Shift+Tab returns to the secret-eye action")
       keyClick(Qt.Key_Backtab);wait(15)
       expect(cue(url).visible,"Shift+Tab returns from the eye to the URL input")
-      keyClick(Qt.Key_Backtab);wait(15)
-      expect(cue(name).visible,"Shift+Tab returns from URL to Name")
       keyClick(Qt.Key_Return);wait(15)
-      expect(cue(url).visible,"Enter in Name explicitly focuses URL text")
-      activate(url);visibleNotice("form.required")
+      expect(cue(name).visible,"Enter in URL explicitly focuses optional Name")
+      activate(name);visibleNotice("form.required")
       var notice=fixture.find(p,function(x){return x.objectName==="vpnNoticeText" && x.visible})
       expect(notice.activeFocus && cue(notice.parent).visible,"Selectable error feedback identifies its keyboard focus")
       keyClick(Qt.Key_Tab);wait(15)
@@ -618,10 +618,10 @@ Rectangle {
       else if(fixture.capture.indexOf("simple")===0) {consumer.setDisplayMode("simple");wait(25);if(fixture.capture==="simple-full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}}
       else if(fixture.capture==="connected") {backend.state="connected";wait(20)}
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}
-      else if(fixture.capture==="subscription-invalid") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"invalid");activate(field(p,"subscriptions.urlPlaceholder"))}
+      else if(fixture.capture==="subscription-invalid") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"invalid");activate(field(p,"subscriptions.namePlaceholder"))}
       else if(fixture.capture==="subscription-form") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub")}
       else if(fixture.capture==="subscription-tooltip") {consumer.openSubscriptionForm();wait(30);var p=page("Subscriptions"),url=field(p,"subscriptions.urlPlaceholder"),eye=fixture.find(url,function(x){return x.tooltipText===backend.tr("subscriptions.showUrl")});hoverTooltip(eye,backend.tr("subscriptions.showUrl"),false)}
-      else if(fixture.capture==="subscription-pending") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub");fixture.holdMethod="subscriptions.add";activate(field(p,"subscriptions.urlPlaceholder"));expect(p.pending,"Pending form capture uses the actual held request")}
+      else if(fixture.capture==="subscription-pending") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"https://example.invalid/sub");fixture.holdMethod="subscriptions.add";activate(field(p,"subscriptions.namePlaceholder"));expect(p.pending,"Pending form capture uses the actual held request")}
       else if(fixture.capture==="rules-focus") {go("rules");byName("vpnRulesEditor").forceActiveFocus();wait(20)}
       else if(fixture.capture==="settings-focus") {go("settings");fixture.find(page("Settings"),function(x){return x.toggled!==undefined && typeof x.description==="string" && x.description.length>0 && x.enabled}).forceActiveFocus();wait(20)}
       else if(fixture.capture==="rules-invalid") {go("rules");fill(byName("vpnRulesEditor"),"invalid rule");fixture.failNext="rules.set";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(35)}
