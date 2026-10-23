@@ -16,6 +16,7 @@ Item {
   property var appLibrary: null
   property int i18nRevision: service ? service.i18nRevision : 0
   property string searchQuery: ""
+  readonly property bool pending: !!root.service && !!root.service.activeOperation
 
   function tr(key, args) {
     var _ = root.i18nRevision
@@ -43,7 +44,7 @@ Item {
   }
 
   function addApp(name) {
-    if (!name || !root.service) return
+    if (!name || !root.service || root.pending) return
     var trimmed = String(name).trim()
     if (!trimmed) return
     var list = root.configuredApps.slice()
@@ -54,7 +55,7 @@ Item {
   }
 
   function removeApp(name) {
-    if (root.service) root.service.setApps(root.routingAppsMode, root.configuredApps.filter(function(item) { return item !== name }))
+    if (root.service && !root.pending) root.service.setApps(root.routingAppsMode, root.configuredApps.filter(function(item) { return item !== name }))
   }
 
   Column {
@@ -82,6 +83,7 @@ Item {
       width: parent.width
       TextField {
         id: customAppInput
+        enabled: !root.pending
         Layout.fillWidth: true
         placeholderText: root.tr("apps.customAppPlaceholder")
         onAccepted: { root.addApp(text); clear() }
@@ -89,7 +91,7 @@ Item {
       Button {
         text: root.tr("apps.addApp")
         variant: "primary"
-        enabled: customAppInput.text.trim().length > 0
+        enabled: !root.pending && customAppInput.text.trim().length > 0
         onClicked: { root.addApp(customAppInput.text); customAppInput.clear() }
       }
     }
@@ -136,6 +138,7 @@ Item {
             font.pixelSize: Commons.Style.font.bodySmall
           }
           IconButton {
+            enabled: !root.pending
             icon: "󰅖"
             tooltipText: root.tr("apps.removeApp", [configuredRow.modelData])
             onClicked: root.removeApp(configuredRow.modelData)
@@ -218,7 +221,7 @@ Item {
             id: appButton
             readonly property bool selected: root.configuredApps.indexOf(appDelegate.modelData.name) !== -1
             text: appButton.selected ? root.tr("apps.selected") : root.tr("action.add")
-            enabled: !appButton.selected
+            enabled: !root.pending && !appButton.selected
             onClicked: root.addApp(appDelegate.modelData.name)
           }
         }
