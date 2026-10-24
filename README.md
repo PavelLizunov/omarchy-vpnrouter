@@ -47,7 +47,9 @@ The home page keeps the Virtual Penguin Network title, original mascot, status
 ring, connection button and routing segments. All colours, typography, spacing
 and control geometry come from the installed Omarchy `Color`, `Style`, `Border`
 and `Ui` components. Connected/connecting use the theme accent, errors and
-unavailable states use urgent, and neutral state marks use muted. Popup background
+unavailable states use urgent. The bar uses filled Material shield glyphs with
+native icon sizing and alignment; disconnected uses foreground and startup uses
+muted. Neutral marks in the panel use muted. Popup background
 luminance selects the original black or white mascot PNG; the asset bytes do not
 change. The Omarchy panel owns fitting and lifecycle.
 
