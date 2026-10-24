@@ -123,6 +123,7 @@ HTTP test through a temporary local SOCKS proxy, without a TUN connection.
 Server, subscription and free-pool lists load 100 rows at a time; **Load more**
 opens the next page. Refreshing a server list discards its previous basic latency
 measurements. Enabling/removing a subscription refreshes the server list too.
+Free-pool latency badges appear only for successful basic or verified probes; rejected probe timings stay hidden after a list refresh.
 Free-pool **Apply** requires a successful verification. Application list editing
 waits for each acknowledged update to avoid replacing an in-flight change.
 Service errors are also shown in the open advanced section. Requests fail

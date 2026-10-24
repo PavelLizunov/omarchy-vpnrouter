@@ -167,7 +167,9 @@ Item {
               }
 
               LatencyPill {
-                visible: root.showLatency && known
+                visible: root.showLatency && known && (["ok", "slow", "verified"].indexOf(modelData.status) !== -1
+                    || !!(root.service && root.service.freeTest && root.service.freeTest.id === modelData.id
+                      && root.service.freeTest.reachable === true && root.service.freeTest.latencyMs === modelData.latencyMs))
                 latency: modelData.latencyMs
                 label: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                 anchors.verticalCenter: parent.verticalCenter

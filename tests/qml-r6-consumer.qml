@@ -648,6 +648,23 @@ Rectangle {
       go("servers");wait(20)
       backend.serverTest={id:"manual",reachable:true,latencyMs:null};wait(15)
       equal(byName("vpnServersTestResult").text,backend.tr("test.reachable",["Probe fixture"]),"UDP reachable result is explicit")
+      go("free")
+      backend.freeServers=[{id:"free",name:"Fresh basic probe",protocol:"vless",status:"unknown",latencyMs:42}]
+      backend.freeTest={id:"free",reachable:true,latencyMs:42};wait(15)
+      expect(fixture.find(page("FreePool"),function(x){return x.known!==undefined && x.latency!==undefined}).visible,"Fresh successful Test is visible before a list refresh")
+      backend.freeTest=null
+      for (var status of ["tlsfailed", "implausible", "timeout", "unreachable", "unknown"]) {
+        backend.freeServers=[{id:"free",name:"Rejected probe",protocol:"vless",status:status,latencyMs:10}]
+        wait(15)
+        var rejectedPill=fixture.find(page("FreePool"),function(x){return x.known!==undefined && x.latency!==undefined})
+        expect(!rejectedPill.visible,"Rejected free probe must not regain a latency pill: "+status)
+      }
+      for (var status of ["ok", "slow", "verified"]) {
+        backend.freeServers=[{id:"free",name:"Accepted probe",protocol:"vless",status:status,latencyMs:42}]
+        wait(15)
+        var acceptedPill=fixture.find(page("FreePool"),function(x){return x.known!==undefined && x.latency!==undefined})
+        expect(acceptedPill.visible,"Accepted free probe keeps its latency pill: "+status)
+      }
       backend.setLocale(fixture.locale);backend.clearLastError()
       console.log("R6_PASS night2 real-latency-controls custom-state-and-navigation empty-subscription probe-pending-results")
     }
