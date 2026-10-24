@@ -74,7 +74,7 @@ Rectangle {
       case "servers.select": fixture.selectedServer=p.id;result=fixture.snapshot();break
       case "servers.import": fixture.servers=fixture.servers.concat([{id:"imported",name:"Imported server (fixture)",protocol:"vless",source:"manual",removable:true}]);break
       case "servers.remove": fixture.servers=fixture.servers.filter(function(x){return x.id!==p.id});break
-      case "servers.test": result={id:p.id,latencyMs:42};break
+      case "servers.test": result={id:p.id,reachable:true,latencyMs:42};break
       case "servers.verify": result={id:p.id,ok:true,latencyMs:42};break
       case "subscriptions.list": result={items:fixture.subscriptions,total:fixture.subscriptions.length};break
       case "subscriptions.add": fixture.subscriptions=fixture.subscriptions.concat([{id:"added",name:p.name,enabled:true,serverCount:0}]);break
@@ -99,7 +99,7 @@ Rectangle {
       case "custom.remove": fixture.configs=fixture.configs.filter(function(x){return x.id!==p.id});break
       case "free.list": result={items:fixture.free,total:fixture.free.length};break
       case "free.refresh": break
-      case "free.test": result={id:p.id,latencyMs:42};break
+      case "free.test": result={id:p.id,reachable:true,latencyMs:42};break
       case "free.verify": result={id:p.id,ok:true,latencyMs:42};break
       case "free.apply": fixture.selectedServer=p.id;break
       case "diagnostics.check": result={items:[{name:"Configuration (fixture)",status:"info",message:"Not configured yet: add a subscription or a server"},{name:"Runtime (fixture)",status:"ok",message:"Fixture: check passed"}]};break
@@ -338,7 +338,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="subscriptions") subscriptions()
+      if(fixture.suite==="night2") night2()
+      else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
       else if(fixture.suite==="custom") customImport()
       else if(fixture.suite==="rules") rules()
@@ -603,6 +604,51 @@ Rectangle {
       var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
       consumer.open();wait(30);go("apps")
       console.log("R6_PASS brand host-luminance host-font change-server first-run language close")
+    }
+    function night2() {
+      go("servers")
+      consumer.settings={mode:"advanced",showLatency:false,locale:fixture.locale}
+      barStateProbe.settings={showLatency:false,locale:fixture.locale}
+      wait(25)
+      var pills=fixture.all(page("Servers"),function(x){return x.known!==undefined && x.latency!==undefined},[])
+      expect(pills.length>0,"Real list latency pills exist")
+      for(var pill of pills) expect(!pill.visible,"Latency preference hides real list pills")
+      backend.state="connected";wait(15)
+      expect(barStateProbe.barTooltip.indexOf(backend.tr("latency.ms",[42]))===-1,"Disabled latency is absent from bar tooltip")
+      consumer.settings={mode:"simple",showLatency:true,locale:fixture.locale}
+      barStateProbe.settings={showLatency:true,locale:fixture.locale}
+      backend.configMode="custom";backend.activeServer="Custom configuration (fixture)"
+      consumer.setDisplayMode("simple");wait(25)
+      equal(byName("vpnHomeServerName").text,backend.activeServer,"Custom mode does not display the stale selected server")
+      equal(barStateProbe.activeServerItem,null,"Custom mode does not borrow a stale server ping")
+      click(byName("vpnChangeServer"));equal(consumer.currentTab,"custom","Change follows the active config type")
+      backend.configMode="generated";backend.state="disconnected";fixture.servers=[];fixture.selectedServer="";backend.servers=[];backend.serversLoaded=true
+      consumer.setDisplayMode("simple");wait(20)
+      expect(!byName("vpnConnect").enabled,"Empty subscription cannot connect")
+      var connects=count("connect");backend.connect();equal(count("connect"),connects,"Quick bar path also rejects an empty configuration");backend.clearLastError()
+      fixture.servers=[{id:"manual",name:"Probe fixture",source:"manual",protocol:"vless",latencyMs:0}];backend.servers=fixture.servers
+      go("servers");wait(20)
+      var row=byName("vpnServerRow-manual"),test=fixture.find(row,function(x){return x.tooltipText===backend.tr("action.test")})
+      fixture.holdMethod="servers.test";click(test)
+      expect(!test.enabled,"A second click cannot enqueue another probe")
+      fixture.release(false);wait(25)
+      expect(byName("vpnServersTestResult").text.indexOf(backend.tr("latency.ms",[42]))!==-1,"Successful ping is visible")
+      backend.serverTest={id:"manual",reachable:false,latencyMs:null};wait(15)
+      expect(byName("vpnServersTestResult").text.indexOf(backend.tr("test.unmeasured",["Probe fixture"]))!==-1,"Null ping is distinguished from never tested")
+      backend.serverTest={id:"manual",errorCode:"timeout"};wait(15)
+      expect(byName("vpnServersTestResult").text.indexOf(backend.tr("test.timeout",["Probe fixture"]))!==-1,"Timeout is explicit")
+      consumer.setDisplayMode("simple");wait(20)
+      backend.setLastError("error.timeout", [], "", "servers.verify")
+      backend.setLocale("en");wait(15)
+      equal(backend.lastErrorText,backend.tr("error.timeout"),"Local error displays in English")
+      backend.setLocale("ru");wait(15)
+      equal(backend.lastErrorText,backend.tr("error.timeout"),"Stored local error follows locale changes")
+      equal(byName("vpnHero").availability,backend.tr("error.timeout"),"Home displays the translated stored error")
+      go("servers");wait(20)
+      backend.serverTest={id:"manual",reachable:true,latencyMs:null};wait(15)
+      equal(byName("vpnServersTestResult").text,backend.tr("test.reachable",["Probe fixture"]),"UDP reachable result is explicit")
+      backend.setLocale(fixture.locale);backend.clearLastError()
+      console.log("R6_PASS night2 real-latency-controls custom-state-and-navigation empty-subscription probe-pending-results")
     }
     function prepareCapture() {
       if(fixture.capture==="home" || fixture.capture==="home-bottom" || fixture.capture==="first-run") {

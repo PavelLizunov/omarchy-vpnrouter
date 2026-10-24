@@ -55,7 +55,8 @@ change. The Omarchy panel owns fitting and lifecycle.
 
 When the server and subscription lists are both empty, **Add a subscription** in
 the connection card or Servers section opens the Subscriptions form. Opening the
-form does not fetch anything. **Change** opens Servers. The home list opens each
+form does not fetch anything. **Change** opens Servers, or Custom Config when a
+custom configuration is active. The home list opens each
 advanced section; its fixed back arrow returns to the originating row. One fitted
 frame and internal scrolling keep the panel stable across sections and forms.
 Tab traverses controls; Escape closes the panel. Enter submits single-line forms;
@@ -109,6 +110,23 @@ The panel follows the Omarchy shell language (`Commons.I18n.language`) by defaul
 The header language control cycles through EN/RU overrides and AUTO to return to
 following the shell. Overrides are saved in the widget's `locale` setting.
 The plugin ships English and Russian catalogs.
+Local service errors follow language changes; diagnostic prose from the backend
+remains verbatim. A successful retry clears the previous error for that operation.
+
+The widget's `mode` preference chooses the initial Home (`simple`) or Servers
+(`advanced`) view. `showLatency` controls latency badges in the bar, tooltip and
+server/free-pool lists. Home does not show a latency badge. Basic tests report a
+measured value (including 0 ms), an unmeasured result or a failure; an unmeasured
+result does not establish that the server is offline. Verification is a separate
+HTTP test through a temporary local SOCKS proxy, without a TUN connection.
+
+Server, subscription and free-pool lists load 100 rows at a time; **Load more**
+opens the next page. Refreshing a server list discards its previous basic latency
+measurements. Enabling/removing a subscription refreshes the server list too.
+Free-pool **Apply** requires a successful verification. Application list editing
+waits for each acknowledged update to avoid replacing an in-flight change.
+Service errors are also shown in the open advanced section. Requests fail
+immediately when the helper is absent, so forms do not remain pending forever.
 
 ## Security & Architecture Invariants
 

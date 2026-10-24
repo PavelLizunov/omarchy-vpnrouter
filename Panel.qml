@@ -29,7 +29,10 @@ Ui.Panel {
   }
 
   // User configuration and display mode
-  property string mode: "simple"
+  readonly property string configuredMode: setting("mode", "simple") === "advanced" ? "advanced" : "simple"
+  property string mode: root.configuredMode
+  onConfiguredModeChanged: root.mode = root.configuredMode
+  readonly property bool showLatency: setting("showLatency", true) !== false
   property string currentTab: "servers"
 
   onOpenedChanged: {
@@ -43,7 +46,7 @@ Ui.Panel {
         if (mode === "advanced") {
           refreshTab(currentTab)
         } else {
-          service.listServers(0, 50)
+          service.listServers(0, 100)
         }
       }
     }
@@ -101,7 +104,7 @@ Ui.Panel {
     if (nextMode === "advanced") {
       refreshTab(currentTab)
     } else if (root.service) {
-      root.service.listServers(0, 50)
+      root.service.listServers(0, 100)
     }
   }
 
@@ -249,7 +252,7 @@ Ui.Panel {
                       objectName: "vpnHomeServerName"
                       width: parent.width
                       textFormat: Text.PlainText
-                      text: hero.needsSetup ? root.tr("simple.noActiveServer") : root.selectedServer ? root.selectedServer.name : root.service && root.service.activeServer ? root.service.activeServer : root.tr("simple.noActiveServer")
+                      text: hero.needsSetup ? root.tr("simple.noActiveServer") : root.service && root.service.configMode === "custom" ? root.service.activeServer || root.tr("simple.noActiveServer") : root.selectedServer ? root.selectedServer.name : root.service && root.service.activeServer ? root.service.activeServer : root.tr("simple.noActiveServer")
                       color: Commons.Color.popups.text
                       font.family: Commons.Style.font.family; font.pixelSize: Commons.Style.font.body; font.weight: Font.DemiBold
                       elide: Text.ElideRight
@@ -273,7 +276,7 @@ Ui.Panel {
 
                     fontSize: Commons.Style.font.bodySmall
                     implicitWidth: Math.max(Commons.Style.space(80), contentWidthHint.implicitWidth+Commons.Style.space(24))
-                    onClicked: { if (hero.needsSetup) root.openSubscriptionForm(); else root.openSection("servers") }
+                    onClicked: { if (hero.needsSetup) root.openSubscriptionForm(); else root.openSection(root.service && root.service.configMode === "custom" ? "custom" : "servers") }
                     Text { id: contentWidthHint; visible: false; text: changeServer.text; font.family: Commons.Style.font.family; font.pixelSize: changeServer.fontSize }
                   }
                 }
@@ -304,8 +307,16 @@ Ui.Panel {
             visible: root.mode === "advanced"
             width: parent.width
             spacing: Commons.Style.space(12)
+            VpnUi.Notice {
+              width: parent.width
+              text: root.service ? root.service.lastErrorText : ""
+              error: true
+              dismissLabel: root.tr("action.dismiss")
+              onDismissed: if (root.service) root.service.clearLastError()
+            }
             VpnUi.ServersView {
               id: serversView
+              showLatency: root.showLatency
               onAddSubscriptionRequested: root.openSubscriptionForm()
               visible: root.currentTab === "servers"
               width: parent.width
@@ -320,6 +331,7 @@ Ui.Panel {
               i18nRevision: root.i18nRevision
             }
             VpnUi.FreePoolView {
+              showLatency: root.showLatency
               visible: root.currentTab === "free"
               width: parent.width
               service: root.service
