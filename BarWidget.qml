@@ -47,7 +47,7 @@ Ui.BarWidget {
   readonly property bool isError: effectiveService ? (effectiveService.isError || vpnState === "error") : false
   readonly property string activeServerName: effectiveService ? effectiveService.activeServer : ""
   readonly property var activeServerItem: {
-    if (!effectiveService || !effectiveService.servers) return null
+    if (!effectiveService || effectiveService.configMode === "custom" || !effectiveService.servers) return null
     for (var i = 0; i < effectiveService.servers.length; i++) {
       if (effectiveService.servers[i].selected) return effectiveService.servers[i]
     }
@@ -69,7 +69,7 @@ Ui.BarWidget {
     var title = root.tr("bar.state", [label])
     var server = activeServerName || (activeServerItem ? activeServerItem.name : "")
     if (server) title += "\n" + root.tr("bar.server", [server])
-    if (isConnected && serverLatency !== null && serverLatency !== undefined) title += " · " + root.tr("latency.ms", [Math.round(serverLatency)])
+    if (showLatencySetting && isConnected && typeof serverLatency === "number" && isFinite(serverLatency) && serverLatency >= 0) title += " · " + Model.formatLatency(serverLatency, ({ t: root.tr }))
     return title
   }
 
@@ -202,8 +202,8 @@ Ui.BarWidget {
       // Latency badge or server label on bar if enabled and connected
       Text {
         textFormat: Text.PlainText
-        visible: !root.vertical && root.showLatencySetting && root.isConnected && root.serverLatency !== null
-        text: root.tr("latency.ms", [Math.round(root.serverLatency || 0)])
+        visible: !root.vertical && root.showLatencySetting && root.isConnected && typeof root.serverLatency === "number" && isFinite(root.serverLatency) && root.serverLatency >= 0
+        text: Model.formatLatency(root.serverLatency, ({ t: root.tr }))
         color: root.inkColor
         font.family: Style.font.family
         font.pixelSize: Style.font.caption

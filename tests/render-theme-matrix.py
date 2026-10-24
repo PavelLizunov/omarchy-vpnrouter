@@ -157,7 +157,7 @@ try:
     if args.mode in ['all', 'check']:
         suites = ['brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
                   'servers', 'custom', 'rules', 'settings', 'actions', 'keyboard', 'pointerForms',
-                  'layoutFit', 'focusCues', 'homeReturn']
+                  'layoutFit', 'focusCues', 'homeReturn', 'night2']
         if args.suites:
             suites = args.suites.split(',')
         for locale in ['en', 'ru']:
