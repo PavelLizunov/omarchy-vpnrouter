@@ -9,6 +9,7 @@ Item {
   objectName: "vpnFreePoolView"
 
   property var service: null
+  property bool showLatency: true
   property int i18nRevision: service ? service.i18nRevision : 0
 
   function tr(key, args) {
@@ -35,6 +36,21 @@ Item {
         variant: "primary"
         onClicked: if (root.service) root.service.refreshFree()
       }
+    }
+
+    Text {
+      objectName: "vpnFreePoolTestResult"
+      width: parent.width
+      visible: text.length > 0
+      text: {
+        var _ = root.i18nRevision
+        return root.service ? Model.testText(root.service.freeTest, root.service.freeServers, ({ t: root.tr })) : ""
+      }
+      textFormat: Text.PlainText
+      wrapMode: Text.WordWrap
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
     }
 
     Text {
@@ -151,6 +167,7 @@ Item {
               }
 
               LatencyPill {
+                visible: root.showLatency && known
                 latency: modelData.latencyMs
                 label: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                 anchors.verticalCenter: parent.verticalCenter
@@ -166,23 +183,33 @@ Item {
             IconButton {
               icon: "󰓅"
               tooltipText: root.tr("action.test")
+              enabled: !!root.service && !root.service.activeOperation
               onClicked: if (root.service) root.service.testFree(modelData.id)
             }
 
             IconButton {
               icon: "󰄬"
               tooltipText: root.tr("action.verify")
+              enabled: !!root.service && !root.service.activeOperation
               onClicked: if (root.service) root.service.verifyFree(modelData.id)
             }
 
             Button {
               text: root.tr("free.apply")
               variant: "normal"
+              enabled: modelData.status === "verified" && !!root.service && !root.service.activeOperation
               onClicked: if (root.service) root.service.applyFree(modelData.id)
             }
           }
         }
       }
+    }
+    Button {
+      objectName: "vpnLoadMoreFreePool"
+      text: root.tr("list.loadMore")
+      visible: !!root.service && root.service.freeServers.length < root.service.freeTotal
+      enabled: !!root.service && !root.service.activeOperation
+      onClicked: root.service.listFree(root.service.freeServers.length, 100)
     }
   }
 }

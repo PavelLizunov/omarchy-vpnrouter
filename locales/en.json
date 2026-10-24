@@ -41,7 +41,7 @@
   "servers.searchPlaceholder": "Search servers…",
   "servers.empty": "No servers yet. Add a subscription or import a server.",
   "servers.importTitle": "Import Server",
-  "servers.importPlaceholder": "Paste VLESS, VMess, Shadowsocks URI lines, or WireGuard configuration…",
+  "servers.importPlaceholder": "Paste VLESS, Hysteria2, TUIC, Shadowsocks URI lines, or WireGuard configuration…",
   "servers.importBtn": "Import Server",
   "servers.testAll": "Test All",
   "servers.colName": "Server",
@@ -283,5 +283,18 @@
   "nav.hint.free": "Discover and verify public servers",
   "nav.hint.profiles": "Choose a routing profile",
   "nav.hint.custom": "Import a sing-box configuration",
-  "home.appsEmptyExclude": "Choose which apps should go direct."
+  "home.appsEmptyExclude": "Choose which apps should go direct.",
+  "list.loadMore": "Load more",
+  "test.measured": "Latency: {0} ({1})",
+  "test.unmeasured": "No latency measured for {0}. Try verification.",
+  "test.reachable": "Reachable: {0}. UDP latency cannot be measured here. Use Verify.",
+  "test.timeout": "Latency test timed out: {0}.",
+  "test.failed": "Latency test failed: {0}.",
+  "verify.unsupported": "This server configuration is not supported by the verifier.",
+  "verify.precondition": "Server configuration is incomplete or contains placeholders.",
+  "verify.socks": "The temporary verification proxy did not start.",
+  "verify.http": "The HTTP request through this server failed.",
+  "error.notFound": "The requested item is no longer available. Refresh the list.",
+  "error.storage": "Could not save the configuration.",
+  "error.stopFailed": "The VPN core did not stop. Check Diagnostics."
 }
