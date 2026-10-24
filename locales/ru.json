@@ -41,7 +41,7 @@
   "servers.searchPlaceholder": "Поиск серверов…",
   "servers.empty": "Серверов пока нет. Добавьте подписку или импортируйте сервер.",
   "servers.importTitle": "Импорт сервера",
-  "servers.importPlaceholder": "Вставьте строки VLESS, VMess, Shadowsocks или конфигурацию WireGuard…",
+  "servers.importPlaceholder": "Вставьте строки VLESS, Hysteria2, TUIC, Shadowsocks или конфигурацию WireGuard…",
   "servers.importBtn": "Импортировать",
   "servers.testAll": "Проверить все",
   "servers.colName": "Сервер",
@@ -283,5 +283,18 @@
   "nav.hint.free": "Поиск и проверка публичных серверов",
   "nav.hint.profiles": "Выбор профиля маршрутизации",
   "nav.hint.custom": "Импорт конфигурации sing-box",
-  "home.appsEmptyExclude": "Выбери приложения, которые будут идти напрямую."
+  "home.appsEmptyExclude": "Выбери приложения, которые будут идти напрямую.",
+  "list.loadMore": "Загрузить ещё",
+  "test.measured": "Задержка: {0} ({1})",
+  "test.unmeasured": "Задержка для {0} не измерена. Попробуйте проверку.",
+  "test.reachable": "Доступен: {0}. Задержка UDP здесь не измеряется. Нажмите «Проверить».",
+  "test.timeout": "Время проверки задержки истекло: {0}.",
+  "test.failed": "Не удалось проверить задержку: {0}.",
+  "verify.unsupported": "Проверка этой конфигурации сервера не поддерживается.",
+  "verify.precondition": "Конфигурация неполная или содержит шаблонные данные.",
+  "verify.socks": "Временный прокси для проверки не запустился.",
+  "verify.http": "HTTP-запрос через этот сервер не выполнен.",
+  "error.notFound": "Элемент больше недоступен. Обновите список.",
+  "error.storage": "Не удалось сохранить конфигурацию.",
+  "error.stopFailed": "Ядро VPN не остановилось. Откройте диагностику."
 }

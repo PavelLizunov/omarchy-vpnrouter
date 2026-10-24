@@ -112,10 +112,10 @@ for (const [method, field, items, id, extra] of [
   root[method](id);
   reply({id, ok: false, latencyMs: null, ...extra});
   assert.match(Model.verificationText(root[field], items, I18n), /Verification failed:/);
-  assert(Model.verificationText(root[field], items, I18n).includes(extra.error || extra.status));
+  assert(Model.verificationText(root[field], items, I18n).includes(I18n.t(extra.error ? "backend.connectUnavailable" : "error.generic")));
   root[method](id);
   reply({code: 'unavailable', message: 'VPN runtime is unavailable'}, true);
-  assert.match(Model.verificationText(root[field], items, I18n), /VPN runtime is unavailable/);
+  assert(Model.verificationText(root[field], items, I18n).includes(I18n.t("backend.connectUnavailable")));
 }
 I18n.setLocale('ru');
 assert.match(Model.verificationText({id: 'srv_1', ok: true, latencyMs: 27}, root.servers, I18n), /Проверка пройдена: My server \(27 мс\)/);
@@ -191,3 +191,111 @@ assert.strictEqual(isConnectionBusy({busy:true,isDisconnecting:true,activeOperat
 assert.strictEqual(binding('ui/HeroCard.qml', /enabled: (.*)/,
   {connected:false,canConnect:true,busy:false,operationBusy:true,needsSetup:false}),false);
 console.log('PASS: collection refresh has no connection arc and keeps Connect admission disabled');
+
+// Night 2: execute real handlers for paginated collections and probe edge cases.
+root._requestQueue.clearAll(); root._pendingCallbacks = {}; root.activeRequestId = '';
+root.fakeBackend = {write(text) { written.push(JSON.parse(text)); }};
+ctx.backendProc.running = true;
+for (const [method, field, totalField] of [['listServers','servers','serversTotal'],
+  ['listSubscriptions','subscriptions','subscriptionsTotal'],['listFree','freeServers','freeTotal']]) {
+  const first = Array.from({length:100}, (_,i) => ({id:'row-'+i,name:'Server '+i,latencyMs:null}));
+  const second = Array.from({length:25}, (_,i) => ({id:'row-'+(100+i),name:'Server '+(100+i),latencyMs:0}));
+  root[method](0,100); reply({items:first,total:125});
+  root[method](100,100); reply({items:second,total:125});
+  assert.strictEqual(root[field].length,125);
+  assert.strictEqual(root[field][124].id,'row-124');
+  assert.strictEqual(root[totalField],125);
+  const previous = root[field]; let invalid;
+  root[method](0,100,null,err => {invalid=err;}); reply({items:'malformed',total:125});
+  assert.strictEqual(invalid.code,'invalid_response');
+  assert.strictEqual(root[field],previous,'Malformed page preserves usable rows');
+  root[method](0,100); reply({items:[],total:0});
+  assert.strictEqual(root[field].length,0); assert.strictEqual(root[totalField],0);
+}
+root.servers=[{id:'probe',name:'Probe fixture',latencyMs:77}];
+for (const latencyMs of [0,42,null]) {
+  root.testServer('probe'); reply({id:'probe',reachable:latencyMs!==null,latencyMs});
+  assert.strictEqual(root.servers[0].latencyMs,latencyMs);
+  const text=Model.testText(root.serverTest,root.servers,I18n);
+  assert(text.includes(latencyMs===null?'No latency measured':latencyMs+' ms'));
+}
+root.testServer('probe'); reply({code:'not_found',message:'Server not found'},true);
+assert.match(Model.testText(root.serverTest,root.servers,I18n),/Latency test failed/);
+for(const locale of ['en','ru']) {
+  I18n.setLocale(locale);
+  assert(Model.testText({id:'probe',errorCode:'timeout'},root.servers,I18n).includes(I18n.t('test.timeout',['Probe fixture'])));
+}
+I18n.setLocale('en');
+root.fakeBackend=null; ctx.backendProc.running=false;
+let missing;
+assert.strictEqual(root.importServers('fixture',null,err => {missing=err;}),null);
+assert.strictEqual(missing.code,'not_running');
+assert.strictEqual(root._requestQueue.size(),0,'Missing helper cannot strand a form in an undispatched queue');
+root.fakeBackend={write(text) {written.push(JSON.parse(text));}};ctx.backendProc.running=true;
+root.refreshSnapshot();
+for(let i=0;i<8;i++) root.refreshSnapshot();
+root.lastError='';assert.strictEqual(root.refreshSnapshot(),null);
+assert.strictEqual(root.lastError,I18n.t('error.queueFull'),'A button without a callback still reports queue rejection');
+root.backendExited(1);
+assert.strictEqual(Object.keys(root._pendingCallbacks).length,0);
+assert.strictEqual(root._requestQueue.size(),0);
+assert.strictEqual(root.capabilities.connect,false);
+assert.strictEqual(Protocol.parseFrame('{"v":1,"event":"state","data":[]}').error,'invalid_event_data');
+console.log('PASS: real QML pagination 125 rows, malformed/empty pages, probe null/0/error, missing backend, queue overflow and crash cleanup');
+root.fakeBackend={write(text) {written.push(JSON.parse(text));}};ctx.backendProc.running=true;
+for(const [method,params,expected] of [['connect',{},100000],['disconnect',{},35000],['servers.verify',{id:'probe'},20000],['free.verify',{id:'probe'},20000],['servers.test',{id:'probe'},15000]]) {
+  root.sendRequest(method,params);const cb=root._pendingCallbacks[written.at(-1).id];
+  assert(cb.deadline-Date.now()>expected-1000 && cb.deadline-Date.now()<=expected);
+  reply(snapshot);
+}
+root.subscriptionsTotal=3;root.refreshSubscription();
+assert(root._pendingCallbacks[written.at(-1).id].deadline-Date.now()>59000);
+root.backendExited(1);
+console.log('PASS: request budgets cover backend connect/warmup/stop, verification and multi-subscription refresh');
+root.fakeBackend={write(text) {written.push(JSON.parse(text));}};ctx.backendProc.running=true;
+root.state='disconnected';root.capabilities={connect:true};root.connect();
+assert.strictEqual(root.connect(),null,'A quick bar double click cannot duplicate connect');
+root.backendExited(1);
+root.fakeBackend={write(text) {written.push(JSON.parse(text));}};ctx.backendProc.running=true;
+root.disconnect();assert.strictEqual(root.disconnect(),null,'A pending urgent disconnect is not duplicated');
+root.backendExited(1);
+console.log('PASS: quick bar controls ignore duplicate lifecycle requests (fake transport only)');
+
+// Night 2 resume: late terminals cannot replace a newer operation's state.
+root.fakeBackend={write(text) {written.push(JSON.parse(text));}};ctx.backendProc.running=true;
+root.verifyServer('probe');
+const expiredId=written.at(-1).id;
+root.checkDeadlines(root._pendingCallbacks[expiredId].deadline+1);
+assert.strictEqual(root.lastErrorKey,'error.timeout');
+assert.strictEqual(root.lastErrorMethod,'servers.verify');
+root.refreshSnapshot(); reply(snapshot);
+assert.strictEqual(root.lastErrorMethod,'servers.verify','Snapshot refresh retains the failed verification');
+root.listServers(); reply({items:root.servers,total:root.servers.length});
+assert.strictEqual(root.lastErrorMethod,'servers.verify','Unrelated successful reads retain the operation error');
+root.verifyServer('probe'); reply({id:'probe',ok:false,error:'Timeout'});
+assert.strictEqual(root.lastErrorMethod,'servers.verify','An unsuccessful retry does not erase the original operation error');
+root.verifyServer('probe');
+const currentId=written.at(-1).id;
+root.handleResponse(expiredId,false,{id:'probe',ok:true,latencyMs:900},null);
+assert.strictEqual(root.activeRequestId,currentId,'Late success cannot complete the current operation');
+assert.strictEqual(root.serverVerification,null,'Late verification cannot overwrite its replacement');
+root.handleResponse(expiredId,true,null,{code:'timeout',message:'Late timeout'});
+assert.strictEqual(root.lastErrorKey,'error.timeout');
+reply({id:'probe',ok:true,latencyMs:42});
+assert.strictEqual(root.lastError,'','Successful retry clears the same operation error');
+root.verifyServer('probe'); reply({code:'timeout',message:'Raw timeout'},true);
+for(const locale of ['en','ru']) {
+  I18n.setLocale(locale);
+  assert(Model.verificationText(root.serverVerification,root.servers,I18n).includes(I18n.t('error.timeout')));
+  assert(Model.testText({id:'probe',reachable:true,latencyMs:null},root.servers,I18n).includes(I18n.t('test.reachable',['Probe fixture'])));
+}
+I18n.setLocale('en');
+console.log('PASS: expired success/error ignored, newer callback preserved, same-kind error recovery and EN/RU UDP feedback');
+
+root.state='disconnected';root.capabilities={connect:true};root.configMode='generated';root.serversLoaded=true;root.servers=[];
+const beforeEmptyConnect=written.length;
+assert.strictEqual(root.connect(),null,'Quick connect cannot submit an empty generated configuration');
+root.configMode='custom';root.activeServer='';
+assert.strictEqual(root.connect(),null,'Quick connect cannot submit an absent custom configuration');
+assert.strictEqual(written.length,beforeEmptyConnect);
+console.log('PASS: quick connect rejects empty generated and custom configurations without backend writes');

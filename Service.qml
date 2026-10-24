@@ -78,6 +78,29 @@ Item {
   property bool busy: false
   property string errorCode: ""
   property string lastError: ""
+  property string lastErrorKey: ""
+  property var lastErrorArgs: []
+  property string lastErrorMethod: ""
+  readonly property string lastErrorText: lastErrorKey ? root.tr(lastErrorKey, lastErrorArgs) : lastError
+  onLastErrorChanged: { lastErrorKey = ""; lastErrorArgs = []; lastErrorMethod = "" }
+
+  function setLastError(key, args, message, method) {
+    root.lastError = key ? root.tr(key, args) : message || ""
+    root.lastErrorKey = key || ""
+    root.lastErrorArgs = args || []
+    root.lastErrorMethod = method || ""
+  }
+
+  function clearLastError() {
+    root.setLastError("", [], "", "")
+  }
+
+  function errorTranslationKey(code) {
+    return ({ busy: "error.busy", conflict: "error.conflict", cancelled: "error.cancelled",
+      timeout: "error.timeout", unavailable: "backend.connectUnavailable", not_removable: "error.notRemovable",
+      not_found: "error.notFound", storage_error: "error.storage", internal_error: "error.generic",
+      invalid_request: "error.protocol", invalid_argument: "form.failed", stop_failed: "error.stopFailed" })[code] || ""
+  }
   // Safe default: connect is false until handshake/snapshot explicitly confirms it
   property var capabilities: ({ connect: false, killSwitch: false, dnsLockdown: false })
 
@@ -101,7 +124,9 @@ Item {
   property var subscriptions: []
   property int subscriptionsTotal: 0
   property var serverVerification: null
+  property var serverTest: null
   property var freeVerification: null
+  property var freeTest: null
   property var freeServers: []
   property int freeTotal: 0
   property bool appsLoaded: false
@@ -233,7 +258,7 @@ Item {
         handleIncomingFrame(frame)
       },
       function(err) {
-        lastError = I18n.t("error.protocol")
+        root.setLastError("error.protocol")
         errorNotice(err.code || "protocol_error", lastError)
         if (err.code === "buffer_overflow") {
           root.flushAllQueued("transport_error", I18n.t("error.protocol"))
@@ -300,7 +325,7 @@ Item {
       }
 
       var errObj = { code: "timeout", message: I18n.t("error.timeout") }
-      root.lastError = errObj.message
+      root.setLastError("error.timeout", [], "", timedOutCb.method)
       root.errorNotice("timeout", errObj.message)
       if (timedOutCb.onError && typeof timedOutCb.onError === "function") {
         timedOutCb.onError(errObj)
@@ -405,11 +430,11 @@ Item {
 
     if (root._shuttingDown) return
     if (root.backendMissing) {
-      root.lastError = ""
+      root.clearLastError()
       retryTimer.stop()
       return
     }
-    root.lastError = I18n.t("backend.retrying", [exitCode])
+    root.setLastError("backend.retrying", [exitCode], "", "snapshot")
     root.retryBackoffMs = Math.min(30000, Math.round(root.retryBackoffMs * (root.retryCount > 0 ? 1.5 : 1)))
     root.retryCount++
     retryTimer.interval = root.retryBackoffMs
@@ -459,6 +484,8 @@ Item {
 
   function handleResponse(reqId, isError, result, error) {
     var cb = root._pendingCallbacks[reqId]
+    // A deadline/exit already finalized this request. Ignore its late terminal frame.
+    if (!cb) return
     var isUrgentCb = cb && cb.isUrgent === true
     if (cb) {
       delete root._pendingCallbacks[reqId]
@@ -481,19 +508,23 @@ Item {
     if (isError) {
       var errCode = error ? error.code : "unknown_error"
       var errMsg = error ? error.message : I18n.t("error.generic")
-      if (errCode === "not_removable") errMsg = root.tr("error.notRemovable")
+      var errorKey = root.errorTranslationKey(errCode)
+      if (errorKey) errMsg = root.tr(errorKey)
       // Forms with an error callback own localized, operation-specific feedback.
       // Keep the hero for otherwise unhandled service failures.
-      if (!cb || typeof cb.onError !== "function") root.lastError = errMsg
+      if (typeof cb.onError !== "function") root.setLastError(errorKey, [], errMsg, cb.method)
       if (errCode === "conflict") {
         root.flushQueuedMutations(I18n.t("error.conflict"))
         root.refreshSnapshot()
       }
       root.errorNotice(errCode, errMsg)
       if (cb && typeof cb.onError === "function") {
-        cb.onError(error)
+        cb.onError({ code: errCode, message: errMsg, messageKey: errorKey })
       }
     } else {
+      // An unrelated read must not hide a failed mutation or verification.
+      if (root.lastErrorMethod === cb.method && (!result || (result.ok !== false && result.reachable !== false)))
+        root.clearLastError()
       if (cb && typeof cb.onDone === "function") {
         cb.onDone(result)
       }
@@ -527,6 +558,12 @@ Item {
 
   // ---- Dispatch and Queue ---------------------------------------------------
   function sendRequest(method, params, onDone, onError, isUrgent, customTimeoutMs) {
+    if (!backendProc.running && !root.fakeBackend) {
+      root.setLastError("backend.notRunning", [], "", method)
+      root.errorNotice("not_running", root.lastError)
+      if (onError) onError({ code: "not_running", message: root.lastError })
+      return null
+    }
     var reqId = Protocol.generateRequestId("req")
     var hasRevision = false
     var originalParams = {}
@@ -540,13 +577,19 @@ Item {
       }
     }
 
-    var timeoutDuration = customTimeoutMs || root.requestDeadlineMs
+    // Match backend budgets: connect has 60 s launch + 20 s warmup + teardown;
+    // disconnect may wait for the lifecycle gate and then stop the core.
+    var timeoutDuration = customTimeoutMs || ({ connect: 100000, disconnect: 35000,
+      "servers.verify": 20000, "free.verify": 20000 })[method] || root.requestDeadlineMs
+    if (!customTimeoutMs && method === "subscriptions.refresh")
+      timeoutDuration = Math.min(1800000, Math.max(30000, (originalParams.id ? 1 : root.subscriptionsTotal || 1) * 20000))
 
     if (isUrgent) {
       // Bound urgent callback count
       if (root._pendingUrgentCount >= root.maxUrgentPending) {
         var queueFullErr = { code: "queue_full", message: I18n.t("error.queueFull") }
-        root.lastError = queueFullErr.message
+        root.setLastError("error.queueFull", [], "", method)
+        root.errorNotice("queue_full", root.lastError)
         if (onError) onError(queueFullErr)
         return null
       }
@@ -594,6 +637,8 @@ Item {
 
     var qRes = root._requestQueue.enqueue(item)
     if (!qRes.ok) {
+      root.setLastError("error.queueFull", [], "", method)
+      root.errorNotice(qRes.error, root.lastError)
       if (onError) onError({ code: qRes.error, message: I18n.t("error.queueFull") })
       return null
     }
@@ -652,24 +697,33 @@ Item {
     return sendRequest("snapshot", {}, function(res) {
       if (!res || typeof res.state !== "string" || typeof res.revision !== "string" ||
           !res.capabilities || typeof res.capabilities.connect !== "boolean") {
-        root.lastError = I18n.t("error.protocol")
+        root.setLastError("error.protocol", [], "", "snapshot")
         if (onError) onError({ code: "invalid_snapshot", message: root.lastError })
         return
       }
       applySnapshot(res)
       root.retryCount = 0
       root.retryBackoffMs = 2000
-      root.lastError = ""
       if (onDone) onDone(res)
     }, onError)
   }
 
   function connect(onDone, onError) {
+    if (root.state === "connected" || root.state === "connecting" || root.state === "disconnecting" ||
+        root.activeOperation === "connect" || root.activeOperation === "disconnect") return null
     if (!root.capabilities || !root.capabilities.connect) {
       var msg = Model.unavailableText(root, ({ t: root.tr }))
-      root.lastError = msg
+      root.setLastError("", [], msg, "connect")
       root.errorNotice("capability_unavailable", msg)
       if (onError) onError({ code: "capability_unavailable", message: msg })
+      return null
+    }
+    // Quick bar actions use this same admission check as the connection card.
+    if (root.configMode === "custom" ? !root.activeServer : root.serversLoaded && !root.servers.length) {
+      var missingKey = root.configMode === "custom" ? "simple.noActiveServer" : "servers.empty"
+      root.setLastError(missingKey, [], "", "connect")
+      root.errorNotice("invalid_argument", root.lastError)
+      if (onError) onError({ code: "invalid_argument", message: root.lastError, messageKey: missingKey })
       return null
     }
     return sendRequest("connect", { revision: root.revision }, function(res) {
@@ -679,6 +733,8 @@ Item {
   }
 
   function disconnect(onDone, onError) {
+    for (var pendingId in root._pendingCallbacks)
+      if (root._pendingCallbacks[pendingId].method === "disconnect") return null
     // Flush unsafe queued mutations on disconnect
     root.flushQueuedMutations(I18n.t("error.cancelled"))
     return sendRequest("disconnect", {}, function(res) {
@@ -697,11 +753,23 @@ Item {
   }
 
   // Servers
+  function validPage(res) {
+    return !!res && Array.isArray(res.items) && res.items.length <= 100 &&
+      typeof res.total === "number" && isFinite(res.total) && res.total >= 0 && Math.floor(res.total) === res.total &&
+      res.items.every(function(item) { return !!item && typeof item.id === "string" && (item.name === null || item.name === undefined || typeof item.name === "string") })
+  }
+
   function listServers(offset, limit, onDone, onError) {
     return sendRequest("servers.list", { offset: offset || 0, limit: limit || 100 }, function(res) {
-      root.servers = (res && res.items) ? res.items : []
+      if (!root.validPage(res)) {
+        root.setLastError("error.protocol", [], "", "servers.list")
+        if (onError) onError({ code: "invalid_response", message: root.lastError })
+        return
+      }
+      root.servers = offset > 0 ? root.servers.slice(0, offset).concat(res.items) : res.items
       root.serversLoaded = true
-      root.serversTotal = (res && res.total) ? res.total : root.servers.length
+      root.serversTotal = res.total
+      if (!offset) { root.serverVerification = null; root.serverTest = null }
       if (onDone) onDone(root.servers)
     }, onError)
   }
@@ -731,7 +799,9 @@ Item {
   }
 
   function testServer(id, onDone, onError) {
+    root.serverTest = null
     return sendRequest("servers.test", { id: id }, function(res) {
+      root.serverTest = res
       if (res && res.id) {
         var copy = root.servers.slice()
         for (var i = 0; i < copy.length; i++) {
@@ -743,7 +813,11 @@ Item {
         root.servers = copy
       }
       if (onDone) onDone(res)
-    }, onError)
+    }, function(err) {
+      root.servers = root.servers.map(function(item) { return item.id === id ? Object.assign({}, item, { latencyMs: null }) : item })
+      root.serverTest = { id: id, errorCode: err.code || "unknown_error" }
+      if (onError) onError(err)
+    })
   }
 
   function verifyServer(id, onDone, onError) {
@@ -752,7 +826,7 @@ Item {
       root.serverVerification = res
       if (onDone) onDone(res)
     }, function(err) {
-      root.serverVerification = { id: id, ok: false, error: err.message }
+      root.serverVerification = { id: id, ok: false, error: err.message, errorKey: err.messageKey || root.errorTranslationKey(err.code) }
       if (onError) onError(err)
     })
   }
@@ -760,9 +834,14 @@ Item {
   // Subscriptions
   function listSubscriptions(offset, limit, onDone, onError) {
     return sendRequest("subscriptions.list", { offset: offset || 0, limit: limit || 100 }, function(res) {
-      root.subscriptions = (res && res.items) ? res.items : []
+      if (!root.validPage(res)) {
+        root.setLastError("error.protocol", [], "", "subscriptions.list")
+        if (onError) onError({ code: "invalid_response", message: root.lastError })
+        return
+      }
+      root.subscriptions = offset > 0 ? root.subscriptions.slice(0, offset).concat(res.items) : res.items
       root.subscriptionsLoaded = true
-      root.subscriptionsTotal = (res && res.total) ? res.total : root.subscriptions.length
+      root.subscriptionsTotal = res.total
       if (onDone) onDone(root.subscriptions)
     }, onError)
   }
@@ -779,6 +858,7 @@ Item {
     return sendRequest("subscriptions.remove", { revision: root.revision, id: id }, function(res) {
       applySnapshot(res)
       listSubscriptions()
+      listServers()
       if (onDone) onDone(res)
     }, onError)
   }
@@ -798,6 +878,7 @@ Item {
     return sendRequest("subscriptions.enable", { revision: root.revision, id: id, enabled: enabled }, function(res) {
       applySnapshot(res)
       listSubscriptions()
+      listServers()
       if (onDone) onDone(res)
     }, onError)
   }
@@ -805,8 +886,14 @@ Item {
   // Free Pool
   function listFree(offset, limit, onDone, onError) {
     return sendRequest("free.list", { offset: offset || 0, limit: limit || 100 }, function(res) {
-      root.freeServers = (res && res.items) ? res.items : []
-      root.freeTotal = (res && res.total) ? res.total : root.freeServers.length
+      if (!root.validPage(res)) {
+        root.setLastError("error.protocol", [], "", "free.list")
+        if (onError) onError({ code: "invalid_response", message: root.lastError })
+        return
+      }
+      root.freeServers = offset > 0 ? root.freeServers.slice(0, offset).concat(res.items) : res.items
+      root.freeTotal = res.total
+      if (!offset) { root.freeVerification = null; root.freeTest = null }
       if (onDone) onDone(root.freeServers)
     }, onError)
   }
@@ -819,7 +906,9 @@ Item {
   }
 
   function testFree(id, onDone, onError) {
+    root.freeTest = null
     return sendRequest("free.test", { id: id }, function(res) {
+      root.freeTest = res
       if (res && res.id) {
         var copy = root.freeServers.slice()
         for (var i = 0; i < copy.length; i++) {
@@ -831,16 +920,22 @@ Item {
         root.freeServers = copy
       }
       if (onDone) onDone(res)
-    }, onError)
+    }, function(err) {
+      root.freeServers = root.freeServers.map(function(item) { return item.id === id ? Object.assign({}, item, { latencyMs: null }) : item })
+      root.freeTest = { id: id, errorCode: err.code || "unknown_error" }
+      if (onError) onError(err)
+    })
   }
 
   function verifyFree(id, onDone, onError) {
     root.freeVerification = null
     return sendRequest("free.verify", { id: id }, function(res) {
       root.freeVerification = res
+      if (res && res.id === id && res.ok === true)
+        root.freeServers = root.freeServers.map(function(item) { return item.id === id ? Object.assign({}, item, { status: "verified", latencyMs: res.latencyMs }) : item })
       if (onDone) onDone(res)
     }, function(err) {
-      root.freeVerification = { id: id, ok: false, error: err.message }
+      root.freeVerification = { id: id, ok: false, error: err.message, errorKey: err.messageKey || root.errorTranslationKey(err.code) }
       if (onError) onError(err)
     })
   }

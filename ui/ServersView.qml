@@ -9,6 +9,7 @@ Item {
   objectName: "vpnServersView"
 
   property var service: null
+  property bool showLatency: true
   property int i18nRevision: service ? service.i18nRevision : 0
   property string searchQuery: ""
   signal addSubscriptionRequested()
@@ -149,6 +150,21 @@ Item {
           }
         }
       }
+    }
+
+    Text {
+      objectName: "vpnServersTestResult"
+      width: parent.width
+      visible: text.length > 0
+      text: {
+        var _ = root.i18nRevision
+        return root.service ? Model.testText(root.service.serverTest, root.service.servers, ({ t: root.tr })) : ""
+      }
+      textFormat: Text.PlainText
+      wrapMode: Text.WordWrap
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
     }
 
     Text {
@@ -330,7 +346,7 @@ Item {
                 }
 
                 LatencyPill {
-                  visible: known
+                  visible: root.showLatency && known
                   latency: modelData.latencyMs
                   label: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))
                   anchors.verticalCenter: parent.verticalCenter
@@ -348,12 +364,14 @@ Item {
               IconButton {
                 icon: "󰓅"
                 tooltipText: root.tr("action.test")
+                enabled: !!root.service && !root.service.activeOperation
                 onClicked: if (root.service) root.service.testServer(modelData.id)
               }
 
               IconButton {
                 icon: "󰄬"
                 tooltipText: root.tr("action.verify")
+                enabled: !!root.service && !root.service.activeOperation
                 onClicked: if (root.service) root.service.verifyServer(modelData.id)
               }
 
@@ -368,6 +386,13 @@ Item {
           }
         }
       }
+    }
+    Button {
+      objectName: "vpnLoadMoreServers"
+      text: root.tr("list.loadMore")
+      visible: !!root.service && root.service.servers.length < root.service.serversTotal
+      enabled: !!root.service && !root.service.activeOperation
+      onClicked: root.service.listServers(root.service.servers.length, 100)
     }
   }
 }

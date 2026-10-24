@@ -297,5 +297,12 @@ Item {
         }
       }
     }
+    Button {
+      objectName: "vpnLoadMoreSubscriptions"
+      text: root.tr("list.loadMore")
+      visible: !!root.service && root.service.subscriptions.length < root.service.subscriptionsTotal
+      enabled: !!root.service && !root.service.activeOperation
+      onClicked: root.service.listSubscriptions(root.service.subscriptions.length, 100)
+    }
   }
 }
