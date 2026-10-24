@@ -60,8 +60,8 @@ Ui.BarWidget {
 
   readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : isStarting ? "starting" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
   // Material Design shield family from the host bar's Nerd Font.
-  readonly property string stateIcon: ({ starting: "\u{f0499}", disconnected: "\u{f0499}", connecting: "\u{f11a3}", connected: "\u{f0cc8}", error: "\u{f0ecd}", unavailable: "\u{f099c}", missing: "\u{f0add}" })[visualState]
-  readonly property color inkColor: visualState === "connected" ? Commons.Color.accent : visualState === "connecting" ? Commons.Color.accent : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? Commons.Color.urgent : Commons.Color.muted
+  readonly property string stateIcon: ({ starting: "\u{f0498}", disconnected: "\u{f0498}", connecting: "\u{f11a2}", connected: "\u{f0565}", error: "\u{f0ecc}", unavailable: "\u{f099e}", missing: "\u{f0adc}" })[visualState]
+  readonly property color inkColor: visualState === "connected" ? Commons.Color.accent : visualState === "connecting" ? Commons.Color.accent : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? Commons.Color.urgent : Commons.Color.foreground
 
   readonly property string barTooltip: {
     var _ = i18nRevision
@@ -148,7 +148,7 @@ Ui.BarWidget {
     hasVisualContent: true
     labelVisible: false
     dimmed: false
-    fixedWidth: root.vertical ? -1 : (contentRow.implicitWidth + Style.space(16))
+    fixedWidth: root.vertical ? -1 : contentRow.implicitWidth
     fixedHeight: root.vertical ? (contentRow.implicitHeight + Style.space(12)) : -1
     tooltipText: root.barTooltip
 
@@ -176,12 +176,13 @@ Ui.BarWidget {
       anchors.centerIn: parent
       spacing: Style.space(5)
 
-      Text {
-        textFormat: Text.PlainText
+      // Reuse the host's optical glyph sizing and baseline on both host versions.
+      Ui.BarIconButton {
+        bar: root.bar
         text: root.stateIcon
-        color: root.inkColor
-        font.family: Style.font.family
-        font.pixelSize: Style.font.iconSmall
+        foreground: root.inkColor
+        interactive: false
+        pressable: false
         anchors.verticalCenter: parent.verticalCenter
       }
 
