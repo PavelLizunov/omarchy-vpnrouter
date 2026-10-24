@@ -125,6 +125,7 @@ Rectangle {
     interval:80;running:true
     onTriggered: {
       Commons.Style.reduceMotion=fixture.reducedMotion
+      consumer.mode="advanced"
       backend.setLocale(fixture.locale);consumer.currentTab=fixture.tab;consumer.open();backend.getApps()
       if (fixture.stateName === "unavailable") {backend.backendMissing=true;backend.capabilities={connect:false}}
       if (fixture.stateName === "error") backend.lastError=backend.tr("error.timeout")
