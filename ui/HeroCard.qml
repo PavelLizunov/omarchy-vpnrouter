@@ -44,12 +44,12 @@ Column {
   spacing: Commons.Style.space(6)
   Item {
     width: parent.width
-    height: Commons.Style.space(152)
+    height: Commons.Style.space(108)
     Rectangle {
       id: emblem
       objectName: "vpnEmblem"
       anchors.horizontalCenter: parent.horizontalCenter
-      width: Commons.Style.space(136); height: width; radius: width / 2
+      width: Commons.Style.space(100); height: width; radius: width / 2
       color: root.connected ? Commons.Style.selectedAccentFill : root.busy ? Commons.Style.normalFill : root.failed || root.missing ? Commons.Util.alpha(Commons.Color.urgent, Commons.Style.selectedFillAlpha) : "transparent"
       // The ring leaves a gap at the bottom for the state badge; theme popup
       // surfaces can be translucent, so covering the line is not enough.
@@ -57,7 +57,7 @@ Column {
         id: ring
         objectName: "vpnStateRing"
         anchors.centerIn: parent
-        width: Commons.Style.space(114); height: width
+        width: Commons.Style.space(84); height: width
         readonly property real radius: width / 2 - Commons.Style.space(3) / 2
         readonly property real gapHalfAngle: Math.asin(Math.min(1, (badge.width / 2 + Commons.Style.space(4)) / radius)) * 180 / Math.PI
         ShapePath {
@@ -73,7 +73,7 @@ Column {
         objectName: "vpnConnectingArc"
         visible: root.busy
         anchors.centerIn: parent
-        width: Commons.Style.space(114); height: width
+        width: Commons.Style.space(84); height: width
         ShapePath {
           strokeColor: Commons.Color.accent
           strokeWidth: Commons.Style.space(3)
@@ -85,13 +85,13 @@ Column {
       }
       Ui.BorderSurface {
         anchors.centerIn: parent
-        width: Commons.Style.space(92); height: width; radius: width / 2
+        width: Commons.Style.space(66); height: width; radius: width / 2
         color: Commons.Color.popups.background
         borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
         Image {
           objectName: "vpnHeroMascot"
           anchors.centerIn: parent
-          width: Commons.Style.space(70); height: width
+          width: Commons.Style.space(52); height: width
           source: Brand.mascot
           fillMode: Image.PreserveAspectFit
           smooth: true
@@ -104,7 +104,7 @@ Column {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: ring.bottom
         anchors.verticalCenterOffset: -Commons.Style.space(3) / 2
-        width: Commons.Style.space(30); height: width; radius: width / 2
+        width: Commons.Style.space(24); height: width; radius: width / 2
         color: root.connected || root.busy || root.failed || root.missing ? root.stateColor : Commons.Style.normalFill
         Text {
           anchors.centerIn: parent

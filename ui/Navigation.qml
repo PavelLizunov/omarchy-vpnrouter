@@ -44,7 +44,7 @@ Ui.BorderSurface {
         required property int index
         objectName: "vpnTab-" + modelData.id
         width: rows.width
-        height: Commons.Style.space(56)
+        height: Commons.Style.space(36)
         activeFocusOnTab: true
         onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { entry.reveal() })
         function reveal() { Focus.reveal(entry) }
@@ -85,6 +85,7 @@ Ui.BorderSurface {
           Text {
             width: parent.width
             textFormat: Text.PlainText
+            visible: false
             text: root.tr("nav.hint." + entry.modelData.id)
             color: Commons.Color.popups.text
             font.family: Commons.Style.font.family
