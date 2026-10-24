@@ -61,7 +61,7 @@ Ui.BarWidget {
   readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : isStarting ? "starting" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
   // Material Design shield family from the host bar's Nerd Font.
   readonly property string stateIcon: ({ starting: "\u{f0498}", disconnected: "\u{f0498}", connecting: "\u{f11a2}", connected: "\u{f0565}", error: "\u{f0ecc}", unavailable: "\u{f099e}", missing: "\u{f0adc}" })[visualState]
-  readonly property color inkColor: visualState === "connected" ? Commons.Color.accent : visualState === "connecting" ? Commons.Color.accent : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? Commons.Color.urgent : Commons.Color.foreground
+  readonly property color inkColor: visualState === "connected" ? Commons.Color.accent : visualState === "connecting" ? Commons.Color.accent : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? Commons.Color.urgent : visualState === "starting" ? Commons.Color.muted : Commons.Color.foreground
 
   readonly property string barTooltip: {
     var _ = i18nRevision
