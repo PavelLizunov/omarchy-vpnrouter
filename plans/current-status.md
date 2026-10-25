@@ -16,5 +16,11 @@ Full Linux parity, VPN lifecycle/traffic routing, physical egress/leak behavior,
 native keyboard and screen-reader acceptance remain unverified by this pass.
 
 The density candidate branch remains a separate owner decision. This hygiene
-work does not install or activate the plugin. Exact check results and the
-deletion inventory are delivered in the coordinator's C1 report.
+work does not install or activate the plugin.
+
+Hygiene outcome (2026-10-25): 22 historical reports and six obsolete QML fixtures
+or runners were removed; current tests use behavior names. English/Russian front
+pages are 59/62 lines, with details in docs. Validation passed: 13 Node suites,
+38 packaging cases, 97 actual-QML interaction/theme cases, qmllint and plugin
+validation. These are isolated checks, not live installation or VPN acceptance.
+Exact commands, deletion reasons and inspection limits are in the C1 report.
