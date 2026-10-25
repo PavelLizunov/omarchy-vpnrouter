@@ -464,3 +464,45 @@ for (const code of ['busy','conflict']) {
 }
 root.busy=false;root.clearLastError();
 console.log('PASS: failed reconciliation snapshots are bounded, including conflict errors');
+
+
+// FailedToStart emits runningChanged without exited in Quickshell 0.3.x.
+root.fakeBackend = null; ctx.backendProc.running = false;
+root.processDisabled = false; ctx.processDisabled = false; root._shuttingDown = false;
+root.starting = true; root._startFailureReported = false; root.retryCount = 0; root.retryBackoffMs = 2000;
+const failedStartHandler = read('Service.qml').match(/^    onRunningChanged: (.+)$/m)[1];
+vm.runInContext('var running = false; ' + failedStartHandler, ctx);
+assert.strictEqual(root.starting, false);
+assert.strictEqual(root.helperPresent, false);
+assert.strictEqual(root.lastErrorKey, 'backend.startFailed');
+assert.strictEqual(root.retryCount, 1);
+assert.strictEqual(timer.interval, 2000);
+assert.strictEqual(Model.backendStarting(root), false);
+const failedRetries = timer.restarts;
+root.backendExited(1);
+assert.strictEqual(timer.restarts, failedRetries, 'No double finalization after a start deadline');
+timer.running = true;
+root.refreshSnapshot();
+assert.strictEqual(root.lastErrorKey, 'backend.startFailed', 'Panel reads preserve the managed retry explanation');
+root.checkHelperAndStart();
+assert.strictEqual(root.starting, true);
+assert.strictEqual(root.lastError, '', 'A new start cannot retain the old not-running message');
+assert.strictEqual(root._startFailureReported, false);
+root.backendStartFailed('backend.startTimeout');
+assert.strictEqual(root.starting, false);
+assert.strictEqual(Model.backendStarting(root), false);
+assert.strictEqual(root.lastErrorKey, 'backend.startTimeout');
+const deadlineRetries = timer.restarts;
+root.backendStartFailed('backend.startTimeout');
+root.backendExited(15);
+assert.strictEqual(timer.restarts, deadlineRetries, 'A start failure schedules only one managed retry');
+root.checkHelperAndStart();
+ctx.backendProc.running = false;
+root.checkHelperAndStart();
+root.backendStarted();
+assert.strictEqual(root.starting, false);
+assert.strictEqual(root.helperPresent, true);
+assert.strictEqual(timer.stopped, true);
+root._shuttingDown = true; root.starting = false;
+assert.doesNotThrow(() => vm.runInContext('var running = false; ' + failedStartHandler, ctx));
+console.log('PASS: FailedToStart and startup deadline end Starting, retain an error and schedule one retry');

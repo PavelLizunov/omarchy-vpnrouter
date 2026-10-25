@@ -56,6 +56,8 @@ Item {
   property bool subscriptionsLoaded: false
   property bool snapshotLoaded: false
   property bool starting: false
+  property int startDeadlineMs: 5000
+  property bool _startFailureReported: false
   property int retryCount: 0
   property int retryBackoffMs: 2000
 
@@ -364,7 +366,9 @@ Item {
     if (processDisabled) return
     if (backendProc.running) return
     root._shuttingDown = false
-    starting = true
+    root._startFailureReported = false
+    root.clearLastError()
+    root.starting = true
     backendProc.running = true
   }
 
@@ -391,11 +395,34 @@ Item {
       }
     }
 
+    onRunningChanged: if (root && root.starting && !running) root.backendStartFailed("backend.startFailed")
     onStarted: if (root) root.backendStarted()
     onExited: function(exitCode) { root.backendExited(exitCode) }
   }
 
+  Timer {
+    id: startDeadline
+    interval: root.startDeadlineMs
+    running: root.starting
+    onTriggered: {
+      root.backendStartFailed("backend.startTimeout")
+      // Only an attempt which never emitted started is stopped by this deadline.
+      backendProc.running = false
+    }
+  }
+
+  function backendStartFailed(messageKey) {
+    if (!root.starting) return
+    root._startFailureReported = true
+    root.backendExited(-1, messageKey)
+  }
+
   function backendStarted() {
+    if (root._startFailureReported || root._shuttingDown) {
+      backendProc.running = false
+      return
+    }
+    retryTimer.stop()
     root.helperPresent = true
     root.backendMissing = false
     root.snapshotLoaded = false
@@ -406,7 +433,9 @@ Item {
     })
   }
 
-  function backendExited(exitCode) {
+  function backendExited(exitCode, startFailureKey) {
+    // A timed-out start may subsequently emit exited. Finalize it just once.
+    if (root._startFailureReported && !startFailureKey) return
     root.starting = false
     root.helperPresent = false
     root.backendMissing = exitCode === 127
@@ -441,7 +470,7 @@ Item {
       retryTimer.stop()
       return
     }
-    root.setLastError("backend.retrying", [exitCode], "", "snapshot")
+    root.setLastError(startFailureKey || "backend.retrying", startFailureKey ? [] : [exitCode], "", "snapshot")
     root.retryBackoffMs = Math.min(30000, Math.round(root.retryBackoffMs * (root.retryCount > 0 ? 1.5 : 1)))
     root.retryCount++
     retryTimer.interval = root.retryBackoffMs
@@ -452,7 +481,9 @@ Item {
     id: retryTimer
     repeat: false
     onTriggered: {
-      root.checkHelperAndStart()
+      // Wait for a timed-out attempt to exit before creating another process.
+      if (backendProc.running && !root.helperPresent) retryTimer.restart()
+      else root.checkHelperAndStart()
     }
   }
 
@@ -569,6 +600,11 @@ Item {
   // ---- Dispatch and Queue ---------------------------------------------------
   function sendRequest(method, params, onDone, onError, isUrgent, customTimeoutMs) {
     if (!backendProc.running && !root.fakeBackend) {
+      if (root.starting || retryTimer.running) {
+        var startupMessage = root.starting ? root.tr("backend.startingDetail") : root.lastErrorText
+        if (onError) onError({ code: "not_running", message: startupMessage })
+        return null
+      }
       root.setLastError("backend.notRunning", [], "", method)
       root.errorNotice("not_running", root.lastError)
       if (onError) onError({ code: "not_running", message: root.lastError })
