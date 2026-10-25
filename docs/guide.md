@@ -380,7 +380,9 @@ The plugin starts the unit on demand; it is not enabled at boot and has no
 graphical-session stop dependency. Closing the UI or restarting the shell
 detaches the relay. The next attachment receives a fresh snapshot.
 `systemctl --user stop vpnrouter-headless.service` explicitly tears down the
-session; ordinary plugin removal leaves a running service alone.
+session; ordinary plugin removal leaves a running service alone. An enabled plugin
+retries and starts a lost service again, so disable the plugin before stopping
+the unit if it should remain stopped.
 A second controller receives `controller_busy`. Socket errors never trigger
 stdio fallback when the installed unit exists. Without the unit, or with a
 plugin-local payload, stdio behavior remains unchanged. No kill-switch, crash

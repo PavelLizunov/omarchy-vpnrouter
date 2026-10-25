@@ -80,3 +80,17 @@ All six fix SHAs passed 13 Node suites, 41 packaging cases in bwrap, qmllint, pl
 On omarchy-test with r33, EN/RU Tokyo Night/Latte pages, nine lazy sections, pinned Settings actions, full Free Pool names, Test/Verify and Back focus were checked; one helper SIGTERM recovered with exit 0 shown only in Diagnostics. The shell restarted once.
 Across 50 UI cycles, whole-shell RSS was 1088136→1282708 KiB and Headless 94732→262476 KiB; during 180 seconds with the panel closed, CPU was 0.0333%/0.0056% of one core and final RSS 1174588/265104 KiB.
 Memory-leak attribution and long soak remain unverified; long error details were checked offscreen only. The VM keeps r33 and candidate code, Tokyo Night, scale 1 and AUTO locale; no VPN connection, subscription edit or publication was performed.
+
+## D3 lifetime candidate
+
+The separate lifetime branch builds on PR 3 and its C3 checkpoint. With the coordinated backend's
+user unit, the shell owns only an attach relay; the service owns the session.
+Stdio fallback retains the restart warning above. A valid wire error now reaches
+the request handler instead of being mistaken for a parse error; controller
+rejection has EN/RU feedback. See [candidate contract](session-lifetime-candidate.md).
+
+At plugin 3e455f9, CI 40181810915 and local checks passed: 13 Node suites,
+40 isolated packaging cases, 97 native QML cases, qmllint and plugin validation.
+The VM ran backend 2b1eb884 with the same service PID and selected server across
+shell restart; the plugin reattached. No real VPN connection was exercised.
+The UI still lacks independent lead acceptance; the density decision is unchanged.
