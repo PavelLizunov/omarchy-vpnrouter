@@ -1053,6 +1053,18 @@ class TestBackendWrapper(PackagingTestBase):
         self.assertEqual(resp.get("id"), "test-snap")
         self.assertEqual(resp.get("result", {}).get("backendVersion"), "2.48.0-dev")
 
+    def test_wrapper_auto_uses_local_payload_stdio_fallback(self):
+        build_dir = self.test_root / "auto_local_build"
+        self.create_fake_backend(build_dir)
+        subprocess.run(["./setup", "--backend-dir", str(build_dir)], cwd=self.plugin_copy,
+                       env=self.env, check=True, capture_output=True)
+        wrapper = self.plugin_copy / "bin" / "vpnrouter-headless"
+        result = subprocess.run([str(wrapper), "--auto"], env=self.env, capture_output=True,
+                                text=True, timeout=5,
+                                input='{"v":1,"id":"auto","method":"snapshot","params":{}}\n')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout.splitlines()[0])["id"], "auto")
+
     def test_wrapper_no_env_backdoor(self):
         """Wrapper must ignore VPNROUTER_HEADLESS_BIN and have NO environment backdoor."""
         # Install legitimate backend

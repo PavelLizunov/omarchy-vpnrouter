@@ -26,3 +26,10 @@ are tracked in [current-status.md](current-status.md); this is not a parity clai
 The backend owns Core behavior and the wire contract; see its
 [Headless documentation](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/VPNRouter.Headless/README.md).
 Contributor rules remain in [AGENTS.md](../AGENTS.md).
+
+## Lifetime candidate transport
+
+Service.qml uses the wrapper's `--auto` mode. With the coordinated installed
+user unit, the wrapper starts the unit and execs the backend `--attach` relay;
+the shell only owns that relay. Otherwise it retains the stdio path described
+above. See [candidate ownership](session-lifetime-candidate.md).

@@ -11,8 +11,12 @@
 См. [инструкцию пакета backend](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/packaging/arch/README.md).
 Выполните из репозитория на проверенном коммите:
 
-Перезапуск оболочки останавливает backend VPNRouter и разрывает
-активное соединение VPNRouter.
+С согласованным backend-кандидатом плагин запускает systemd user service и
+подключается к приватному сокету. Перезапуск оболочки отключает UI, а сервис
+сохраняет сессию. Со старым пакетом или локальным payload используется stdio:
+выход оболочки по-прежнему останавливает backend и разрывает соединение.
+Сохранение настоящего VPN-соединения при перезапуске пока не проверено.
+См. [контракт кандидата](plans/session-lifetime-candidate.md).
 
 ```bash
 id=io.github.pavellizunov.vpnrouter

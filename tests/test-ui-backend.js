@@ -464,3 +464,14 @@ for (const code of ['busy','conflict']) {
 }
 root.busy=false;root.clearLastError();
 console.log('PASS: failed reconciliation snapshots are bounded, including conflict errors');
+
+for(const locale of ['en','ru']) {
+  I18n.setLocale(locale);
+  root.feedChunk(JSON.stringify({v:1,id:null,error:{code:'controller_busy',message:'Fixture'}})+'\n');
+  assert.strictEqual(root.controllerBusy,true);
+  assert.strictEqual(root.lastError,I18n.t('backend.controllerBusy'));
+  root.backendExited(0);
+  assert.strictEqual(root.lastErrorKey,'backend.controllerBusy','Relay exit retains actionable controller error');
+}
+I18n.setLocale('en');root.controllerBusy=false;root.clearLastError();
+console.log('PASS: real wire errors finish callbacks and controller rejection remains localized after relay exit');

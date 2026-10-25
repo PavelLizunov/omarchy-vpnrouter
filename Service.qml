@@ -56,6 +56,7 @@ Item {
   property bool subscriptionsLoaded: false
   property bool snapshotLoaded: false
   property bool starting: false
+  property bool controllerBusy: false
   property int retryCount: 0
   property int retryBackoffMs: 2000
 
@@ -103,7 +104,7 @@ Item {
       subscription_refresh_failed: "subscriptions.refreshFailed", connect_failed: "error.connectFailed",
       depth_limit_exceeded: "error.depthLimit", duplicate_key: "error.duplicateKey", invalid_id: "error.invalidId",
       invalid_version: "error.invalidVersion", payload_too_large: "error.payloadTooLarge",
-      unknown_method: "error.unknownMethod", unsupported: "error.unsupported" })[code] || ""
+      unknown_method: "error.unknownMethod", unsupported: "error.unsupported", controller_busy: "backend.controllerBusy" })[code] || ""
   }
   // Safe default: connect is false until handshake/snapshot explicitly confirms it
   property var capabilities: ({ connect: false, killSwitch: false, dnsLockdown: false })
@@ -379,7 +380,7 @@ Item {
   // ---- Process Wiring -------------------------------------------------------
   Process {
     id: backendProc
-    command: [root.helperPath, "--stdio"]
+    command: [root.helperPath, "--auto"]
     stdinEnabled: true
 
     stdout: SplitParser {
@@ -399,6 +400,7 @@ Item {
     root.helperPresent = true
     root.backendMissing = false
     root.snapshotLoaded = false
+    root.controllerBusy = false
     root.starting = false
     // Starting a wrapper is not a successful handshake.
     Qt.callLater(function() {
@@ -441,7 +443,7 @@ Item {
       retryTimer.stop()
       return
     }
-    root.setLastError("backend.retrying", [exitCode], "", "snapshot")
+    if (!root.controllerBusy) root.setLastError("backend.retrying", [exitCode], "", "snapshot")
     root.retryBackoffMs = Math.min(30000, Math.round(root.retryBackoffMs * (root.retryCount > 0 ? 1.5 : 1)))
     root.retryCount++
     retryTimer.interval = root.retryBackoffMs
@@ -466,6 +468,13 @@ Item {
     }
 
     if (frame.type === "response") {
+      if (frame.id === null && frame.isError) {
+        var code = frame.error && frame.error.code || "protocol_error"
+        root.controllerBusy = code === "controller_busy"
+        root.setLastError(root.controllerBusy ? "backend.controllerBusy" : "error.protocol", [], "", "snapshot")
+        root.errorNotice(code, root.lastError)
+        return
+      }
       handleResponse(frame.id, frame.isError, frame.result, frame.error)
       return
     }

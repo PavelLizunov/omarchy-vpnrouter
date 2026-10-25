@@ -132,8 +132,12 @@ The Arch `vpnrouter-headless` package supplies `/usr/lib/vpnrouter-headless/VPNR
 
 With the `vpnrouter-headless` package already installed, copy the plugin's committed files into a real directory (not a symlink):
 
-Restarting the shell stops the VPNRouter backend and drops any active
-VPNRouter connection.
+With the coordinated lifetime-candidate backend, the plugin starts the systemd
+user service and attaches to its private socket. A shell restart detaches the
+UI while the service retains the session. With an older package or plugin-local
+payload, stdio fallback still stops the backend and drops an active connection.
+Connected-session survival across restart remains unverified. See the
+[candidate contract](../plans/session-lifetime-candidate.md).
 
 ```bash
 plugin_dir="$HOME/.config/omarchy/plugins/io.github.pavellizunov.vpnrouter"
@@ -204,7 +208,7 @@ This removes `bin/backend/`. Your VPN profiles, certificates, and routing settin
 
 The launcher resolves the executable in the plugin-local payload first, then
 under /usr/lib/vpnrouter-headless. It does not search PATH or accept an environment
-override. A missing executable exits 127. After resolution, it accepts `--stdio`,
+override. A missing executable exits 127. After resolution, it accepts `--auto`, `--stdio`,
 an optional absolute `--data-dir`, and local `--help`/`-h`; other flags exit 2.
 It forwards the protocol stream through `exec`, without inspecting stdin as CLI
 arguments. Help does not execute the backend, but still requires resolution.
@@ -296,3 +300,18 @@ It does not test live shell integration, binary authenticity or a VPN connection
 ## License
 
 GNU General Public License v3.0 (GPL-3.0). See [LICENSE](../LICENSE) for full text and provenance details.
+
+## Independent session service candidate
+
+The coordinated backend package ships `vpnrouter-headless.service` as a systemd
+user unit. After upgrading the package, run `systemctl --user daemon-reload`.
+The plugin starts the unit on demand; it is not enabled at boot and has no
+graphical-session stop dependency. Closing the UI or restarting the shell
+detaches the relay. The next attachment receives a fresh snapshot.
+`systemctl --user stop vpnrouter-headless.service` explicitly tears down the
+session; ordinary plugin removal leaves a running service alone.
+A second controller receives `controller_busy`. Socket errors never trigger
+stdio fallback when the installed unit exists. Without the unit, or with a
+plugin-local payload, stdio behavior remains unchanged. No kill-switch, crash
+recovery, lingering, or automatic reconnect is added. See the
+[candidate contract](../plans/session-lifetime-candidate.md).

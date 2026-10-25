@@ -178,6 +178,7 @@
   "backend.startingDetail": "Получаем состояние службы…",
   "backend.statusUnavailable": "Состояние службы недоступно",
   "backend.exited": "Служба VPNRouter завершилась (код {0})",
+  "backend.controllerBusy": "Сессией VPNRouter управляет другой клиент. Закройте его, чтобы подключить эту панель.",
   "backend.retrying": "Служба VPNRouter завершилась (код {0}). Повторная попытка…",
   "verify.passed": "Проверка пройдена: {0} ({1})",
   "verify.failed": "Проверка не пройдена: {0}. {1}",
