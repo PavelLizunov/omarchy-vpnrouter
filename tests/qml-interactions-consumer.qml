@@ -808,6 +808,8 @@ Rectangle {
     function rowProbes() {
       fixture.servers=[{id:"one",name:"Probe one",source:"manual",protocol:"vless"},{id:"two",name:"Probe two",source:"manual",protocol:"vless"}]
       fixture.free=[{id:"one",name:"Free one",protocol:"vless"},{id:"two",name:"Free two",protocol:"vless"}]
+      // Load the Free Pool rows before the later transport deadline exercise.
+      go("free")
       for(var scope of ["servers","free"]) {
         go(scope)
         for(var kind of ["test","verify"]) {
@@ -827,6 +829,8 @@ Rectangle {
         backend.checkDeadlines(Date.now()+2000000);wait(30)
         expect(fixture.find(consumer,function(x){return x.visible && x.objectName==="vpnProbeOperation-one"})===null,"Deadline clears row feedback")
         fixture.release(false);wait(20)
+        // A deadline closes admission until the helper restarts.
+        backend.backendExited(1);backend.backendStarted();backend.refreshSnapshot();wait(35)
       }
       console.log("QML_PASS rowProbes target-row named-test-verify spinner success-failure-timeout")
     }
