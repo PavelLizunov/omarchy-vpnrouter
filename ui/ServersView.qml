@@ -94,6 +94,9 @@ Item {
 
     Notice {
       objectName: "vpnServersError"
+      detailsHeightLimit: root.availableHeight > 0
+        ? Math.min(Commons.Style.space(160), Math.max(Commons.Style.space(48), root.availableHeight / 4))
+        : Commons.Style.space(160)
       width: parent.width
       text: root.service ? root.service.lastErrorText : ""
       error: true
@@ -110,59 +113,6 @@ Item {
       onDismissed: root.noticeKey = ""
     }
 
-    // Collapsible Import Form
-    Ui.BorderSurface {
-      visible: root.showImportBox
-      width: parent.width
-      height: importCol.implicitHeight + Commons.Style.space(20)
-      radius: Commons.Style.cornerRadius
-      color: Commons.Style.hoverFill
-      borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
-
-      Column {
-        id: importCol
-        anchors.fill: parent
-        anchors.margins: Commons.Style.space(10)
-        spacing: Commons.Style.space(8)
-
-        Text {
-          textFormat: Text.PlainText
-          text: root.tr("servers.importTitle")
-          color: Commons.Color.popups.text
-          font.family: Commons.Style.font.family
-          font.pixelSize: Commons.Style.font.title
-        }
-
-        Editor {
-          id: importArea
-          objectName: "vpnServerImport"
-          width: parent.width
-          height: Commons.Style.space(90)
-          enabled: !root.pending
-          label: root.tr("servers.importTitle")
-          placeholderText: root.tr("servers.importPlaceholder")
-          onSubmitted: root.submit()
-        }
-
-        Row {
-          spacing: Commons.Style.space(8)
-
-          Button {
-            text: root.tr("servers.importBtn")
-            variant: "primary"
-            enabled: !root.pending
-            onClicked: root.submit()
-          }
-
-          Button {
-            text: root.tr("action.cancel")
-            variant: "subtle"
-            enabled: !root.pending
-            onClicked: root.cancelForm()
-          }
-        }
-      }
-    }
 
     Text {
       objectName: "vpnServersTestResult"
@@ -193,7 +143,7 @@ Item {
       font.pixelSize: Commons.Style.font.bodySmall
     }
 
-    // Keep search, errors and import actions outside the scrolling server list.
+    // Keep search and operation feedback outside the scrolling server content.
     Flickable {
       objectName: "vpnServerListViewport"
       width: parent.width
@@ -207,6 +157,60 @@ Item {
         id: serverRows
         width: parent.width
         spacing: Commons.Style.space(10)
+
+        // Collapsible Import Form
+        Ui.BorderSurface {
+          visible: root.showImportBox
+          width: parent.width
+          height: importCol.implicitHeight + Commons.Style.space(20)
+          radius: Commons.Style.cornerRadius
+          color: Commons.Style.hoverFill
+          borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
+
+          Column {
+            id: importCol
+            anchors.fill: parent
+            anchors.margins: Commons.Style.space(10)
+            spacing: Commons.Style.space(8)
+
+            Text {
+              textFormat: Text.PlainText
+              text: root.tr("servers.importTitle")
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.title
+            }
+
+            Editor {
+              id: importArea
+              objectName: "vpnServerImport"
+              width: parent.width
+              height: Commons.Style.space(90)
+              enabled: !root.pending
+              label: root.tr("servers.importTitle")
+              placeholderText: root.tr("servers.importPlaceholder")
+              onSubmitted: root.submit()
+            }
+
+            Row {
+              spacing: Commons.Style.space(8)
+
+              Button {
+                text: root.tr("servers.importBtn")
+                variant: "primary"
+                enabled: !root.pending
+                onClicked: root.submit()
+              }
+
+              Button {
+                text: root.tr("action.cancel")
+                variant: "subtle"
+                enabled: !root.pending
+                onClicked: root.cancelForm()
+              }
+            }
+          }
+        }
         // Empty state
         Ui.BorderSurface {
           visible: !root.showImportBox && root.filteredServers.length === 0

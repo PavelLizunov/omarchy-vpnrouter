@@ -21,6 +21,7 @@ Ui.BorderSurface {
   property bool detailsOnly: false
   property bool expanded: false
   property bool autoExpand: false
+  property real detailsHeightLimit: Commons.Style.space(160)
   onAutoExpandChanged: if (autoExpand && text) expanded = true
   readonly property bool hasDetails: detailsOnly || (error && (text.length > 180 || text.indexOf("\n") !== -1))
   signal dismissed()
@@ -92,7 +93,7 @@ Ui.BorderSurface {
       id: detailsViewport
       visible: root.hasDetails && root.expanded
       width: parent.width
-      height: Math.min(details.implicitHeight, Commons.Style.space(160))
+      height: Math.min(details.implicitHeight, root.detailsHeightLimit)
       clip: true
       contentWidth: width
       contentHeight: details.implicitHeight

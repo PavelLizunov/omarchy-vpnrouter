@@ -50,7 +50,8 @@ for noninteractive DNS cleanup. Plugin setup and its launcher do not request roo
 Click the bar icon to open Home. Add a subscription or import servers, select a
 server, then use Connect when the backend reports that connection is available.
 Home keeps the connection action, status and current server above its scrolling
-navigation. Server rows scroll below a fixed search field; Settings keeps Save
+navigation. Server rows scroll below a fixed search field, and import actions remain reachable
+when error details expand. Settings keeps Save
 and Revert at the bottom of the visible page. On short screens the extra Home
 emblem is hidden and routing controls remain in the scrolling area.
 

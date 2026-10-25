@@ -789,6 +789,14 @@ Rectangle {
       keyClick(Qt.Key_Space);wait(35);equal(fixture.selectedServer,"row99","Last server can be selected by keyboard")
       fill(search,"Server 42");wait(30)
       expect(byName("vpnServerRow-row42")!==null,"Pinned search filters the list")
+      var serversPage=page("Servers")
+      serversPage.openImportForm();backend.lastError="Technical fixture detail. ".repeat(150);wait(30)
+      var serverError=byName("vpnServersError");serverError.expanded=true;wait(30)
+      var importSubmit=button(serversPage,"servers.importBtn")
+      importSubmit.forceActiveFocus();wait(30)
+      inside(importSubmit,view,"Import submit after an expanded error")
+      expect(list.height>=importSubmit.height,"An expanded error leaves space for form actions")
+      serversPage.cancelForm();backend.clearLastError()
       fixture.servers=originalServers;fixture.selectedServer="manual";backend.listServers(0,100)
       fixture.width=originalWidth;fixture.height=originalHeight;consumer.setDisplayMode("simple",true);wait(30)
       console.log("QML_PASS compactLayout five-heights five-states pinned-primary-server-status expanded-errors save 100-servers search keyboard-selection")
@@ -1146,6 +1154,12 @@ Rectangle {
         fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
         backend.checkDeadlines(Date.now()+2000000);wait(30)
         consumer.forceActiveFocus();byName("vpnContentViewport").contentY=0
+      }
+      else if(fixture.capture==="server-import-error") {
+        go("servers");page("Servers").openImportForm()
+        backend.lastError="Technical fixture detail. ".repeat(150);wait(30)
+        byName("vpnServersError").expanded=true;wait(30)
+        button(page("Servers"),"servers.importBtn").forceActiveFocus();wait(30)
       }
       else if(fixture.capture==="connected") {backend.state="connected";wait(20)}
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}

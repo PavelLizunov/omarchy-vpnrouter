@@ -186,6 +186,8 @@ try:
                 for tab in ['servers', 'settings']:
                     render(f'qml-{theme}-{locale}-{tab}', theme,
                         {'locale': locale, 'theme': theme, 'tab': tab})
+                render(f'qml-{theme}-{locale}-import-error', theme,
+                    {'locale': locale, 'theme': theme, 'capture': 'server-import-error', 'tab': 'servers'})
                 render(f'qml-{theme}-{locale}-home-bottom', theme,
                     {'locale': locale, 'theme': theme, 'capture': 'home-bottom', 'scrollBottom': True})
 finally:
