@@ -130,6 +130,9 @@ The Arch `vpnrouter-headless` package supplies `/usr/lib/vpnrouter-headless/VPNR
 
 With the `vpnrouter-headless` package already installed, copy the plugin's committed files into a real directory (not a symlink):
 
+Restarting the shell stops the VPNRouter backend and drops any active
+VPNRouter connection.
+
 ```bash
 plugin_dir="$HOME/.config/omarchy/plugins/io.github.pavellizunov.vpnrouter"
 mkdir -p "$plugin_dir"

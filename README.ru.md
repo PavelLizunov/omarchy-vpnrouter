@@ -11,6 +11,9 @@
 См. [инструкцию пакета backend](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/packaging/arch/README.md).
 Выполните из репозитория на проверенном коммите:
 
+Перезапуск оболочки останавливает backend VPNRouter и разрывает
+активное соединение VPNRouter.
+
 ```bash
 id=io.github.pavellizunov.vpnrouter
 plugin_dir="$HOME/.config/omarchy/plugins/$id"

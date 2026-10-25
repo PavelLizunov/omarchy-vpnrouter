@@ -132,6 +132,9 @@ backend показаны дословно. Блокировка трафика �
 
 После установки пакета `vpnrouter-headless` скопируйте файлы проверенного коммита в обычный каталог плагина:
 
+Перезапуск оболочки останавливает backend VPNRouter и разрывает
+активное соединение VPNRouter.
+
 ```bash
 plugin_dir="$HOME/.config/omarchy/plugins/io.github.pavellizunov.vpnrouter"
 mkdir -p "$plugin_dir"

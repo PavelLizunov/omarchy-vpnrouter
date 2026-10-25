@@ -11,6 +11,9 @@ Requires Omarchy Quattro and the `vpnrouter-headless` Arch package.
 See the backend's [package instructions](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/packaging/arch/README.md).
 From this repository at the reviewed commit:
 
+Restarting the shell stops the VPNRouter backend and drops any active
+VPNRouter connection.
+
 ```bash
 id=io.github.pavellizunov.vpnrouter
 plugin_dir="$HOME/.config/omarchy/plugins/$id"
