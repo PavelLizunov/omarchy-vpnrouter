@@ -46,7 +46,7 @@ def stage():
     for directory in ['ui', 'lib', 'assets', 'locales']:
         shutil.copytree(ROOT / directory, plugin / directory, dirs_exist_ok=True)
     (plugin / 'tests').mkdir(exist_ok=True)
-    for file in ['qml-r6-consumer.qml', 'qml-native-reference.qml']:
+    for file in ['qml-interactions-consumer.qml', 'qml-native-reference.qml']:
         shutil.copy2(ROOT / 'tests' / file, plugin / 'tests' / file)
     imports = base / 'imports'
     imports.mkdir(parents=True, exist_ok=True)
@@ -95,7 +95,7 @@ host, imports, themes = stage()
 # Include host sources, adapter and theme bytes, not just plugin HEAD.
 dependencies = [*ROOT.glob('*.qml'), *ROOT.glob('ui/*.qml'), ROOT / 'ui/qmldir',
     *ROOT.glob('lib/*.js'), *ROOT.glob('locales/*.json'), *ROOT.glob('assets/*.png'),
-    ROOT / 'tests/qml-r6-consumer.qml', ROOT / 'tests/qml-native-reference.qml',
+    ROOT / 'tests/qml-interactions-consumer.qml', ROOT / 'tests/qml-native-reference.qml',
     *host.glob('Commons/*'), *host.glob('Ui/*'),
     *Path('/usr/share/omarchy/shell/plugins/panels/bluetooth').glob('*'),
     host / 'vpnrouter/native-bluetooth/Panel.qml', ROOT / 'tests/render-theme-matrix.py',
@@ -130,7 +130,7 @@ def render(name, theme, properties, reference=False, width=440, height=764):
         theme_link.unlink()
     theme_link.symlink_to(themes[theme])
     properties = {**properties, 'width': width, 'height': height}
-    qml = host / 'vpnrouter' / ('tests/qml-native-reference.qml' if reference else 'tests/qml-r6-consumer.qml')
+    qml = host / 'vpnrouter' / ('tests/qml-native-reference.qml' if reference else 'tests/qml-interactions-consumer.qml')
     response = client.call({'qmlPath': str(qml), 'outputPath': str(base / (name + '.png')),
         'width': width, 'height': height, 'dpr': 2, 'timeoutMs': 10000,
         'importPaths': [str(host), str(imports)], 'readyProperty': 'previewReady',
@@ -141,11 +141,11 @@ def render(name, theme, properties, reference=False, width=440, height=764):
     meta = result.get('structuredContent', {})
     diagnostics = meta.get('diagnosticRecords', [])
     unexpected = [d for d in diagnostics if not ('HYPRLAND_INSTANCE_SIGNATURE' in d['message']
-        or d['message'].startswith(('R6_READY', 'R6_PASS', 'R6_RESULT', 'R7_MOTION', 'R8_NATIVE_READY')))]
-    ready = 'R8_NATIVE_READY' if reference else 'R6_READY'
+        or d['message'].startswith(('QML_READY', 'QML_PASS', 'QML_RESULT', 'QML_MOTION', 'NATIVE_READY')))]
+    ready = 'NATIVE_READY' if reference else 'QML_READY'
     passed = not result.get('isError') and not unexpected and any(d['message'].startswith(ready) for d in diagnostics)
     if properties.get('suite'):
-        passed = passed and any(d['message'].startswith('R6_RESULT') for d in diagnostics)
+        passed = passed and any(d['message'].startswith('QML_RESULT') for d in diagnostics)
     manifest.append({'name': name, 'theme': theme, 'properties': properties,
         'passed': passed, 'sha256': meta.get('sha256'), 'inspected': False})
     (base / 'manifest.json').write_text(json.dumps(manifest, indent=2))
@@ -157,29 +157,29 @@ try:
     if args.mode in ['all', 'check']:
         suites = ['brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
                   'servers', 'custom', 'rules', 'settings', 'actions', 'keyboard', 'pointerForms',
-                  'layoutFit', 'focusCues', 'homeReturn', 'night2']
+                  'layoutFit', 'focusCues', 'homeReturn', 'probesAndPreferences']
         if args.suites:
             suites = args.suites.split(',')
         for locale in ['en', 'ru']:
             for suite in suites:
-                render(f'r8-check-{locale}-{suite}', 'catppuccin-latte',
+                render(f'qml-check-{locale}-{suite}', 'catppuccin-latte',
                        {'locale': locale, 'theme': 'catppuccin-latte', 'suite': suite, 'capture': ''})
         for locale in ['en', 'ru']:
             for suite in ([] if args.suites else ['geometry', 'routing', 'keyboard']):
-                render(f'r8-check-small-{locale}-{suite}', 'tokyo-night',
+                render(f'qml-check-small-{locale}-{suite}', 'tokyo-night',
                        {'locale': locale, 'theme': 'tokyo-night', 'suite': suite, 'capture': ''}, width=400, height=560)
     if args.mode in ['all', 'render']:
         for theme in THEMES:
-            render(f'r8-reference-{theme}', theme, {}, reference=True)
+            render(f'qml-reference-{theme}', theme, {}, reference=True)
             for locale in ([] if args.references_only else ['en', 'ru']):
                 for state in ['first-run', 'disconnected', 'connecting', 'connected', 'error', 'unavailable']:
-                    render(f'r8-{theme}-{locale}-{state}', theme,
+                    render(f'qml-{theme}-{locale}-{state}', theme,
                         {'locale': locale, 'theme': theme, 'stateName': 'disconnected' if state == 'first-run' else state,
                          'capture': 'first-run' if state == 'first-run' else 'home'})
                 for tab in ['servers', 'settings']:
-                    render(f'r8-{theme}-{locale}-{tab}', theme,
+                    render(f'qml-{theme}-{locale}-{tab}', theme,
                         {'locale': locale, 'theme': theme, 'tab': tab})
-                render(f'r8-{theme}-{locale}-home-bottom', theme,
+                render(f'qml-{theme}-{locale}-home-bottom', theme,
                     {'locale': locale, 'theme': theme, 'capture': 'home-bottom', 'scrollBottom': True})
 finally:
     client.close()

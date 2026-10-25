@@ -102,7 +102,7 @@ sub.submit();
 assert.strictEqual(sent, 1);
 assert.strictEqual(sub.showAddForm, false);
 assert.strictEqual(sub.successNotice, 'subscriptions.added');
-console.log('PASS: r4 application metadata/legacy fallback, grouping, reason codes, severities, count labels, actual QML selection and first-run form flow');
+console.log('PASS: application metadata/legacy fallback, grouping, reason codes, severities, count labels, actual QML selection and first-run form flow');
 root.pending = true;
 const pendingWrites = writes.length;
 root.addApp('PendingFixture');root.removeApp('firefox');

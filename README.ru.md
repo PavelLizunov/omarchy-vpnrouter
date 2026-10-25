@@ -285,10 +285,10 @@ python3 tests/test-packaging.py
 
 ### Логика UI и нативная offscreen-проверка
 
-Каждый `tests/test-ui-*.js` запускается через Node. Новый `tests/test-ui-r4.js`
+Каждый `tests/test-ui-*.js` запускается через Node. Новый `tests/test-ui-metadata.js`
 проверяет production Model и функции QML: метаданные приложений, старый backend,
 источники серверов, причины недоступности, переход первого запуска и валидацию.
-`tests/qml-r6-consumer.qml` загружает настоящие Panel, Service и locale-файлы с
+`tests/qml-interactions-consumer.qml` загружает настоящие Panel, Service и locale-файлы с
 `processDisabled=true` и инертными ответами протокола. Внешний `qml-render` с
 адаптером layer-shell → Item позволяет проверить настоящие события Qt мыши и
 клавиатуры и снять настоящий consumer с установленными темами Omarchy. Это не проверка

@@ -146,14 +146,14 @@ Rectangle {
         checks.wait(fixture.settleDelay)
         if (fixture.stateName === "error") {backend.lastError=backend.tr("error.timeout");checks.wait(20)}
         checks.equal(String(VpnUi.Brand.background), String(Commons.Color.popups.background), "Mascot uses popup luminance")
-        console.log("R6_READY",JSON.stringify({suite:fixture.suite,capture:fixture.capture,requests:fixture.messages,geometry:checks.geometry(),theme:fixture.theme,dark:VpnUi.Brand.dark,font:Commons.Style.font.family,background:String(Commons.Color.background),accent:String(Commons.Color.accent),urgent:String(Commons.Color.urgent),muted:String(Commons.Color.muted),popup:String(Commons.Color.popups.background),tokens:Commons.Color.shellValues,arc:fixture.find(consumer,function(x){return x.objectName==="vpnConnectingArc"}).rotation}))
-      } catch(e) { console.error("R6_FAIL",fixture.suite,String(e),e.stack) }
+        console.log("QML_READY",JSON.stringify({suite:fixture.suite,capture:fixture.capture,requests:fixture.messages,geometry:checks.geometry(),theme:fixture.theme,dark:VpnUi.Brand.dark,font:Commons.Style.font.family,background:String(Commons.Color.background),accent:String(Commons.Color.accent),urgent:String(Commons.Color.urgent),muted:String(Commons.Color.muted),popup:String(Commons.Color.popups.background),tokens:Commons.Color.shellValues,arc:fixture.find(consumer,function(x){return x.objectName==="vpnConnectingArc"}).rotation}))
+      } catch(e) { console.error("QML_FAIL",fixture.suite,String(e),e.stack) }
       fixture.previewReady=true
     }
   }
   TestCase {
     id: checks
-    name:"VPNRouterR6Forms"
+    name:"VPNRouterInteractions"
     when:false
     function expect(condition,message) {if(!condition) throw new Error(message || "Expectation failed")}
     function equal(actual,expected,message) {if(actual!==expected) throw new Error((message || "Mismatch")+": expected "+JSON.stringify(expected)+", observed "+JSON.stringify(actual))}
@@ -198,7 +198,7 @@ Rectangle {
       activate(name);equal(count("subscriptions.add"),before+1,"Pending cannot duplicate")
       fixture.release(true);wait(35);expect(!p.pending);expect(p.showAddForm);visibleNotice("subscriptions.addFailed");equal(url.text,"https://example.invalid/sub")
       activate(name);expect(!p.showAddForm);equal(url.text,"");equal(name.text,"");visibleNotice("subscriptions.added")
-      console.log("R6_PASS subscriptions empty invalid-url masking cancel pending failure-retention retry-success")
+      console.log("QML_PASS subscriptions empty invalid-url masking cancel pending failure-retention retry-success")
     }
     function serversImport() {
       go("servers");var p=page("Servers");click(button(p,"action.import"));expect(p.showImportBox)
@@ -209,7 +209,7 @@ Rectangle {
       fill(area,"vless://fixture@example.invalid:443#Fixture");fixture.holdMethod="servers.import";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);expect(p.pending);visibleNotice("operation.pending")
       fixture.release(false);wait(45);expect(!p.showImportBox);equal(area.text,"");visibleNotice("servers.imported")
       click(button(p,"action.import"));fill(area,"discard me");click(button(p,"action.cancel"));expect(!p.showImportBox);equal(area.text,"")
-      console.log("R6_PASS servers empty rejected-text retained pending imported cancel")
+      console.log("QML_PASS servers empty rejected-text retained pending imported cancel")
     }
     function customImport() {
       go("custom");var p=page("CustomConfig");click(button(p,"custom.addTitle"));expect(p.showImportForm)
@@ -221,7 +221,7 @@ Rectangle {
       fixture.holdMethod="custom.import";area.forceActiveFocus();keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);expect(p.pending)
       fixture.release(false);wait(45);expect(!p.showImportForm);equal(area.text,"");equal(name.text,"");visibleNotice("custom.imported")
       click(button(p,"custom.addTitle"));fill(name,"Discard");fill(area,"{}");click(button(p,"action.cancel"));equal(area.text,"");equal(name.text,"")
-      console.log("R6_PASS custom required malformed-json array backend-rejection pending retry-success cancel")
+      console.log("QML_PASS custom required malformed-json array backend-rejection pending retry-success cancel")
     }
     function rules() {
       go("rules");var p=page("Rules"),area=byName("vpnRulesEditor")
@@ -236,7 +236,7 @@ Rectangle {
       equal(area.text,"UNSAVED DRAFT","Export preserves draft");equal(byName("vpnRulesExport").text,"domain,example.invalid,proxy");equal(p.statusNotice,"rules.exportReady")
       fixture.failNext="rules.export";activate(button(p,"rules.exportBtn"));expect(p.noticeError);equal(p.exportedText,"")
       activate(button(p,"rules.exportBtn"));expect(p.exportedText!=="");equal(p.noticeArgs[0],"CSV")
-      console.log("R6_PASS rules edit invalid priority save import-empty import-error import-success format export-preserves-draft no-fake-file retry")
+      console.log("QML_PASS rules edit invalid priority save import-empty import-error import-success format export-preserves-draft no-fake-file retry")
     }
     function settings() {
       go("settings");var p=page("Settings"),mtu=fixture.find(p,function(x){return x.placeholderText==="1420"}),cidr=byName("vpnSettingsCidrs")
@@ -254,7 +254,7 @@ Rectangle {
       fixture.holdMethod="settings.set";activate(button(p,"settings.save"));expect(p.pending);fixture.release(false);wait(45)
       equal(fixture.savedSettings.mtu,1400);expect(fixture.savedSettings.ipv6Enabled);equal(fixture.savedSettings.routeExcludeAddress.length,2);equal(cidr.text,"10.0.0.0/8\n2001:db8::/32");visibleNotice("settings.saved")
       activate(editable[0],Qt.Key_Space);expect(!p.ipv6Val);activate(button(p,"settings.revert"));expect(p.ipv6Val && editable[0].checked,"Revert uses newly saved values")
-      console.log("R6_PASS settings real-typing invalid-mtu cidr-no-loss backend-rejection all-editable-toggles revert bindings pending saved ipv6-cidr")
+      console.log("QML_PASS settings real-typing invalid-mtu cidr-no-loss backend-rejection all-editable-toggles revert bindings pending saved ipv6-cidr")
     }
     function routing() {
       go("apps")
@@ -274,7 +274,7 @@ Rectangle {
       fixture.release(true);wait(35);equal(backend.routingMode,"split","Rejected change retains confirmed value")
       fixture.holdMethod="routing.set";click(fixture.find(byName("vpnHomeRoutingChoice"),function(x){return x.objectName==="vpnChoice-full"}));fixture.release(false);wait(35);equal(backend.routingMode,"full")
       consumer.openSection("apps");wait(35)
-      console.log("R6_PASS routing apps-home arrows-return-space-pointer pending-failure-success")
+      console.log("QML_PASS routing apps-home arrows-return-space-pointer pending-failure-success")
     }
 
     function actions() {
@@ -289,7 +289,7 @@ Rectangle {
       remove=fixture.find(p,function(x){return x.tooltipText===backend.tr("action.remove") && x.visible});activate(remove);wait(20);equal(backend.servers.length,1)
       go("custom");p=page("CustomConfig");activate(button(p,"custom.activate"));wait(20);equal(fixture.selectedCustom,"two");remove=fixture.find(p,function(x){return x.tooltipText===backend.tr("action.remove")});activate(remove);wait(20);equal(backend.customConfigs.length,1)
       go("free");p=page("FreePool");activate(button(p,"free.refresh"));activate(fixture.find(p,function(x){return x.tooltipText===backend.tr("action.test")}));equal(backend.freeServers[0].latencyMs,42);activate(fixture.find(p,function(x){return x.tooltipText===backend.tr("action.verify")}));expect(backend.freeVerification.ok);activate(button(p,"free.apply"));equal(fixture.selectedServer,"free")
-      console.log("R6_PASS actions profiles-reload-select diagnostics-check-export-path-retry-dismiss subscription-enable-refresh-delete server-select-ping-verify-delete custom-activate-delete free-mock-refresh-ping-verify-apply")
+      console.log("QML_PASS actions profiles-reload-select diagnostics-check-export-path-retry-dismiss subscription-enable-refresh-delete server-select-ping-verify-delete custom-activate-delete free-mock-refresh-ping-verify-apply")
     }
     function keyboard() {
       go("rules");var p=page("Rules"),area=byName("vpnRulesEditor")
@@ -308,7 +308,7 @@ Rectangle {
       go("subscriptions");click(button(page("Subscriptions"),"subscriptions.addTitle"));var url=field(page("Subscriptions"),"subscriptions.urlPlaceholder")
       url.forceActiveFocus();keyClick(Qt.Key_Escape);wait(10);expect(!consumer.opened,"Escape from secret field")
       consumer.open();wait(25);click(button(page("Subscriptions"),"action.cancel"))
-      console.log("R6_PASS keyboard multiline-enter tab-backtab long-caret-inner-scroll focus-reveal escape-editor escape-secret")
+      console.log("QML_PASS keyboard multiline-enter tab-backtab long-caret-inner-scroll focus-reveal escape-editor escape-secret")
     }
     function editingLayout(parent,emptyKey) {
       var cancels=fixture.all(parent,function(x){return x.visible && x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("action.cancel")},[])
@@ -335,11 +335,11 @@ Rectangle {
       go("apps");var group=byName("vpnRoutingChoice"),options=fixture.all(group,function(x){return x.clicked!==undefined && x.selected!==undefined},[])
       click(options[1]);equal(backend.routingMode,"full");click(options[0]);equal(backend.routingMode,"split")
       group=byName("vpnAppRuleChoice");options=fixture.all(group,function(x){return x.clicked!==undefined && x.selected!==undefined},[]);click(options[1]);equal(backend.routingAppsMode,"exclude");click(options[0]);equal(backend.routingAppsMode,"include")
-      console.log("R6_PASS pointerForms submit-single-cancel no-competing-empty-card focus-return every-form native-routing-options")
+      console.log("QML_PASS pointerForms submit-single-cancel no-competing-empty-card focus-return every-form native-routing-options")
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="night2") night2()
+      if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
       else if(fixture.suite==="custom") customImport()
@@ -369,13 +369,13 @@ Rectangle {
           expect(item.activeFocus,"Back restores originating row focus")
         }
         go("subscriptions");click(button(page("Subscriptions"),"subscriptions.addTitle"));click(button(page("Subscriptions"),"action.cancel"));go("apps")
-        console.log("R6_PASS geometry all-tabs-editor-return")
+        console.log("QML_PASS geometry all-tabs-editor-return")
       }
       equal(JSON.stringify(geometry()),initial,"Advanced frame and navigation stay fixed")
       var focus=fixture.find(consumer,function(x){return x.visible && x.isPassword!==undefined})
       if(focus) focus.forceActiveFocus();keyClick(Qt.Key_Escape);wait(10);expect(!consumer.opened,"Escape closes panel from form focus")
       consumer.open();wait(40)
-      console.log("R6_RESULT",fixture.suite,"PASS",JSON.stringify(geometry()))
+      console.log("QML_RESULT",fixture.suite,"PASS",JSON.stringify(geometry()))
     }
     function homeReturn() {
       go("custom")
@@ -397,7 +397,7 @@ Rectangle {
       consumer.openSection("servers");wait(35);consumer.setDisplayMode("simple");wait(40)
       target=byName("vpnTab-servers");point=target.mapToItem(viewport,0,0)
       expect(target.activeFocus && point.y>=-1 && point.y+target.height<=viewport.height+1,"Changing section restores its visible home row")
-      console.log("R6_PASS homeReturn repeated-home reveal-already-focused changed-section")
+      console.log("QML_PASS homeReturn repeated-home reveal-already-focused changed-section")
     }
     function visibleTooltip(label) {
       return fixture.controlOverlay && fixture.find(fixture.controlOverlay,function(x){return x.visible && x.text===label})
@@ -475,7 +475,7 @@ Rectangle {
       expect(cue(toggle).visible,"Description click focuses the complete native setting")
       mouseClick(text);wait(15);equal(toggle.checked,checked,"Description click can restore the draft")
       equal(count("settings.set"),before,"Description click does not save settings")
-      console.log("R6_PASS focusCues native-hover-hints notice-focus theme-accent tab-transfer eye choice named-toggle readable-wrapped-descriptions")
+      console.log("QML_PASS focusCues native-hover-hints notice-focus theme-accent tab-transfer eye choice named-toggle readable-wrapped-descriptions")
     }
     function layoutFit() {
       var originalWidth=fixture.width
@@ -502,7 +502,7 @@ Rectangle {
         }
       }
       fixture.width=originalWidth
-      console.log("R6_PASS layoutFit wrapped-empty-states native-choice-width vertical-key-navigation")
+      console.log("QML_PASS layoutFit wrapped-empty-states native-choice-width vertical-key-navigation")
     }
     function states() {
       consumer.setDisplayMode("simple");wait(35)
@@ -543,7 +543,7 @@ Rectangle {
       backend.backendMissing=false;backend.state="connecting";backend.lastError="";backend.busy=true;backend.activeOperation="connect";wait(30)
       expect(!button.enabled,"Connecting cannot duplicate")
       var start=arc.rotation;wait(130);expect(Math.abs(arc.rotation-start)>1,"Connecting arc moves")
-      console.log("R7_MOTION",start,arc.rotation,"after130ms")
+      console.log("QML_MOTION",start,arc.rotation,"after130ms")
       if(fixture.motionOutputPrefix) {
         byName("vpnContentViewport").contentY=0
         for(var i=0;i<3;i++) {
@@ -560,7 +560,7 @@ Rectangle {
       Commons.Style.reduceMotion=false
       backend.activeOperation="";backend.busy=false;backend.state="disconnected";backend.capabilities={connect:true}
       consumer.openSection("apps");wait(30)
-      console.log("R6_PASS states disconnected-connected-error-unavailable-connecting disabled-capability rotation-reduced-motion")
+      console.log("QML_PASS states disconnected-connected-error-unavailable-connecting disabled-capability rotation-reduced-motion")
     }
     function summary() {
       consumer.setDisplayMode("simple");wait(30)
@@ -588,7 +588,7 @@ Rectangle {
       }
       backend.routingAppsMode=fixture.appRule;backend.setLocale(fixture.locale)
       backend.apps={include:original,exclude:fixture.excludes,runningApps:fixture.appRecords};wait(15)
-      console.log("R6_PASS summary real-Text both-locales include-exclude 0-1-2-many CLDR-boundaries exact-keys stable-geometry")
+      console.log("QML_PASS summary real-Text both-locales include-exclude 0-1-2-many CLDR-boundaries exact-keys stable-geometry")
     }
     function brand() {
       equal(String(VpnUi.Brand.background), String(Commons.Color.popups.background),"Mascot follows host surface")
@@ -604,9 +604,9 @@ Rectangle {
       backend.setLocale(fixture.locale);wait(20)
       var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
       consumer.open();wait(30);go("apps")
-      console.log("R6_PASS brand host-luminance host-font change-server first-run language close")
+      console.log("QML_PASS brand host-luminance host-font change-server first-run language close")
     }
-    function night2() {
+    function probesAndPreferences() {
       go("servers")
       consumer.settings={mode:"advanced",showLatency:false,locale:fixture.locale}
       barStateProbe.settings={showLatency:false,locale:fixture.locale}
@@ -666,7 +666,7 @@ Rectangle {
         expect(acceptedPill.visible,"Accepted free probe keeps its latency pill: "+status)
       }
       backend.setLocale(fixture.locale);backend.clearLastError()
-      console.log("R6_PASS night2 real-latency-controls custom-state-and-navigation empty-subscription probe-pending-results")
+      console.log("QML_PASS probesAndPreferences real-latency-controls custom-state-and-navigation empty-subscription probe-pending-results")
     }
     function prepareCapture() {
       if(fixture.capture==="home" || fixture.capture==="home-bottom" || fixture.capture==="first-run") {

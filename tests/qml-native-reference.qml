@@ -39,12 +39,12 @@ Rectangle {
   running: true; interval: 400
   onTriggered: {
    var panel=fixture.find(builtin,function(x){return x.ensureContent!==undefined})
-   if (!panel) { console.error("R8_NATIVE_FAIL missing KeyboardPanel");fixture.previewReady=true;return }
+   if (!panel) { console.error("NATIVE_FAIL missing KeyboardPanel");fixture.previewReady=true;return }
    for (var child of builtin.children) if (child.pressed !== undefined) child.visible=false
    panel.ensureContent()
    // Reparent only the offscreen adapter, leaving the built-in logic closed.
    panel.parent=fixture;panel.x=0;panel.y=0
-   Qt.callLater(function() {fixture.previewReady=true; console.log("R8_NATIVE_READY",builtin.opened, String(Commons.Color.background))})
+   Qt.callLater(function() {fixture.previewReady=true; console.log("NATIVE_READY",builtin.opened, String(Commons.Color.background))})
   }
  }
 }

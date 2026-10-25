@@ -284,10 +284,10 @@ The test suite validates missing backend notices, directory-copied benign mock b
 
 ### UI logic and native offscreen review
 
-Run each `tests/test-ui-*.js` file with Node. `tests/test-ui-r4.js` exercises the
+Run each `tests/test-ui-*.js` file with Node. `tests/test-ui-metadata.js` exercises the
 production model and QML functions for metadata, legacy fallback, sources,
 availability reasons, first-run navigation and form validation.
-`tests/qml-r6-consumer.qml` loads the real Panel, Service and locale files with
+`tests/qml-interactions-consumer.qml` loads the real Panel, Service and locale files with
 `processDisabled=true` and inert protocol responses. With the external `qml-render`
 tool and a layer-shell-to-Item adapter, it checks actual Qt mouse/key events and
 captures the real consumer with installed Omarchy themes. It does not test the
