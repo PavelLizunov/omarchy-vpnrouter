@@ -426,6 +426,7 @@ Item {
               IconButton {
                 icon: "󰆴"
                 variant: "danger"
+                surfaceColor: serverRowRect.color
                 visible: modelData.removable === true
                 tooltipText: root.tr("action.remove")
                 onClicked: if (root.service) root.service.removeServer(modelData.id)

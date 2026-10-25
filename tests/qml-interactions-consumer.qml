@@ -5,6 +5,7 @@ import QtQuick.Controls as Controls
 import qs.Commons as Commons
 import ".." as Vpn
 import "../ui" as VpnUi
+import "../lib/Contrast.js" as Contrast
 Rectangle {
   id: fixture
   width: 540; height: 640
@@ -420,6 +421,7 @@ Rectangle {
       var initial=JSON.stringify(geometry())
       if(fixture.suite==="settingsFooter") settingsFooter()
       else if(fixture.suite==="errorDetails") errorDetails()
+      else if(fixture.suite==="dangerContrast") dangerContrast()
       else if(fixture.suite==="helperRecovery") helperRecovery()
       else if(fixture.suite==="rowProbes") rowProbes()
       else if(fixture.suite==="loading") loading()
@@ -811,6 +813,18 @@ Rectangle {
       equal(fixture.find(notice,function(x){return x.objectName==="vpnNoticeText"}).text,backend.tr("error.timeout"),"Short error remains specific")
       backend.clearLastError()
       console.log("QML_PASS errorDetails bounded-summary full-selectable-details pointer-keyboard primary-visibility")
+    }
+    function dangerContrast() {
+      for(var destination of [["servers","Servers"],["subscriptions","Subscriptions"],["custom","CustomConfig"]]) {
+        go(destination[0])
+        var danger=fixture.find(page(destination[1]),function(x){return x.visible && x.variant==="danger"})
+        expect(danger!==null,"Delete exists on "+destination[0])
+        var control=fixture.find(danger,function(x){return x.foreground!==undefined && x.iconText!==undefined})
+        var urgentPasses=Contrast.ratio(Commons.Color.urgent,danger.surfaceColor,Commons.Color.popups.background)>=4.5
+        equal(String(control.foreground),String(urgentPasses?Commons.Color.urgent:Commons.Color.popups.text),"Delete keeps urgent ink unless its measured contrast fails")
+        expect(Contrast.ratio(control.foreground,danger.surfaceColor,Commons.Color.popups.background)>=4.5,"Delete remains readable on its actual row surface")
+      }
+      console.log("QML_PASS dangerContrast delete-urgent-role measured-surface-fallback three-pages")
     }
     function helperRecovery() {
       consumer.setDisplayMode("simple",true);wait(25)

@@ -2,6 +2,7 @@ import QtQuick
 import qs.Commons as Commons
 import qs.Ui as Ui
 import "../lib/Focus.js" as Focus
+import "../lib/Contrast.js" as Contrast
 
 // Preserve the plugin action API while the host paints and sizes the control.
 Item {
@@ -11,6 +12,8 @@ Item {
   property string tooltipText: ""
   property string variant: "normal"
   property bool busy: false
+  property color surfaceColor: Commons.Color.popups.background
+  readonly property color dangerInk: Contrast.ratio(Commons.Color.urgent, surfaceColor, Commons.Color.popups.background) >= 4.5 ? Commons.Color.urgent : Commons.Color.popups.text
 
   property real fontSize: Commons.Style.font.body
   property string accessibleLabel: text
@@ -33,7 +36,7 @@ Item {
     iconText: root.busy ? "\u{f0772}" : root.icon
     iconSpinning: root.busy
     fontSize: root.fontSize
-    foreground: Commons.Color.popups.text
+    foreground: root.variant === "danger" ? root.dangerInk : Commons.Color.popups.text
     accent: root.variant === "danger" ? Commons.Color.urgent : Commons.Color.accent
     background: root.variant === "solid" || root.variant === "primary" ? Commons.Style.selectedAccentFill : "transparent"
     bordered: root.variant !== "subtle"

@@ -210,6 +210,7 @@ Item {
       model: root.service ? root.service.customConfigs : []
 
       Ui.CursorSurface {
+        id: configSurface
         width: column.width
         height: customRow.implicitHeight + Commons.Style.space(16)
         radius: Commons.Style.cornerRadius
@@ -291,6 +292,7 @@ Item {
             IconButton {
               icon: "󰆴"
               variant: "danger"
+              surfaceColor: configSurface.color
               tooltipText: root.tr("action.remove")
               onClicked: if (root.service) root.service.removeCustom(modelData.id)
             }

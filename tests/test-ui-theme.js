@@ -30,3 +30,15 @@ for (const file of fs.readdirSync(path.join(root, 'ui')).filter(file => file.end
   assert(moduleText.includes(`${path.basename(file, '.qml')} 1.0 ${file}`), `qmldir: ${file}`);
 }
 console.log(`PASS: ${count} production QML/JS files contain no hex colours or fixed font families; every UI type is exported`);
+
+const contrastModule = {exports: {}};
+new Function('module', fs.readFileSync(path.join(root, 'lib/Contrast.js'), 'utf8')
+  .replace(/^\.pragma library\s*/m, ''))(contrastModule);
+const ratio = contrastModule.exports.ratio;
+const black = {r:0,g:0,b:0}, white = {r:1,g:1,b:1};
+assert.equal(ratio(black, white), 21);
+assert.equal(ratio(white, black), 21);
+assert.equal(ratio(white, white), 1);
+assert.equal(ratio(black, {...white,a:0}, black), 1, 'Transparent host fills use their underlay');
+assert(ratio({...white,a:0.5}, black) > 5 && ratio({...white,a:0.5}, black) < 6);
+console.log('PASS: actual contrast helper handles luminance, symmetry and translucent host fills');

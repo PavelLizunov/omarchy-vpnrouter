@@ -316,6 +316,7 @@ Item {
             IconButton {
               icon: "󰆴"
               variant: "danger"
+              surfaceColor: Commons.Style.normalFill
               tooltipText: root.tr("action.remove")
               onClicked: if (root.service) root.service.removeSubscription(modelData.id)
             }
