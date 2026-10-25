@@ -74,3 +74,9 @@ EN/RU docs describe unsandboxed execution, backend shutdown and complete removal
 The fix commits passed 13 Node suites, up to 41 packaging and 109 QML cases, qmllint and plugin validation (exit 0); CI passed on each pushed fix SHA.
 No workstation display, VM, real VPN, subscription edit, activation, release, tag or merge was used; live lifecycle and traffic behavior remain unverified.
 AGENTS.md is preserved for agent tooling; its Marketplace inclusion remains the owner's decision. Git-clone installs still include the test-only mascot fixture.
+
+Visual integration (2026-10-25): lazy-page probe tests now visit Free Pool and recover after deadlines; helper recovery wording, nonbreaking latency, Servers action ordering and measured danger/bar ink fallbacks are fixed.
+All six fix SHAs passed 13 Node suites, 41 packaging cases in bwrap, qmllint, plugin validation and exact-SHA CI; the final code head 0e92c22 passes 146 actual-QML cases. Qmllint retains 1204 warnings and no errors.
+On omarchy-test with r33, EN/RU Tokyo Night/Latte pages, nine lazy sections, pinned Settings actions, full Free Pool names, Test/Verify and Back focus were checked; one helper SIGTERM recovered with exit 0 shown only in Diagnostics. The shell restarted once.
+Across 50 UI cycles, whole-shell RSS was 1088136→1282708 KiB and Headless 94732→262476 KiB; during 180 seconds with the panel closed, CPU was 0.0333%/0.0056% of one core and final RSS 1174588/265104 KiB.
+Memory-leak attribution and long soak remain unverified; long error details were checked offscreen only. The VM keeps r33 and candidate code, Tokyo Night, scale 1 and AUTO locale; no VPN connection, subscription edit or publication was performed.
