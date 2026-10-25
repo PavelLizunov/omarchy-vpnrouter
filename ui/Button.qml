@@ -17,7 +17,7 @@ Item {
   signal clicked()
   implicitWidth: control.implicitWidth
   implicitHeight: Math.max(Commons.Style.spacing.controlHeight, control.implicitHeight)
-  activeFocusOnTab: enabled && !busy
+  activeFocusOnTab: enabled
   onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
   Accessible.role: Accessible.Button
   Accessible.name: accessibleLabel

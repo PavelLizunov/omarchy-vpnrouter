@@ -417,7 +417,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="names") names()
+      if(fixture.suite==="loading") loading()
+      else if(fixture.suite==="names") names()
       else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
@@ -726,6 +727,26 @@ Rectangle {
       var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
       consumer.open();wait(30);go("apps")
       console.log("QML_PASS brand host-luminance host-font change-server first-run language close")
+    }
+    function loading() {
+      fixture.subscriptions=[];backend.subscriptions=[];fixture.free=[];backend.freeServers=[]
+      fixture.profiles=[];backend.profiles=[];fixture.configs=[];backend.customConfigs=[];backend.diagnosticsItems=[]
+      for(var destination of [["subscriptions","Subscriptions","subscriptions.list"],["free","FreePool","free.list"],["profiles","Profiles","profiles.list"],["custom","CustomConfig","custom.list"],["diagnostics","Diagnostics","diagnostics.check"]]) {
+        var key=destination[0],method=destination[2]
+        fixture.holdMethod=method;go(key)
+        var p=page(destination[1])
+        expect(p.loading,"Held read is loading: "+key)
+        expect(fixture.find(p,function(x){return x.visible && x.text===backend.tr(key+".loading")})!==null,"Loading names the current operation: "+key)
+        expect(fixture.find(p,function(x){return x.visible && x.text===backend.tr(key+".empty")})===null,"No premature empty prompt: "+key)
+        fixture.release(true);wait(30)
+        expect(!p.loading && p.loadFailed,"Read failure is distinct: "+key)
+        expect(fixture.find(p,function(x){return x.visible && x.text===backend.tr(key+".empty")})===null,"Failed read is not confirmed empty: "+key)
+        fixture.holdMethod=method;consumer.refreshTab(key);wait(30);expect(p.loading)
+        fixture.release(false);wait(30)
+        expect(!p.loading && !p.loadFailed,"Successful reply ends loading: "+key)
+        if(key!=="diagnostics") expect(fixture.find(p,function(x){return x.visible && x.text===backend.tr(key+".empty")})!==null,"Empty prompt follows confirmed reply: "+key)
+      }
+      console.log("QML_PASS loading held-reply failure retry confirmed-empty five-pages")
     }
     function names() {
       var name="Shared prefix " .repeat(12)+"END-IDENTIFIER:65535"

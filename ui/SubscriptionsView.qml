@@ -9,6 +9,8 @@ Item {
   objectName: "vpnSubscriptionsView"
 
   property var service: null
+  readonly property bool loading: !!service && ["subscriptions.list", "subscriptions.refresh"].indexOf(service.activeOperation) !== -1
+  readonly property bool loadFailed: !!service && !!service.lastError && ["subscriptions.list", "subscriptions.refresh"].indexOf(service.lastErrorMethod) !== -1
   property int i18nRevision: service ? service.i18nRevision : 0
   property bool showAddForm: false
   property string successNotice: ""
@@ -87,6 +89,7 @@ Item {
 
       Button {
         icon: "󰓦"
+        busy: root.loading
         text: root.tr("subscriptions.refreshAll")
         variant: "normal"
         onClicked: if (root.service) root.service.refreshSubscription()
@@ -215,7 +218,7 @@ Item {
           width: parent.width
           horizontalAlignment: Text.AlignHCenter
           wrapMode: Text.WordWrap
-          text: root.tr("subscriptions.empty")
+          text: root.loading ? root.tr("subscriptions.loading") : !root.service || root.loadFailed ? root.tr("state.unavailable") : root.tr("subscriptions.empty")
           color: Commons.Color.popups.text
           font.family: Commons.Style.font.family
           font.pixelSize: Commons.Style.font.bodySmall

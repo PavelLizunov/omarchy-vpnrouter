@@ -9,6 +9,8 @@ Item {
   objectName: "vpnProfilesView"
 
   property var service: null
+  readonly property bool loading: !!service && ["profiles.list", "profiles.refresh"].indexOf(service.activeOperation) !== -1
+  readonly property bool loadFailed: !!service && !!service.lastError && ["profiles.list", "profiles.refresh"].indexOf(service.lastErrorMethod) !== -1
   property int i18nRevision: service ? service.i18nRevision : 0
 
   function tr(key, args) {
@@ -30,6 +32,7 @@ Item {
 
       Button {
         icon: "󰓦"
+        busy: root.loading
         text: root.tr("profiles.refresh")
         variant: "primary"
         onClicked: if (root.service) root.service.refreshProfiles()
@@ -66,7 +69,7 @@ Item {
           width: parent.width
           horizontalAlignment: Text.AlignHCenter
           wrapMode: Text.WordWrap
-          text: root.tr("profiles.empty")
+          text: root.loading ? root.tr("profiles.loading") : !root.service || root.loadFailed ? root.tr("state.unavailable") : root.tr("profiles.empty")
           color: Commons.Color.popups.text
           font.family: Commons.Style.font.family
           font.pixelSize: Commons.Style.font.bodySmall

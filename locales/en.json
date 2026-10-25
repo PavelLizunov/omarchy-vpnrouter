@@ -305,5 +305,10 @@
   "error.invalidVersion": "Unsupported protocol version.",
   "error.payloadTooLarge": "Input frame exceeds the maximum allowed size.",
   "error.unknownMethod": "Unknown request method.",
-  "error.unsupported": "The requested operation or parameter is unsupported."
+  "error.unsupported": "The requested operation or parameter is unsupported.",
+  "subscriptions.loading": "Loading subscriptions…",
+  "free.loading": "Loading free servers…",
+  "profiles.loading": "Loading profiles…",
+  "custom.loading": "Loading configurations…",
+  "diagnostics.loading": "Running diagnostics…"
 }

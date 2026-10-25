@@ -10,6 +10,8 @@ Item {
   objectName: "vpnFreePoolView"
 
   property var service: null
+  readonly property bool loading: !!service && ["free.list", "free.refresh"].indexOf(service.activeOperation) !== -1
+  readonly property bool loadFailed: !!service && !!service.lastError && ["free.list", "free.refresh"].indexOf(service.lastErrorMethod) !== -1
   property bool showLatency: true
   property int i18nRevision: service ? service.i18nRevision : 0
 
@@ -33,6 +35,7 @@ Item {
 
       Button {
         icon: "󰓦"
+        busy: root.loading
         text: root.tr("free.refresh")
         variant: "primary"
         onClicked: if (root.service) root.service.refreshFree()
@@ -98,7 +101,7 @@ Item {
           width: parent.width
           horizontalAlignment: Text.AlignHCenter
           wrapMode: Text.WordWrap
-          text: root.tr("free.empty")
+          text: root.loading ? root.tr("free.loading") : !root.service || root.loadFailed ? root.tr("state.unavailable") : root.tr("free.empty")
           color: Commons.Color.popups.text
           font.family: Commons.Style.font.family
           font.pixelSize: Commons.Style.font.bodySmall

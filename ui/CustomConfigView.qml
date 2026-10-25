@@ -9,6 +9,8 @@ Item {
   objectName: "vpnCustomConfigView"
 
   property var service: null
+  readonly property bool loading: !!service && ["custom.list"].indexOf(service.activeOperation) !== -1
+  readonly property bool loadFailed: !!service && !!service.lastError && ["custom.list"].indexOf(service.lastErrorMethod) !== -1
   property int i18nRevision: service ? service.i18nRevision : 0
   property bool showImportForm: false
   property bool pending: false
@@ -195,7 +197,7 @@ Item {
           width: parent.width
           horizontalAlignment: Text.AlignHCenter
           wrapMode: Text.WordWrap
-          text: root.tr("custom.empty")
+          text: root.loading ? root.tr("custom.loading") : !root.service || root.loadFailed ? root.tr("state.unavailable") : root.tr("custom.empty")
           color: Commons.Color.popups.text
           font.family: Commons.Style.font.family
           font.pixelSize: Commons.Style.font.bodySmall

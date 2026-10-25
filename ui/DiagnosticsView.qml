@@ -9,6 +9,8 @@ Item {
   objectName: "vpnDiagnosticsView"
 
   property var service: null
+  readonly property bool loading: !!service && ["diagnostics.check"].indexOf(service.activeOperation) !== -1
+  readonly property bool loadFailed: !!service && !!service.lastError && ["diagnostics.check"].indexOf(service.lastErrorMethod) !== -1
   property string noticeKey: ""
   property bool noticeError: false
   property int i18nRevision: service ? service.i18nRevision : 0
@@ -44,6 +46,7 @@ Item {
 
       Button {
         icon: "󰓙"
+        busy: root.loading
         text: root.tr("diagnostics.checkBtn")
         variant: "primary"
         onClicked: if (root.service) root.service.checkDiagnostics()
@@ -96,7 +99,7 @@ Item {
           width: parent.width
           horizontalAlignment: Text.AlignHCenter
           wrapMode: Text.WordWrap
-          text: root.tr("diagnostics.empty")
+          text: root.loading ? root.tr("diagnostics.loading") : !root.service || root.loadFailed ? root.tr("state.unavailable") : root.tr("diagnostics.empty")
           color: Commons.Color.popups.text
           font.family: Commons.Style.font.family
           font.pixelSize: Commons.Style.font.bodySmall
