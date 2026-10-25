@@ -417,7 +417,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="rowProbes") rowProbes()
+      if(fixture.suite==="errorDetails") errorDetails()
+      else if(fixture.suite==="rowProbes") rowProbes()
       else if(fixture.suite==="loading") loading()
       else if(fixture.suite==="names") names()
       else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
@@ -728,6 +729,40 @@ Rectangle {
       var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
       consumer.open();wait(30);go("apps")
       console.log("QML_PASS brand host-luminance host-font change-server first-run language close")
+    }
+    function errorDetails() {
+      consumer.setDisplayMode("simple",true);wait(30)
+      var longError=backend.tr("error.timeout")+" "+"Technical fixture detail. ".repeat(150)
+      backend.lastError=longError;wait(35)
+      var primary=byName("vpnConnect"),notice=byName("vpnHomeErrorDetails")
+      var disclosure=fixture.find(notice,function(x){return x.objectName==="vpnNoticeDisclosure"})
+      var initial=primary.mapToItem(byName("vpnContentViewport"),0,0).y
+      expect(initial>=0 && initial+primary.height<byName("vpnContentViewport").height,"Connect stays in the first viewport with a long error")
+      expect(!notice.expanded)
+      activate(disclosure,Qt.Key_Space);expect(notice.expanded,"Space expands Home details")
+      equal(primary.mapToItem(byName("vpnContentViewport"),0,0).y,initial,"Details do not move Connect")
+      expect(notice.y>=primary.y+primary.height,"Primary action precedes Home details")
+      var details=fixture.find(notice,function(x){return x.objectName==="vpnNoticeDetails"})
+      equal(details.text,longError,"Full error is retained and selectable")
+      expect(details.readOnly && details.selectByMouse)
+      details.forceActiveFocus();keyClick(Qt.Key_End,Qt.ControlModifier);wait(25)
+      var detailViewport=details.parent
+      while(detailViewport && detailViewport.contentY===undefined) detailViewport=detailViewport.parent
+      expect(detailViewport && detailViewport.contentY>0,"Keyboard can reach the end of bounded details")
+      click(disclosure);expect(!notice.expanded,"Pointer collapses details")
+      go("servers")
+      notice=fixture.find(consumer,function(x){return x.visible && x.hasDetails===true && x.detailsOnly===false})
+      expect(notice!==null)
+      disclosure=fixture.find(notice,function(x){return x.objectName==="vpnNoticeDisclosure"})
+      activate(disclosure);expect(notice.expanded,"Return expands global error details")
+      expect(notice.height<Commons.Style.space(260),"Expanded error has a bounded height")
+      var importButton=fixture.find(page("Servers"),function(x){return x.text==="+ "+backend.tr("action.import")}),point=importButton.mapToItem(byName("vpnContentViewport"),0,0)
+      expect(point.y>=0 && point.y+importButton.height<=byName("vpnContentViewport").height,"Import stays visible with expanded details")
+      backend.lastError=backend.tr("error.timeout");wait(25)
+      expect(!notice.expanded && !notice.hasDetails,"New short error resets disclosure")
+      equal(fixture.find(notice,function(x){return x.objectName==="vpnNoticeText"}).text,backend.tr("error.timeout"),"Short error remains specific")
+      backend.clearLastError()
+      console.log("QML_PASS errorDetails bounded-summary full-selectable-details pointer-keyboard primary-visibility")
     }
     function rowProbes() {
       fixture.servers=[{id:"one",name:"Probe one",source:"manual",protocol:"vless"},{id:"two",name:"Probe two",source:"manual",protocol:"vless"}]

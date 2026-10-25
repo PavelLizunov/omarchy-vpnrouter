@@ -312,5 +312,7 @@
   "custom.loading": "Loading configurations…",
   "diagnostics.loading": "Running diagnostics…",
   "test.pending": "Testing latency…",
-  "verify.pending": "Verifying connection…"
+  "verify.pending": "Verifying connection…",
+  "action.showDetails": "Show details",
+  "action.hideDetails": "Hide details"
 }

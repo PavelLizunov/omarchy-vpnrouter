@@ -312,5 +312,7 @@
   "custom.loading": "Загрузка конфигураций…",
   "diagnostics.loading": "Выполняется диагностика…",
   "test.pending": "Измерение задержки…",
-  "verify.pending": "Проверка подключения…"
+  "verify.pending": "Проверка подключения…",
+  "action.showDetails": "Показать подробности",
+  "action.hideDetails": "Скрыть подробности"
 }

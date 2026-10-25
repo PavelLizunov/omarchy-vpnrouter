@@ -29,6 +29,7 @@ Column {
   readonly property bool needsSetup: !!service && service.serversLoaded && service.subscriptionsLoaded && !service.servers.length && !service.subscriptions.length && !connected && !busy && !missing && !initializing && service.configMode !== "custom"
   readonly property color stateColor: connected ? Commons.Color.accent : busy ? Commons.Color.accent : failed || missing ? Commons.Color.urgent : Commons.Color.muted
   readonly property string availability: availabilityText()
+  readonly property bool longError: !!service && !!service.lastError && (availability.length > 180 || availability.indexOf("\n") !== -1)
   function availabilityText() {
     var _ = root.i18nRevision
     if (root.connected) return ""
@@ -132,7 +133,7 @@ Column {
   Text {
     width: parent.width
     textFormat: Text.PlainText
-    text: root.busy ? root.tr(root.service.isDisconnecting || root.service.activeOperation === "disconnect" ? "home.disconnecting" : "home.connecting") : root.connected ? root.tr("home.active") : root.needsSetup ? root.tr("home.addHint") : root.availability || root.tr(root.failed ? "error.generic" : "home.direct")
+    text: root.busy ? root.tr(root.service.isDisconnecting || root.service.activeOperation === "disconnect" ? "home.disconnecting" : "home.connecting") : root.connected ? root.tr("home.active") : root.needsSetup ? root.tr("home.addHint") : (root.longError ? root.tr("error.generic") : root.availability) || root.tr(root.failed ? "error.generic" : "home.direct")
     horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.WordWrap
     color: Commons.Color.popups.text
@@ -160,5 +161,13 @@ Column {
     text: root.tr("action.cancel")
     variant: "subtle"
     onClicked: root.cancelRequested()
+  }
+  Notice {
+    objectName: "vpnHomeErrorDetails"
+    width: parent.width
+    service: root.service
+    text: root.longError ? root.availability : ""
+    error: true
+    detailsOnly: true
   }
 }
