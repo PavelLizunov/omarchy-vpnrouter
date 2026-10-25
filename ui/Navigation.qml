@@ -21,6 +21,13 @@ Ui.BorderSurface {
       if (item && item.modelData.id === tabId) { item.forceActiveFocus(); item.reveal(); return }
     }
   }
+  function revealFocusedRow() {
+    for (var i = 0; i < entries.count; i++) {
+      var item = entries.itemAt(i)
+      if (item && item.visible && item.activeFocus) { item.reveal(); return }
+    }
+  }
+  onYChanged: Qt.callLater(revealFocusedRow)
   readonly property var tabs: [
     {id:"servers",icon:"󰒋"}, {id:"subscriptions",icon:"󰌹"},
     {id:"apps",icon:"󰀻"}, {id:"rules",icon:"󰈶"},
