@@ -210,3 +210,15 @@ console.log("ALL PROTOCOL TESTS PASSED!\n");
   assert.strictEqual(acc.getBufferLength(), 0);
   console.log('✓ Backend uncorrelated errors, burst frame limits and oversized-frame resynchronization passed');
 }
+
+{
+  const frames=[],errors=[];
+  const acc=Protocol.createChunkAccumulator(f=>frames.push(f),e=>errors.push(e));
+  for(const id of ['request',null])
+    acc.feed(JSON.stringify({v:1,id,error:{code:'busy',message:'Fixture'}})+'\n');
+  assert.strictEqual(errors.length,0,'Valid error responses are not framing errors');
+  assert.strictEqual(frames.length,2);
+  assert.strictEqual(frames[0].error.code,'busy');
+  assert.strictEqual(frames[1].id,null);
+  console.log('PASS: correlated and uncorrelated error responses traverse the real chunk accumulator');
+}

@@ -347,3 +347,13 @@ for (const locale of ['en','ru']) {
 }
 I18n.setLocale('en');root.clearLastError();
 console.log('PASS: typed subscription refresh failures are localized in EN/RU and retain servers');
+
+// Exercise error responses through the production chunk accumulator.
+root._requestQueue.clearAll();root._pendingCallbacks={};root.activeRequestId='';root.activeOperation='';
+root.initAccumulator();
+root.refreshSubscription();
+root.feedChunk(JSON.stringify({v:1,id:written.at(-1).id,error:{code:'subscription_refresh_failed',message:'Fixture'}})+'\n');
+assert.strictEqual(root.lastErrorKey,'subscriptions.refreshFailed');
+assert.strictEqual(Object.keys(root._pendingCallbacks).length,0);
+root.clearLastError();
+console.log('PASS: wire error responses finish callbacks with the typed message');
