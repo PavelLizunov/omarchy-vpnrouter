@@ -15,7 +15,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 HOST = Path('/usr/share/omarchy/shell')
-THEMES = ['catppuccin-latte', 'tokyo-night', 'hackerman']
+THEMES = ['catppuccin-latte', 'tokyo-night', 'hackerman', 'miasma']
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--evidence-dir', required=True, type=Path)
 parser.add_argument('--renderer-root', type=Path, default=ROOT.parent / 'qml-preview-mcp')
@@ -155,7 +155,7 @@ def render(name, theme, properties, reference=False, width=440, height=764):
 
 try:
     if args.mode in ['all', 'check']:
-        suites = ['settingsFooter', 'errorDetails', 'helperRecovery', 'dangerContrast', 'rowProbes', 'loading', 'names', 'lazySections', 'serviceQueue', 'brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
+        suites = ['settingsFooter', 'errorDetails', 'helperRecovery', 'dangerContrast', 'barContrast', 'rowProbes', 'loading', 'names', 'lazySections', 'serviceQueue', 'brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
                   'servers', 'custom', 'rules', 'settings', 'appsDiscovery', 'actions', 'keyboard', 'pointerForms',
                   'layoutFit', 'focusCues', 'homeReturn', 'probesAndPreferences']
         if args.suites:

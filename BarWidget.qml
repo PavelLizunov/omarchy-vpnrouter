@@ -3,6 +3,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Ui
 import "lib/Model.js" as Model
+import "lib/Contrast.js" as Contrast
 import "lib/I18n.js" as I18n
 import "ui" as VpnUi
 
@@ -60,7 +61,10 @@ Ui.BarWidget {
   readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : isStarting ? "starting" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
   // Material Design shield family from the host bar's Nerd Font.
   readonly property string stateIcon: ({ starting: "\u{f0498}", disconnected: "\u{f0498}", connecting: "\u{f11a2}", connected: "\u{f0565}", error: "\u{f0ecc}", unavailable: "\u{f099e}", missing: "\u{f0adc}" })[visualState]
-  readonly property color inkColor: visualState === "connected" ? Commons.Color.accent : visualState === "connecting" ? Commons.Color.accent : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? Commons.Color.urgent : visualState === "starting" ? Commons.Color.muted : Commons.Color.foreground
+  readonly property color preferredInk: visualState === "connected" ? Commons.Color.accent : visualState === "connecting" ? Commons.Color.accent : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? Commons.Color.urgent : visualState === "starting" ? Commons.Color.muted : Commons.Color.foreground
+
+  readonly property color barSurface: root.bar && root.bar.background !== undefined ? root.bar.background : Commons.Color.bar.background
+  readonly property color inkColor: Contrast.ratio(preferredInk, barSurface, Commons.Color.background) >= 3 ? preferredInk : Commons.Color.bar.text
 
   readonly property string barTooltip: {
     var _ = i18nRevision

@@ -421,6 +421,7 @@ Rectangle {
       var initial=JSON.stringify(geometry())
       if(fixture.suite==="settingsFooter") settingsFooter()
       else if(fixture.suite==="errorDetails") errorDetails()
+      else if(fixture.suite==="barContrast") barContrast()
       else if(fixture.suite==="dangerContrast") dangerContrast()
       else if(fixture.suite==="helperRecovery") helperRecovery()
       else if(fixture.suite==="rowProbes") rowProbes()
@@ -625,7 +626,8 @@ Rectangle {
       backend.servers=[];backend.subscriptions=[];wait(15);expect(!hero.needsSetup,"Startup does not show a premature empty-configuration prompt")
       backend.servers=savedServers;backend.subscriptions=savedSubscriptions
       equal(barStateProbe.visualState,"starting","The actual bar binding recognizes startup")
-      equal(String(barStateProbe.inkColor),String(Commons.Color.muted),"Startup bar is neutral")
+      equal(String(barStateProbe.preferredInk),String(Commons.Color.muted),"Startup bar has a neutral role")
+      expect(Contrast.ratio(barStateProbe.inkColor,barStateProbe.barSurface,Commons.Color.background)>=3,"Startup shield remains readable")
       equal(String(hero.stateColor),String(Commons.Color.muted),"Startup hero is neutral")
       backend.capabilities={connect:true};wait(20);expect(!button.enabled,"Startup never enables Connect from stale capability")
       backend.starting=true;backend.helperPresent=false;wait(20);expect(hero.initializing,"Process startup is covered too")
@@ -813,6 +815,20 @@ Rectangle {
       equal(fixture.find(notice,function(x){return x.objectName==="vpnNoticeText"}).text,backend.tr("error.timeout"),"Short error remains specific")
       backend.clearLastError()
       console.log("QML_PASS errorDetails bounded-summary full-selectable-details pointer-keyboard primary-visibility")
+    }
+    function barContrast() {
+      for(var state of ["disconnected","connected","connecting","error","unavailable","missing","starting"]) {
+        backend.state=state==="missing" || state==="starting"?"unavailable":state
+        backend.backendMissing=state==="missing";backend.starting=state==="starting"
+        backend.helperPresent=state!=="unavailable" && state!=="starting";backend.snapshotLoaded=state!=="starting"
+        backend.lastError="";wait(20)
+        equal(barStateProbe.visualState,state,"Actual bar state")
+        var passes=Contrast.ratio(barStateProbe.preferredInk,barStateProbe.barSurface,Commons.Color.background)>=3
+        equal(String(barStateProbe.inkColor),String(passes?barStateProbe.preferredInk:Commons.Color.bar.text),"Bar retains its role unless measured contrast fails")
+        expect(Contrast.ratio(barStateProbe.inkColor,barStateProbe.barSurface,Commons.Color.background)>=3,"Bar shield meets icon contrast: "+state)
+      }
+      backend.backendMissing=false;backend.starting=false;backend.applySnapshot(fixture.snapshot());wait(20)
+      console.log("QML_PASS barContrast seven-states measured-host-bar-surface fallback")
     }
     function dangerContrast() {
       for(var destination of [["servers","Servers"],["subscriptions","Subscriptions"],["custom","CustomConfig"]]) {
