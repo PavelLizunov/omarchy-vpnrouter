@@ -18,8 +18,8 @@ console.log("=== Testing Model.js ===");
   assert.strictEqual(Model.formatLatency(null), "—");
   assert.strictEqual(Model.formatLatency(undefined), "—");
   assert.strictEqual(Model.formatLatency(-5), "—");
-  assert.strictEqual(Model.formatLatency(42.3), "42 ms");
-  assert.strictEqual(Model.formatLatency(150), "150 ms");
+  assert.strictEqual(Model.formatLatency(42.3), "42\u00a0ms");
+  assert.strictEqual(Model.formatLatency(150), "150\u00a0ms");
 
   assert.strictEqual(Model.latencyTier(null), "unknown");
   assert.strictEqual(Model.latencyTier(50), "good");

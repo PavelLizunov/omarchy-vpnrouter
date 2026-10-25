@@ -120,7 +120,7 @@ for (const [method, field, items, id, extra] of [
   assert.strictEqual(written.at(-1).method, method === 'verifyServer' ? 'servers.verify' : 'free.verify');
   assert.deepStrictEqual(written.at(-1).params, {id});
   reply({id, ok: true, latencyMs: 27, ...extra});
-  assert.match(Model.verificationText(root[field], items, I18n), /Verification passed: .*27 ms/);
+  assert.match(Model.verificationText(root[field], items, I18n), /Verification passed: .*27\u00a0ms/);
   root[method](id);
   reply({id, ok: false, latencyMs: null, ...extra});
   assert.match(Model.verificationText(root[field], items, I18n), /Verification failed:/);
@@ -130,7 +130,7 @@ for (const [method, field, items, id, extra] of [
   assert(Model.verificationText(root[field], items, I18n).includes(I18n.t("backend.connectUnavailable")));
 }
 I18n.setLocale('ru');
-assert.match(Model.verificationText({id: 'srv_1', ok: true, latencyMs: 27}, root.servers, I18n), /Проверка пройдена: My server \(27 мс\)/);
+assert.match(Model.verificationText({id: 'srv_1', ok: true, latencyMs: 27}, root.servers, I18n), /Проверка пройдена: My server \(27\u00a0мс\)/);
 I18n.setLocale('en');
 
 // Cancel false is not completion. A true acknowledgement still awaits target response.
@@ -229,7 +229,7 @@ for (const latencyMs of [0,42,null]) {
   root.testServer('probe'); reply({id:'probe',reachable:latencyMs!==null,latencyMs});
   assert.strictEqual(root.servers[0].latencyMs,latencyMs);
   const text=Model.testText(root.serverTest,root.servers,I18n);
-  assert(text.includes(latencyMs===null?'No latency measured':latencyMs+' ms'));
+  assert(text.includes(latencyMs===null?'No latency measured':latencyMs+'\u00a0ms'));
 }
 root.testServer('probe'); reply({code:'not_found',message:'Server not found'},true);
 assert.match(Model.testText(root.serverTest,root.servers,I18n),/Latency test failed/);

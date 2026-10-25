@@ -167,7 +167,7 @@
   "rules.exported": "Правила экспортированы ({0})",
   "routing.fullBadge": "ВЕСЬ ТРАФИК",
   "routing.splitBadge": "ВЫБОРОЧНО",
-  "latency.ms": "{0} мс",
+  "latency.ms": "{0}\u00a0мс",
   "protocol.unknown": "Неизвестно",
   "operation.pending": "Операция выполняется…",
   "backend.notInstalled": "Служба VPNRouter не установлена",

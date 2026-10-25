@@ -177,7 +177,7 @@ console.log("ALL I18N TESTS PASSED!\n");
   for (const translate of consumers) {
     assert.strictEqual(translate('app.name'), 'VPNRouter');
     assert.strictEqual(translate('state.disconnected'), 'Отключено');
-    assert.strictEqual(translate('latency.ms', [12]), '12 мс');
+    assert.strictEqual(translate('latency.ms', [12]), '12\u00a0мс');
   }
   service.setLocale('en');
   commons.I18n.language = 'ru';

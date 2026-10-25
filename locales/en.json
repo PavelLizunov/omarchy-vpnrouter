@@ -167,7 +167,7 @@
   "rules.exported": "Rules exported ({0})",
   "routing.fullBadge": "FULL VPN",
   "routing.splitBadge": "SPLIT",
-  "latency.ms": "{0} ms",
+  "latency.ms": "{0}\u00a0ms",
   "protocol.unknown": "Unknown",
   "operation.pending": "Operation in progress…",
   "backend.notInstalled": "VPNRouter service is not installed",
