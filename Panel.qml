@@ -234,6 +234,16 @@ Ui.Panel {
               onDisconnectRequested: if (root.service) root.service.disconnect()
               onCancelRequested: if (root.service) root.service.cancel()
             }
+            VpnUi.Notice {
+              objectName: "vpnTransportNotice"
+              width: parent.width
+              // The connected hero keeps the last reported VPN state; transport
+              // failure is separate feedback and must remain visible on Home.
+              text: root.service && root.service.transportStalled && root.service.isConnected ? root.service.lastErrorText : ""
+              error: true
+              dismissLabel: root.tr("action.dismiss")
+              onDismissed: if (root.service) root.service.clearLastError()
+            }
             Ui.BorderSurface {
               width: parent.width
               implicitHeight: connectionColumn.implicitHeight

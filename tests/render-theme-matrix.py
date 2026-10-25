@@ -176,6 +176,8 @@ try:
                     render(f'qml-{theme}-{locale}-{state}', theme,
                         {'locale': locale, 'theme': theme, 'stateName': 'disconnected' if state == 'first-run' else state,
                          'capture': 'first-run' if state == 'first-run' else 'home'})
+                render(f'qml-{theme}-{locale}-transport-stalled', theme,
+                       {'locale': locale, 'theme': theme, 'capture': 'transport-stalled', 'stateName': 'connected'})
                 for tab in ['servers', 'settings']:
                     render(f'qml-{theme}-{locale}-{tab}', theme,
                         {'locale': locale, 'theme': theme, 'tab': tab})

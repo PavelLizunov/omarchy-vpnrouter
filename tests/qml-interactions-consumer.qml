@@ -823,8 +823,18 @@ Rectangle {
       equal(watchdog.running,true,"Urgent-only pending starts the watchdog")
       fixture.release(false);wait(20)
       equal(watchdog.running,false,"Last urgent response stops the watchdog")
+      consumer.setDisplayMode("simple");wait(25);backend.state="connected"
       fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
       backend.checkDeadlines(Date.now()+2000000);wait(15)
+      equal(backend.state,"connected","Stalled requests do not overwrite the reported VPN state")
+      var notice=byName("vpnTransportNotice")
+      equal(notice.text,backend.tr("error.transportStalled"),"Connected Home shows the transport failure")
+      equal(byName("vpnConnect").text,backend.tr("action.disconnect"),"Connected controls keep their meaning")
+      var dismiss=fixture.find(notice,function(x){return x.tooltipText===backend.tr("action.dismiss")})
+      click(dismiss);expect(!notice.visible,"Transport notice can be dismissed")
+      expect(backend.transportStalled,"Dismissal does not reopen transport admission")
+      equal(backend.disconnect(),null,"A requested action fails fast while stalled");wait(20)
+      expect(notice.visible,"An action rejection restores the explanation")
       equal(watchdog.running,false,"Deadline finalization stops the watchdog")
       expect(backend.transportStalled,"A missing terminal closes admission")
       fixture.held=null;fixture.holdMethod=""
@@ -832,7 +842,7 @@ Rectangle {
       equal(watchdog.running,false,"Exit cleanup leaves no watchdog work")
       backend.backendStarted();wait(15)
       equal(watchdog.running,false,"A settled restarted helper is idle")
-      backend.clearLastError()
+      backend.clearLastError();consumer.setDisplayMode("advanced");backend.applySnapshot(fixture.snapshot());wait(25)
       console.log("QML_PASS serviceQueue idle ordinary urgent deadline exit recovery watchdog")
     }
     function prepareCapture() {
@@ -847,6 +857,12 @@ Rectangle {
       }
 
       else if(fixture.capture.indexOf("simple")===0) {consumer.setDisplayMode("simple");wait(25);if(fixture.capture==="simple-full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}}
+      else if(fixture.capture==="transport-stalled") {
+        consumer.setDisplayMode("simple");wait(30);backend.state="connected"
+        fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
+        backend.checkDeadlines(Date.now()+2000000);wait(30)
+        consumer.forceActiveFocus();byName("vpnContentViewport").contentY=0
+      }
       else if(fixture.capture==="connected") {backend.state="connected";wait(20)}
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}
       else if(fixture.capture==="subscription-invalid") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"invalid");activate(field(p,"subscriptions.namePlaceholder"))}
