@@ -69,6 +69,18 @@ Item {
       onDismissed: { root.noticeKey = ""; if (root.service) root.service.diagnosticsExportPath = "" }
     }
 
+    Text {
+      objectName: "vpnLastHelperExit"
+      width: parent.width
+      visible: !!root.service && root.service.lastExitCode !== null && root.service.lastExitCode !== undefined
+      text: visible ? root.tr("backend.exited", [root.service.lastExitCode]) : ""
+      textFormat: Text.PlainText
+      wrapMode: Text.WordWrap
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.bodySmall
+    }
+
     // Empty state
     Ui.BorderSurface {
       visible: root.items.length === 0

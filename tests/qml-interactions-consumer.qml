@@ -420,6 +420,7 @@ Rectangle {
       var initial=JSON.stringify(geometry())
       if(fixture.suite==="settingsFooter") settingsFooter()
       else if(fixture.suite==="errorDetails") errorDetails()
+      else if(fixture.suite==="helperRecovery") helperRecovery()
       else if(fixture.suite==="rowProbes") rowProbes()
       else if(fixture.suite==="loading") loading()
       else if(fixture.suite==="names") names()
@@ -804,6 +805,22 @@ Rectangle {
       equal(fixture.find(notice,function(x){return x.objectName==="vpnNoticeText"}).text,backend.tr("error.timeout"),"Short error remains specific")
       backend.clearLastError()
       console.log("QML_PASS errorDetails bounded-summary full-selectable-details pointer-keyboard primary-visibility")
+    }
+    function helperRecovery() {
+      consumer.setDisplayMode("simple",true);wait(25)
+      backend.backendExited(0);wait(25)
+      var hero=byName("vpnHero")
+      expect(hero.recovering && !byName("vpnConnect").enabled,"Recovery never enables Connect")
+      equal(String(hero.stateColor),String(Commons.Color.muted),"Recovery uses a neutral ring")
+      equal(hero.availability,backend.tr("backend.retrying"),"Home describes recovery without an exit code")
+      equal(byName("vpnStateTitle").text,backend.tr("backend.starting"),"Recovery has a plain startup title")
+      go("diagnostics")
+      equal(byName("vpnLastHelperExit").text,backend.tr("backend.exited",[0]),"Diagnostics retains the actual zero exit code")
+      backend.backendStarted();backend.refreshSnapshot();wait(35)
+      equal(backend.lastExitCode,0,"Last exit remains available after recovery")
+      consumer.setDisplayMode("simple",true);wait(20)
+      expect(!hero.recovering,"A valid snapshot clears the recovery state")
+      console.log("QML_PASS helperRecovery neutral-home zero-exit-diagnostics snapshot-recovery")
     }
     function rowProbes() {
       fixture.servers=[{id:"one",name:"Probe one",source:"manual",protocol:"vless"},{id:"two",name:"Probe two",source:"manual",protocol:"vless"}]

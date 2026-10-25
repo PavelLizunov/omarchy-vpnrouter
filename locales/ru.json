@@ -178,7 +178,7 @@
   "backend.startingDetail": "Получаем состояние службы…",
   "backend.statusUnavailable": "Состояние службы недоступно",
   "backend.exited": "Служба VPNRouter завершилась (код {0})",
-  "backend.retrying": "Служба VPNRouter завершилась (код {0}). Повторная попытка…",
+  "backend.retrying": "Служба VPNRouter перезапускается…",
   "verify.passed": "Проверка пройдена: {0} ({1})",
   "verify.failed": "Проверка не пройдена: {0}. {1}",
   "error.protocol": "Некорректный ответ службы VPNRouter",

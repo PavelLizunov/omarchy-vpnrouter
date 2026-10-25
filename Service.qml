@@ -58,6 +58,7 @@ Item {
   property bool starting: false
   property int startDeadlineMs: 5000
   property bool _startFailureReported: false
+  property var lastExitCode: null
   property int retryCount: 0
   property int retryBackoffMs: 2000
 
@@ -467,7 +468,8 @@ Item {
     root.activeProgress = null
     if (root._accumulator) root._accumulator.reset()
 
-    var message = I18n.t("backend.exited", [exitCode])
+    root.lastExitCode = exitCode
+    var message = I18n.t("backend.retrying")
     for (var id in root._pendingCallbacks) {
       var cb = root._pendingCallbacks[id]
       if (cb && typeof cb.onError === "function") {
@@ -484,7 +486,7 @@ Item {
       retryTimer.stop()
       return
     }
-    root.setLastError(startFailureKey || "backend.retrying", startFailureKey ? [] : [exitCode], "", "snapshot")
+    root.setLastError(startFailureKey || "backend.retrying", [], "", "snapshot")
     root.retryBackoffMs = Math.min(30000, Math.round(root.retryBackoffMs * (root.retryCount > 0 ? 1.5 : 1)))
     root.retryCount++
     retryTimer.interval = root.retryBackoffMs

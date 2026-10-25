@@ -178,7 +178,7 @@
   "backend.startingDetail": "Reading local status…",
   "backend.statusUnavailable": "Service status is unavailable",
   "backend.exited": "VPNRouter service exited (code {0})",
-  "backend.retrying": "VPNRouter service exited (code {0}). Retrying…",
+  "backend.retrying": "VPNRouter service is restarting…",
   "verify.passed": "Verification passed: {0} ({1})",
   "verify.failed": "Verification failed: {0}. {1}",
   "error.protocol": "Invalid response from the VPNRouter service",

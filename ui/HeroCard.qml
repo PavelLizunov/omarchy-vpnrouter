@@ -22,12 +22,13 @@ Column {
   readonly property bool connected: !!service && service.isConnected
   readonly property bool busy: !!service && (service.isConnecting || service.isDisconnecting || service.activeOperation === "connect" || service.activeOperation === "disconnect")
   readonly property bool operationBusy: !!service && service.busy
+  readonly property bool recovering: !!service && service.lastErrorKey === "backend.retrying"
   readonly property bool initializing: Model.backendStarting(service)
   readonly property bool missing: !service || service.backendMissing || (service.state === "unavailable" && !initializing)
   readonly property bool failed: !!service && (service.state === "error" || service.state === "conflict")
   readonly property bool canConnect: !!service && service.capabilities && service.capabilities.connect === true && !missing && !initializing && (service.configMode === "custom" ? !!service.activeServer : service.serversLoaded && service.servers.length > 0)
   readonly property bool needsSetup: !!service && service.serversLoaded && service.subscriptionsLoaded && !service.servers.length && !service.subscriptions.length && !connected && !busy && !missing && !initializing && service.configMode !== "custom"
-  readonly property color stateColor: connected ? Commons.Color.accent : busy ? Commons.Color.accent : failed || missing ? Commons.Color.urgent : Commons.Color.muted
+  readonly property color stateColor: recovering ? Commons.Color.muted : connected ? Commons.Color.accent : busy ? Commons.Color.accent : failed || missing ? Commons.Color.urgent : Commons.Color.muted
   readonly property string availability: availabilityText()
   readonly property bool longError: !!service && !!service.lastError && (availability.length > 180 || availability.indexOf("\n") !== -1)
   function availabilityText() {
@@ -51,7 +52,7 @@ Column {
       objectName: "vpnEmblem"
       anchors.horizontalCenter: parent.horizontalCenter
       width: Commons.Style.space(136); height: width; radius: width / 2
-      color: root.connected ? Commons.Style.selectedAccentFill : root.busy ? Commons.Style.normalFill : root.failed || root.missing ? Commons.Util.alpha(Commons.Color.urgent, Commons.Style.selectedFillAlpha) : "transparent"
+      color: root.connected ? Commons.Style.selectedAccentFill : root.busy ? Commons.Style.normalFill : (root.failed || root.missing) && !root.recovering ? Commons.Util.alpha(Commons.Color.urgent, Commons.Style.selectedFillAlpha) : "transparent"
       // The ring leaves a gap at the bottom for the state badge; theme popup
       // surfaces can be translucent, so covering the line is not enough.
       Shape {
@@ -122,7 +123,7 @@ Column {
     objectName: "vpnStateTitle"
     width: parent.width
     textFormat: Text.PlainText
-    text: root.initializing ? root.tr("backend.starting") : root.failed ? root.tr("home.error") : root.needsSetup ? root.tr("home.addConfig") : root.service && root.service.state === "disconnected" ? root.tr("home.disconnected") : root.tr("state." + (root.service ? root.service.state : "unavailable"))
+    text: root.initializing || root.recovering ? root.tr("backend.starting") : root.failed ? root.tr("home.error") : root.needsSetup ? root.tr("home.addConfig") : root.service && root.service.state === "disconnected" ? root.tr("home.disconnected") : root.tr("state." + (root.service ? root.service.state : "unavailable"))
     horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.WordWrap
     color: Commons.Color.popups.text

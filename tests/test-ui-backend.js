@@ -76,6 +76,9 @@ for (let i = 0; i < 5; i++) {
   assert.strictEqual(root.snapshotLoaded, false, "A new process needs a fresh snapshot");
   root.snapshotLoaded = true;
   root.backendExited(1);
+  assert.strictEqual(root.lastExitCode, 1);
+  assert.strictEqual(root.lastError, I18n.t("backend.retrying"));
+  assert.deepStrictEqual(Array.from(root.lastErrorArgs), [], "Home recovery has no technical exit-code arguments");
   assert.strictEqual(root.snapshotLoaded, false, "Exit invalidates displayed status readiness");
   delays.push(timer.interval);
 }

@@ -155,7 +155,7 @@ def render(name, theme, properties, reference=False, width=440, height=764):
 
 try:
     if args.mode in ['all', 'check']:
-        suites = ['settingsFooter', 'errorDetails', 'rowProbes', 'loading', 'names', 'lazySections', 'serviceQueue', 'brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
+        suites = ['settingsFooter', 'errorDetails', 'helperRecovery', 'rowProbes', 'loading', 'names', 'lazySections', 'serviceQueue', 'brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
                   'servers', 'custom', 'rules', 'settings', 'appsDiscovery', 'actions', 'keyboard', 'pointerForms',
                   'layoutFit', 'focusCues', 'homeReturn', 'probesAndPreferences']
         if args.suites:
