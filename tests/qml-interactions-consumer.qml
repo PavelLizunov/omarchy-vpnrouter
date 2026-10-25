@@ -17,6 +17,7 @@ Rectangle {
   property string theme: "catppuccin-latte"
   property string stateName: "disconnected"
   property var sessionTelemetry: null
+  property bool serverBusy: false
   property int captureDelay: 400
   property int settleDelay: 180
   property bool reducedMotion: false
@@ -66,7 +67,7 @@ Rectangle {
     for(var i=0;i<children.length;i++) all(children[i],predicate,list)
     return list
   }
-  function snapshot() { return {state:fixture.stateName,telemetry:fixture.sessionTelemetry,revision:"fixture",activeServer:(fixture.servers.find(function(x){return x.id===fixture.selectedServer}) || {name:fixture.selectedServer}).name,routingMode:fixture.route,routingAppsMode:fixture.appRule,configMode:"generated",capabilities:{connect:true}} }
+  function snapshot() { return {state:fixture.stateName,busy:fixture.serverBusy,telemetry:fixture.sessionTelemetry,revision:"fixture",activeServer:(fixture.servers.find(function(x){return x.id===fixture.selectedServer}) || {name:fixture.selectedServer}).name,routingMode:fixture.route,routingAppsMode:fixture.appRule,configMode:"generated",capabilities:{connect:true}} }
   function complete(request, forcedError) {
     var method=request.method, p=request.params, result=fixture.snapshot(), error=null
     if (forcedError) error={code:"invalid_argument",message:"Fixture rejected input"}
@@ -432,6 +433,7 @@ Rectangle {
       else if(fixture.suite==="lazySections") lazySections()
       else if(fixture.suite==="serviceQueue") serviceQueue()
       else if(fixture.suite==="sessionLifetime") sessionLifetime()
+      else if(fixture.suite==="sessionDataReattach") sessionDataReattach()
       else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
@@ -1030,6 +1032,25 @@ Rectangle {
       probe.destroy();wait(30)
       console.log("QML_PASS lazySections absent-unvisited forms retain-drafts same-instance reopen all-sections")
     }
+    function sessionDataReattach() {
+      consumer.setDisplayMode("simple");consumer.close();wait(30)
+      fixture.selectedServer="sub";fixture.stateName="connecting";fixture.serverBusy=true
+      backend.servers=[];backend.subscriptions=[];backend.serversLoaded=false;backend.subscriptionsLoaded=false;backend.appsLoaded=false
+      backend.applySnapshot(fixture.snapshot());backend.clearLastError();fixture.messages=[]
+      consumer.open();wait(90)
+      equal(count("servers.list"),0,"Reattach must not lose server reads to a detached connect's busy slot")
+      equal(count("subscriptions.list"),0,"Subscription reads wait for the service operation")
+      equal(count("apps.list"),0,"Application reads wait for the service operation")
+      fixture.stateName="connected";fixture.serverBusy=false;backend.applySnapshot(fixture.snapshot());wait(100)
+      expect(backend.serversLoaded && backend.subscriptionsLoaded && backend.appsLoaded,"Idle transition restores all Home data without reopening")
+      var selected=backend.servers.find(function(x){return x.selected})
+      expect(selected && selected.source==="subscription","Reattach preserves the selected server's source metadata")
+      backend.disconnect();wait(50)
+      equal(backend.state,"disconnected")
+      expect(byName("vpnConnect").enabled,"A completed detached connect does not strand the next Connect action")
+      console.log("QML_PASS sessionDataReattach connecting busy deferred-reads selected-source next-connect")
+    }
+
     function sessionLifetime() {
       consumer.setDisplayMode("simple")
       fixture.stateName="connected"

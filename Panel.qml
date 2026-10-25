@@ -34,14 +34,14 @@ Ui.Panel {
   onConfiguredModeChanged: root.mode = root.configuredMode
   readonly property bool showLatency: setting("showLatency", true) !== false
   property string currentTab: "servers"
+  property bool _deferredPanelData: false
 
   onOpenedChanged: {
     if (opened) {
       // A fresh open shows the connection status, not the last scroll position.
       if (mode === "simple") flickableContent.contentY = 0
       if (service) {
-        service.refreshSnapshot()
-        root.refreshPanelData()
+        service.refreshSnapshot(function() { if (root && root.opened) root.refreshPanelData() })
       }
     }
   }
@@ -55,6 +55,13 @@ Ui.Panel {
 
   function refreshPanelData() {
     if (!root.service) return
+    // A service-owned operation can outlive the former controller. Its ordinary
+    // slot is still busy, so keep these reads until it finishes.
+    if (root.service.busy) {
+      root._deferredPanelData = true
+      return
+    }
+    root._deferredPanelData = false
     root.service.listSubscriptions(0, 100)
     root.service.getApps()
     if (root.mode === "advanced") root.refreshTab(root.currentTab)
@@ -64,6 +71,10 @@ Ui.Panel {
   Connections {
     target: root.service
     function onBackendReady() { if (root.opened) root.refreshPanelData() }
+    function onBusyChanged() {
+      if (root.opened && root._deferredPanelData && root.service && !root.service.busy)
+        root.refreshPanelData()
+    }
   }
 
   function switchPanel(direction) {
