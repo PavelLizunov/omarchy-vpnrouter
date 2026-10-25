@@ -99,7 +99,8 @@ Item {
     return ({ busy: "error.busy", conflict: "error.conflict", cancelled: "error.cancelled",
       timeout: "error.timeout", unavailable: "backend.connectUnavailable", not_removable: "error.notRemovable",
       not_found: "error.notFound", storage_error: "error.storage", internal_error: "error.generic",
-      invalid_request: "error.protocol", invalid_argument: "form.failed", stop_failed: "error.stopFailed" })[code] || ""
+      invalid_request: "error.protocol", invalid_argument: "form.failed", stop_failed: "error.stopFailed",
+      subscription_refresh_failed: "subscriptions.refreshFailed" })[code] || ""
   }
   // Safe default: connect is false until handshake/snapshot explicitly confirms it
   property var capabilities: ({ connect: false, killSwitch: false, dnsLockdown: false })

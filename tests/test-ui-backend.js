@@ -326,3 +326,16 @@ const beforeStoppedStartup=written.length;later.shift()();
 assert.strictEqual(written.length,beforeStoppedStartup,'An exited process cannot start a delayed handshake');
 ctx.backendProc.running=true;
 console.log('PASS: validated startup readiness, malformed response rejection and exit-before-handshake guard');
+
+for (const locale of ['en','ru']) {
+  I18n.setLocale(locale);
+  const keptServers=root.servers;
+  root.refreshSubscription();
+  reply({code:'subscription_refresh_failed',message:'Fixture backend failure'},true);
+  assert.strictEqual(root.lastErrorKey,'subscriptions.refreshFailed','Typed refresh failures use localized feedback');
+  assert.strictEqual(root.lastErrorMethod,'subscriptions.refresh');
+  assert.strictEqual(root.lastError,I18n.t('subscriptions.refreshFailed'));
+  assert.strictEqual(root.servers,keptServers,'Refresh failure retains the displayed servers');
+}
+I18n.setLocale('en');root.clearLastError();
+console.log('PASS: typed subscription refresh failures are localized in EN/RU and retain servers');

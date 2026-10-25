@@ -198,7 +198,16 @@ Rectangle {
       activate(name);equal(count("subscriptions.add"),before+1,"Pending cannot duplicate")
       fixture.release(true);wait(35);expect(!p.pending);expect(p.showAddForm);visibleNotice("subscriptions.addFailed");equal(url.text,"https://example.invalid/sub")
       activate(name);expect(!p.showAddForm);equal(url.text,"");equal(name.text,"");visibleNotice("subscriptions.added")
-      console.log("QML_PASS subscriptions empty invalid-url masking cancel pending failure-retention retry-success")
+      backend.listServers();tryVerify(function(){return backend.serversLoaded},2000,"Server fixture loaded")
+      var keptServers=JSON.stringify(backend.servers)
+      fixture.holdMethod="subscriptions.refresh";activate(button(p,"subscriptions.refreshAll"))
+      var refreshRequest=fixture.held;fixture.held=null;fixture.holdMethod=""
+      backend.feedFrame({type:"response",id:refreshRequest.id,isError:true,error:{code:"subscription_refresh_failed",message:"Fixture backend failure"}})
+      wait(25);visibleNotice("subscriptions.refreshFailed")
+      equal(JSON.stringify(backend.servers),keptServers,"Refresh failure keeps the displayed servers")
+      backend.setLocale(fixture.locale==="ru"?"en":"ru");wait(15);visibleNotice("subscriptions.refreshFailed")
+      backend.setLocale(fixture.locale);backend.clearLastError()
+      console.log("QML_PASS subscriptions empty invalid-url masking cancel pending failure-retention retry-success typed-refresh-error locale-change")
     }
     function serversImport() {
       go("servers");var p=page("Servers");click(button(p,"action.import"));expect(p.showImportBox)

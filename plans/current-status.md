@@ -10,7 +10,8 @@ from this tree; recover any with `git show <base>:plans/<filename>`.
 
 Known limits: Linux kill switch and DNS lockdown are unavailable; search covers
 loaded pages, offset pagination has no snapshot token, arbitrary backend prose
-is not translated, and subscription refresh can lack a structured fetch failure.
+is not translated. Older backend builds may not report subscription refresh
+failures explicitly.
 The previous VM audit observed an intermittent HY2 Verify LocalSpawn failure.
 Full Linux parity, VPN lifecycle/traffic routing, physical egress/leak behavior,
 native keyboard and screen-reader acceptance remain unverified by this pass.
@@ -32,13 +33,14 @@ C2 outcome (2026-10-25): reachable probes without reliable latency now use
 protocol-neutral EN/RU text; measured zero remains valid. Setup checks the fixed
 system runtime path and leaves trust/capability authorization to the backend.
 All four install sequences warn that restarting the shell drops the VPN.
-Focused Home rows stay visible after later content growth/shrink. A validated
-startup snapshot now notifies an open panel to reload its data; recovery does
-not reconnect the VPN. The closed panel makes no recovery reads.
+Focused Home navigation rows stay visible after later content growth/shrink.
+A validated startup snapshot now notifies an open panel to reload its data; recovery does
+not reconnect the VPN. The closed panel makes no recovery reads. Structured
+subscription refresh failures now have EN/RU feedback and retain displayed servers.
 
 C2 isolated checks passed: 13 Node suites, 39 packaging cases and 97 QML
 interaction/theme cases, plus qmllint and plugin validation. An earlier QML run
 exposed the Home focus defect; the new growth/shrink regression passes after
 its fix. Source checks matched 38 methods/parameter sets, 12 snapshot fields,
-six states and 298 EN/RU keys with placeholders. No live backend, shell restart,
+six states and 299 EN/RU keys with placeholders. No live backend, shell restart,
 VPN operation or deployment was performed; the runtime limits above remain.

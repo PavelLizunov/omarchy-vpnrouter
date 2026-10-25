@@ -59,6 +59,7 @@
   "subscriptions.urlLabel": "Subscription URL",
   "subscriptions.urlPlaceholder": "https://...",
   "subscriptions.refreshAll": "Refresh All",
+  "subscriptions.refreshFailed": "Could not refresh subscriptions. Existing servers were kept.",
   "subscriptions.serversCount": "Servers: {0}",
   "subscriptions.enabled": "Enabled",
   "subscriptions.disabled": "Disabled",

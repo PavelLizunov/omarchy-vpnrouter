@@ -59,6 +59,7 @@
   "subscriptions.urlLabel": "Ссылка на подписку",
   "subscriptions.urlPlaceholder": "https://...",
   "subscriptions.refreshAll": "Обновить все",
+  "subscriptions.refreshFailed": "Не удалось обновить подписки. Существующие серверы сохранены.",
   "subscriptions.serversCount": "Серверы: {0}",
   "subscriptions.enabled": "Включена",
   "subscriptions.disabled": "Отключена",
