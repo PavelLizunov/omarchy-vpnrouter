@@ -60,3 +60,10 @@ All 38 request wrappers have wire-error regressions; native form failures check
 released controls and one notice. The final local gate passed 13 Node suites,
 40 packaging cases, 99 QML cases, qmllint and plugin validation. No live backend,
 VM, shell restart, VPN operation or deployment was used for C3.
+
+F2 outcome (2026-10-25): failed starts/deadlines retry; unacknowledged writes are capped at 1,310,720 bytes and pause on timeout without stopping the helper; the idle watchdog stops.
+Nine sections load on first visit and retain drafts. V3 harness on d30144d, five paired trials: Panel creation medians 147.7→24.8 ms (2 servers), 465.3→24.1 ms (100); not shell cold-start.
+EN/RU docs describe unsandboxed execution, backend shutdown and complete removal. The unchanged mascot reference moved to tests/fixtures and is excluded from documented archive installs.
+The fix commits passed 13 Node suites, up to 41 packaging and 109 QML cases, qmllint and plugin validation (exit 0); CI passed on each pushed fix SHA.
+No workstation display, VM, real VPN, subscription edit, activation, release, tag or merge was used; live lifecycle and traffic behavior remain unverified.
+AGENTS.md is preserved for agent tooling; its Marketplace inclusion remains the owner's decision. Git-clone installs still include the test-only mascot fixture.

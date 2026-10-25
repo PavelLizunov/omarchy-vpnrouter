@@ -814,6 +814,14 @@ Rectangle {
       for (var resource of backend.resources) if(resource.objectName==="vpnDeadlineWatchdog") watchdog=resource
       expect(watchdog!==null,"Service owns the deadline watchdog")
       wait(30);equal(Object.keys(backend._pendingCallbacks).length,0)
+      // Exercise the real startup Timer without a process; processDisabled stays true.
+      backend.state="unavailable";backend.startDeadlineMs=25;backend.starting=true
+      tryVerify(function(){return !backend.starting},500,"Native start deadline ends Starting")
+      equal(backend.lastErrorKey,"backend.startTimeout","Start deadline has explicit feedback")
+      equal(fixture.find(consumer,function(x){return x.objectName==="vpnHero"}).initializing,false,"Hero leaves startup after the deadline")
+      expect(backend.retryCount>0,"Native start deadline schedules a managed retry")
+      backend._startFailureReported=false;backend.startDeadlineMs=5000;backend.backendStarted()
+      backend.applySnapshot(fixture.snapshot());backend.clearLastError();wait(20)
       equal(watchdog.running,false,"Idle watchdog is stopped")
       fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
       equal(watchdog.running,true,"Ordinary pending starts the watchdog")
@@ -843,7 +851,7 @@ Rectangle {
       backend.backendStarted();wait(15)
       equal(watchdog.running,false,"A settled restarted helper is idle")
       backend.clearLastError();consumer.setDisplayMode("advanced");backend.applySnapshot(fixture.snapshot());wait(25)
-      console.log("QML_PASS serviceQueue idle ordinary urgent deadline exit recovery watchdog")
+      console.log("QML_PASS serviceQueue startup-deadline idle ordinary urgent deadline exit recovery watchdog")
     }
     function prepareCapture() {
       if(fixture.capture==="home" || fixture.capture==="home-bottom" || fixture.capture==="first-run") {
