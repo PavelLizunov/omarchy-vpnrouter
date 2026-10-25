@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import "../lib/Focus.js" as Focus
 import qs.Ui as Ui
 import qs.Commons as Commons
 import QtQuick.Layouts
@@ -132,7 +133,29 @@ Item {
             Layout.fillWidth: true
             Layout.leftMargin: Commons.Style.space(6)
             text: configuredRow.modelData
-            elide: Text.ElideRight
+            id: fullName1
+            elide: Text.ElideMiddle
+            activeFocusOnTab: truncated
+            Accessible.role: Accessible.StaticText
+            Accessible.name: text
+            onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(fullName1) })
+            HoverHandler { id: nameHover1 }
+            Ui.PanelToolTip {
+              width: Math.min(implicitWidth, Commons.Style.space(360))
+              visible: fullName1.truncated && (nameHover1.hovered || fullName1.activeFocus)
+              text: fullName1.text
+              timeout: 0
+              contentItem: Text {
+                width: Math.min(implicitWidth, Commons.Style.space(340))
+                text: fullName1.text
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.tooltip.text
+                font.family: Commons.Style.font.family
+                font.pixelSize: Commons.Style.font.bodySmall
+                padding: Commons.Style.spacing.controlPaddingX
+              }
+            }
             color: Commons.Color.popups.text
             font.family: Commons.Style.font.family
             font.pixelSize: Commons.Style.font.bodySmall
@@ -202,7 +225,29 @@ Item {
               textFormat: Text.PlainText
               width: parent.width
               text: appDelegate.modelData.displayName
-              elide: Text.ElideRight
+              id: fullName2
+              elide: Text.ElideMiddle
+              activeFocusOnTab: truncated
+              Accessible.role: Accessible.StaticText
+              Accessible.name: text
+              onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(fullName2) })
+              HoverHandler { id: nameHover2 }
+              Ui.PanelToolTip {
+                width: Math.min(implicitWidth, Commons.Style.space(360))
+                visible: fullName2.truncated && (nameHover2.hovered || fullName2.activeFocus)
+                text: fullName2.text
+                timeout: 0
+                contentItem: Text {
+                  width: Math.min(implicitWidth, Commons.Style.space(340))
+                  text: fullName2.text
+                  textFormat: Text.PlainText
+                  wrapMode: Text.Wrap
+                  color: Commons.Color.tooltip.text
+                  font.family: Commons.Style.font.family
+                  font.pixelSize: Commons.Style.font.bodySmall
+                  padding: Commons.Style.spacing.controlPaddingX
+                }
+              }
               color: Commons.Color.popups.text
               font.family: Commons.Style.font.family
               font.pixelSize: Commons.Style.font.bodySmall
@@ -211,7 +256,29 @@ Item {
               textFormat: Text.PlainText
               width: parent.width
               text: root.tr("apps.matchName", [appDelegate.modelData.name])
-              elide: Text.ElideRight
+              id: fullName3
+              elide: Text.ElideMiddle
+              activeFocusOnTab: truncated
+              Accessible.role: Accessible.StaticText
+              Accessible.name: text
+              onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(fullName3) })
+              HoverHandler { id: nameHover3 }
+              Ui.PanelToolTip {
+                width: Math.min(implicitWidth, Commons.Style.space(360))
+                visible: fullName3.truncated && (nameHover3.hovered || fullName3.activeFocus)
+                text: fullName3.text
+                timeout: 0
+                contentItem: Text {
+                  width: Math.min(implicitWidth, Commons.Style.space(340))
+                  text: fullName3.text
+                  textFormat: Text.PlainText
+                  wrapMode: Text.Wrap
+                  color: Commons.Color.tooltip.text
+                  font.family: Commons.Style.font.family
+                  font.pixelSize: Commons.Style.font.bodySmall
+                  padding: Commons.Style.spacing.controlPaddingX
+                }
+              }
               color: Commons.Color.popups.text
               font.family: Commons.Style.font.family
               font.pixelSize: Commons.Style.font.caption

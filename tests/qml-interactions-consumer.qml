@@ -417,7 +417,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="probesAndPreferences") probesAndPreferences()
+      if(fixture.suite==="names") names()
+      else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
       else if(fixture.suite==="custom") customImport()
@@ -725,6 +726,27 @@ Rectangle {
       var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
       consumer.open();wait(30);go("apps")
       console.log("QML_PASS brand host-luminance host-font change-server first-run language close")
+    }
+    function names() {
+      var name="Shared prefix " .repeat(12)+"END-IDENTIFIER:65535"
+      fixture.servers=[{id:"manual",name:name,source:"manual",protocol:"vless"}]
+      fixture.subscriptions=[{id:"one",name:name,enabled:true}]
+      fixture.includes=[name]
+      fixture.appRecords=[{name:"long-process-".repeat(12)+"END",displayName:name,desktopId:"fixture.desktop"}]
+      fixture.free=[{id:"free",name:name,protocol:"vless"}]
+      fixture.profiles=[{id:"one",name:name}];fixture.configs=[{id:"one",name:name}]
+      for(var destination of [["servers","Servers"],["subscriptions","Subscriptions"],["apps","Apps"],["free","FreePool"],["profiles","Profiles"],["custom","CustomConfig"]]) {
+        go(destination[0])
+        var label=fixture.find(page(destination[1]),function(x){return x.text===name && x.elide===Text.ElideMiddle})
+        expect(label!==null && label.truncated,"Long identifier keeps its end on "+destination[0])
+        label.forceActiveFocus();wait(450)
+        expect(visibleTooltip(name),"Full identifier is visible on keyboard focus: "+destination[0])
+        byName("vpnBack").forceActiveFocus();wait(20)
+        mouseMove(label,label.width/2,label.height/2);wait(450)
+        expect(visibleTooltip(name),"Full identifier is visible on hover: "+destination[0])
+        mouseMove(consumer,1,1);wait(20)
+      }
+      console.log("QML_PASS names middle-elision focus-hover full-identifiers free-port")
     }
     function probesAndPreferences() {
       go("servers")
