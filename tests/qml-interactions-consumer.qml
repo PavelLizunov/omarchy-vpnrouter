@@ -918,17 +918,20 @@ Rectangle {
       backend.freeServers=[{id:"free",name:"Fresh basic probe",protocol:"vless",status:"unknown",latencyMs:42}]
       backend.freeTest={id:"free",reachable:true,latencyMs:42};wait(15)
       expect(fixture.find(page("FreePool"),function(x){return x.known!==undefined && x.latency!==undefined}).visible,"Fresh successful Test is visible before a list refresh")
+      var freeHeight=byName("vpnFreeRow-free").height
       backend.freeTest=null
       for (var status of ["tlsfailed", "implausible", "timeout", "unreachable", "unknown"]) {
         backend.freeServers=[{id:"free",name:"Rejected probe",protocol:"vless",status:status,latencyMs:10}]
         wait(15)
         var rejectedPill=fixture.find(page("FreePool"),function(x){return x.known!==undefined && x.latency!==undefined})
+        equal(byName("vpnFreeRow-free").height,freeHeight,"Unknown free latency keeps the row height")
         expect(!rejectedPill.visible,"Rejected free probe must not regain a latency pill: "+status)
       }
       for (var status of ["ok", "slow", "verified"]) {
         backend.freeServers=[{id:"free",name:"Accepted probe",protocol:"vless",status:status,latencyMs:42}]
         wait(15)
         var acceptedPill=fixture.find(page("FreePool"),function(x){return x.known!==undefined && x.latency!==undefined})
+        equal(byName("vpnFreeRow-free").height,freeHeight,"Known free latency keeps the row height")
         expect(acceptedPill.visible,"Accepted free probe keeps its latency pill: "+status)
       }
       backend.setLocale(fixture.locale);backend.clearLastError()

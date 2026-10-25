@@ -176,6 +176,7 @@ Item {
             }
 
             Row {
+              height: latencyPill.height
               spacing: Commons.Style.space(6)
 
               Rectangle {
@@ -196,6 +197,7 @@ Item {
               }
 
               LatencyPill {
+                id: latencyPill
                 visible: root.showLatency && known && (["ok", "slow", "verified"].indexOf(modelData.status) !== -1
                     || !!(root.service && root.service.freeTest && root.service.freeTest.id === modelData.id
                       && root.service.freeTest.reachable === true && root.service.freeTest.latencyMs === modelData.latencyMs))
