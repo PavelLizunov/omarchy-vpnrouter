@@ -609,3 +609,10 @@ assert.strictEqual(root.telemetry.connectedSinceUnixMs,12345);
 root.backendExited(1);
 assert.strictEqual(root.telemetry,null,'Lost service invalidates live telemetry');
 console.log('PASS: reattach preserves backend busy and refreshes session-owned telemetry');
+
+root._requestQueue.clearAll();root._pendingCallbacks={};ctx.backendProc.running=true;
+root.isConnecting=true;root.activeRequestId='';root.activeOperation='';
+root.cancel();
+assert.strictEqual(written.at(-1).method,'disconnect','A reattached connect has no former callback ID');
+reply(snapshot);root.isConnecting=false;
+console.log('PASS: Cancel after reattach uses global urgent disconnect');

@@ -868,6 +868,9 @@ Item {
   }
 
   function cancel(targetId) {
+    // A reattached controller has no callback ID for the service-owned connect.
+    // Urgent disconnect cancels that global operation and tears down its engine.
+    if (!targetId && (root.isConnecting || root.isDisconnecting)) return root.disconnect()
     var idToCancel = targetId || root.activeRequestId
     if (!idToCancel) return null
     return sendRequest("cancel", { id: idToCancel }, function(res) {

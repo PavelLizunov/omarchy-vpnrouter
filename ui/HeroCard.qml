@@ -157,7 +157,7 @@ Column {
   }
   Button {
     objectName: "vpnCancelOperation"
-    visible: root.busy && !!root.service && !!root.service.activeOperation
+    visible: root.busy && !!root.service && (root.service.isConnecting || !!root.service.activeOperation)
     anchors.horizontalCenter: parent.horizontalCenter
     text: root.tr("action.cancel")
     variant: "subtle"

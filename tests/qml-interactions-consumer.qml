@@ -72,6 +72,7 @@ Rectangle {
     if (forcedError) error={code:"invalid_argument",message:"Fixture rejected input"}
     if (!error) switch(method) {
       case "snapshot": break
+      case "disconnect": fixture.stateName="disconnected";result=fixture.snapshot();break
       case "servers.list": result={items:fixture.servers.map(function(x) {return Object.assign({},x,{selected:x.id===fixture.selectedServer})}),total:fixture.servers.length};break
       case "servers.select": fixture.selectedServer=p.id;result=fixture.snapshot();break
       case "servers.import": fixture.servers=fixture.servers.concat([{id:"imported",name:"Imported server (fixture)",protocol:"vless",source:"manual",removable:true}]);break
@@ -1048,6 +1049,10 @@ Rectangle {
       backend.refreshSnapshot();wait(35)
       // The fixture snapshot is the authoritative server result.
       equal(backend.telemetry,null,"Connecting is not connected telemetry")
+      backend.activeRequestId="";backend.activeOperation="";wait(20)
+      click(byName("vpnCancelOperation"));wait(30)
+      equal(count("disconnect"),1,"Reattached connect cancels through urgent disconnect")
+      equal(backend.state,"disconnected","Cancel observes the service's disconnected result")
       fixture.stateName="connected";backend.applySnapshot(fixture.snapshot());backend.clearLastError();wait(30)
       console.log("QML_PASS sessionLifetime detach reattach live-counters unknown session-clock")
     }
