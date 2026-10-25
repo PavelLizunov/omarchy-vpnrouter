@@ -114,6 +114,9 @@ Item {
       model: root.service ? root.service.freeServers : []
 
       Ui.BorderSurface {
+        id: freeRow
+        readonly property string probeOperation: Model.probeOperation(root.service, "free", modelData.id)
+        objectName: "vpnFreeRow-" + modelData.id
         width: column.width
         height: rowItem.implicitHeight + Commons.Style.space(14)
         radius: Commons.Style.cornerRadius
@@ -201,6 +204,17 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
               }
             }
+            Text {
+              objectName: "vpnProbeOperation-" + modelData.id
+              width: parent.width
+              visible: freeRow.probeOperation !== ""
+              text: root.tr(freeRow.probeOperation === "verify" ? "verify.pending" : "test.pending")
+              textFormat: Text.PlainText
+              wrapMode: Text.Wrap
+              color: Commons.Color.popups.text
+              font.family: Commons.Style.font.family
+              font.pixelSize: Commons.Style.font.caption
+            }
           }
 
           Row {
@@ -210,6 +224,7 @@ Item {
 
             IconButton {
               icon: "󰓅"
+              busy: freeRow.probeOperation === "test"
               tooltipText: root.tr("action.test")
               enabled: !!root.service && !root.service.activeOperation
               onClicked: if (root.service) root.service.testFree(modelData.id)
@@ -217,6 +232,7 @@ Item {
 
             IconButton {
               icon: "󰄬"
+              busy: freeRow.probeOperation === "verify"
               tooltipText: root.tr("action.verify")
               enabled: !!root.service && !root.service.activeOperation
               onClicked: if (root.service) root.service.verifyFree(modelData.id)

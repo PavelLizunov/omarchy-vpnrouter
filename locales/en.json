@@ -310,5 +310,7 @@
   "free.loading": "Loading free servers…",
   "profiles.loading": "Loading profiles…",
   "custom.loading": "Loading configurations…",
-  "diagnostics.loading": "Running diagnostics…"
+  "diagnostics.loading": "Running diagnostics…",
+  "test.pending": "Testing latency…",
+  "verify.pending": "Verifying connection…"
 }

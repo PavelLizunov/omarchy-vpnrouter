@@ -247,6 +247,7 @@ Item {
         }
         Ui.CursorSurface {
           id: serverRowRect
+          readonly property string probeOperation: Model.probeOperation(root.service, "servers", modelData.id)
           objectName: "vpnServerRow-" + modelData.id
           activeFocusOnTab: true
           Keys.onReturnPressed: if (root.service) root.service.selectServer(modelData.id)
@@ -377,6 +378,17 @@ Item {
                   anchors.verticalCenter: parent.verticalCenter
                 }
               }
+              Text {
+                objectName: "vpnProbeOperation-" + modelData.id
+                width: parent.width
+                visible: serverRowRect.probeOperation !== ""
+                text: root.tr(serverRowRect.probeOperation === "verify" ? "verify.pending" : "test.pending")
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.popups.text
+                font.family: Commons.Style.font.family
+                font.pixelSize: Commons.Style.font.caption
+              }
             }
 
             // Action buttons domain (z: 2)
@@ -388,6 +400,7 @@ Item {
 
               IconButton {
                 icon: "󰓅"
+                busy: serverRowRect.probeOperation === "test"
                 tooltipText: root.tr("action.test")
                 enabled: !!root.service && !root.service.activeOperation
                 onClicked: if (root.service) root.service.testServer(modelData.id)
@@ -395,6 +408,7 @@ Item {
 
               IconButton {
                 icon: "󰄬"
+                busy: serverRowRect.probeOperation === "verify"
                 tooltipText: root.tr("action.verify")
                 enabled: !!root.service && !root.service.activeOperation
                 onClicked: if (root.service) root.service.verifyServer(modelData.id)

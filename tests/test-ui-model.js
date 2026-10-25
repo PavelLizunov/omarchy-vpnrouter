@@ -147,3 +147,16 @@ for (const [state, expected] of [
 console.log("PASS: initial backend startup, timeout, known snapshot and missing/stopped cases");
 
 console.log("ALL MODEL TESTS PASSED!\n");
+
+// Probe feedback follows the active resource, not every disabled row.
+{
+  let active = {method:'servers.test',params:{id:'one'}};
+  const service = {activeOperation:'servers.test',_requestQueue:{getActive:()=>active}};
+  assert.strictEqual(Model.probeOperation(service,'servers','one'),'test');
+  assert.strictEqual(Model.probeOperation(service,'servers','two'),'');
+  assert.strictEqual(Model.probeOperation(service,'free','one'),'');
+  active = {method:'servers.verify',params:{id:'two'}};service.activeOperation='servers.verify';
+  assert.strictEqual(Model.probeOperation(service,'servers','two'),'verify');
+  service.activeOperation='';assert.strictEqual(Model.probeOperation(service,'servers','two'),'');
+  assert.strictEqual(Model.probeOperation(null,'servers','one'),'');
+}

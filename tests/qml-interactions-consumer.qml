@@ -417,7 +417,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="loading") loading()
+      if(fixture.suite==="rowProbes") rowProbes()
+      else if(fixture.suite==="loading") loading()
       else if(fixture.suite==="names") names()
       else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
@@ -727,6 +728,31 @@ Rectangle {
       var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
       consumer.open();wait(30);go("apps")
       console.log("QML_PASS brand host-luminance host-font change-server first-run language close")
+    }
+    function rowProbes() {
+      fixture.servers=[{id:"one",name:"Probe one",source:"manual",protocol:"vless"},{id:"two",name:"Probe two",source:"manual",protocol:"vless"}]
+      fixture.free=[{id:"one",name:"Free one",protocol:"vless"},{id:"two",name:"Free two",protocol:"vless"}]
+      for(var scope of ["servers","free"]) {
+        go(scope)
+        for(var kind of ["test","verify"]) {
+          var row=byName((scope==="servers"?"vpnServerRow-":"vpnFreeRow-")+"two")
+          var control=fixture.find(row,function(x){return x.tooltipText===backend.tr("action."+kind)})
+          fixture.holdMethod=scope+"."+kind;click(control)
+          equal(row.probeOperation,kind,"Only the active row owns the operation")
+          expect(control.busy && !control.enabled,"Running probe spins and cannot be submitted twice")
+          equal(byName("vpnProbeOperation-two").text,backend.tr(kind+".pending"),"The operation is named")
+          expect(fixture.find(page(scope==="servers"?"Servers":"FreePool"),function(x){return x.visible && x.objectName==="vpnProbeOperation-one"})===null,"Other rows have no pending caption")
+          fixture.release(kind==="verify");wait(35)
+          expect(fixture.find(consumer,function(x){return x.visible && x.objectName==="vpnProbeOperation-two"})===null,"Success and failure clear row feedback")
+        }
+        fixture.holdMethod=scope+".test"
+        row=byName((scope==="servers"?"vpnServerRow-":"vpnFreeRow-")+"one")
+        click(fixture.find(row,function(x){return x.tooltipText===backend.tr("action.test")}))
+        backend.checkDeadlines(Date.now()+2000000);wait(30)
+        expect(fixture.find(consumer,function(x){return x.visible && x.objectName==="vpnProbeOperation-one"})===null,"Deadline clears row feedback")
+        fixture.release(false);wait(20)
+      }
+      console.log("QML_PASS rowProbes target-row named-test-verify spinner success-failure-timeout")
     }
     function loading() {
       fixture.subscriptions=[];backend.subscriptions=[];fixture.free=[];backend.freeServers=[]

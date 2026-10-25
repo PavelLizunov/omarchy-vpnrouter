@@ -310,5 +310,7 @@
   "free.loading": "Загрузка бесплатных серверов…",
   "profiles.loading": "Загрузка профилей…",
   "custom.loading": "Загрузка конфигураций…",
-  "diagnostics.loading": "Выполняется диагностика…"
+  "diagnostics.loading": "Выполняется диагностика…",
+  "test.pending": "Измерение задержки…",
+  "verify.pending": "Проверка подключения…"
 }

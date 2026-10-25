@@ -39,7 +39,7 @@ Item {
     bordered: root.variant !== "subtle"
     hasCursor: root.activeFocus
     borderSpec: root.activeFocus ? Commons.Border.controlSpec("focus", foreground, accent) : _borderSpec
-    opacity: root.enabled ? 1 : 0.5
+    opacity: root.enabled || root.busy ? 1 : 0.5
     onClicked: { root.forceActiveFocus(); root.clicked() }
   }
   FocusCue { focused: root.activeFocus && !root.busy }
