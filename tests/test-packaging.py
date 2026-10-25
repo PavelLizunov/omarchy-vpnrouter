@@ -332,6 +332,45 @@ class TestSetupLifecycle(PackagingTestBase):
         self.assertIn("Wire Protocol: v1", res_present.stdout)
         self.assertIn(str(self.user_config_dir), res_present.stdout)
 
+    def test_setup_reports_only_the_headless_system_runtime(self):
+        runtime = self.test_root / "system-runtime" / "sing-box"
+        setup = self.plugin_copy / "setup"
+        source = setup.read_text(encoding="utf-8")
+        fixed_path = "/usr/lib/vpnrouter-headless/runtime/sing-box"
+        self.assertEqual(source.count(fixed_path), 1)
+        setup.write_text(source.replace(fixed_path, str(runtime)), encoding="utf-8")
+        marker = self.test_root / "runtime-executed"
+        decoys = [self.plugin_copy / "bin/backend/sing-box",
+                  self.stub_bin_dir / "sing-box", self.user_config_dir / "bin/sing-box"]
+        for decoy in decoys:
+            decoy.parent.mkdir(parents=True, exist_ok=True)
+            decoy.write_text(f"#!/bin/sh\ntouch '{marker}'\n", encoding="utf-8")
+            decoy.chmod(0o755)
+        runtime.parent.mkdir()
+        for kind in ["missing", "not-executable", "executable", "symlink", "directory"]:
+            with self.subTest(kind=kind):
+                if runtime.is_symlink() or runtime.is_file():
+                    runtime.unlink()
+                elif runtime.is_dir():
+                    runtime.rmdir()
+                if kind in ["not-executable", "executable"]:
+                    runtime.write_text(f"#!/bin/sh\ntouch '{marker}'\n", encoding="utf-8")
+                    runtime.chmod(0o755 if kind == "executable" else 0o644)
+                elif kind == "symlink":
+                    runtime.symlink_to(decoys[0])
+                elif kind == "directory":
+                    runtime.mkdir()
+                result = subprocess.run(["./setup", "--status"], cwd=self.plugin_copy,
+                                        env=self.env, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                expected = "[OK] sing-box: executable present at" if kind == "executable" else "[NOTICE] sing-box: no executable regular file at"
+                self.assertIn(f"{expected} {runtime}", result.stdout)
+                self.assertIn("file presence alone does not verify readiness", result.stdout)
+                self.assertNotIn("Deployment gap", result.stdout)
+                self.assertNotIn("sing-box: present in plugin payload", result.stdout)
+                self.assertNotIn("sing-box: present on PATH", result.stdout)
+                self.assertFalse(marker.exists(), "Diagnostics must never execute runtime candidates")
+
     def test_setup_install_from_backend_dir_and_verifies_no_symlinks(self):
         """Setup copies build materials to bin/backend/ payload directory with ZERO symlinks."""
         build_dir = self.test_root / "local_build"

@@ -393,7 +393,7 @@ sys.exit(0)
   rm -rf "$probe_dir" 2>/dev/null || true
 
   if [[ "$ret" -eq 0 ]]; then
-    printf '%s\n' "  Wire Protocol: v1 (conforms to plans/omarchy-protocol-v1.md)"
+    printf '%s\n' "  Wire Protocol: v1 (snapshot handshake)"
     return 0
   else
     return 1
@@ -430,22 +430,15 @@ check_dependencies() {
     printf '%s\n' "  [NOTICE] nft (nftables) not found (firewall killSwitch/DNS lockdown is pending a privileged broker)"
   fi
 
-  if [[ -x "$plugin_dir/bin/backend/sing-box" ]]; then
-    printf '%s\n' "  [OK] sing-box: present in plugin payload ($plugin_dir/bin/backend/sing-box)"
-  elif command -v sing-box >/dev/null 2>&1; then
-    printf '%s\n' "  [OK] sing-box: present on PATH ($(command -v sing-box))"
+  local system_runtime="/usr/lib/vpnrouter-headless/runtime/sing-box"
+  if [[ -f "$system_runtime" && ! -L "$system_runtime" && -x "$system_runtime" ]]; then
+    printf '%s\n' "  [OK] sing-box: executable present at $system_runtime"
   else
-    printf '%s\n' "  [NOTICE] sing-box not found in plugin payload or system PATH"
+    printf '%s\n' "  [NOTICE] sing-box: no executable regular file at $system_runtime"
+    printf '%s\n' "           Install or reinstall the vpnrouter-headless package to provision this runtime."
   fi
-
-  local app_singbox="${XDG_CONFIG_HOME:-$HOME/.config}/vpnrouter/bin/sing-box"
-  if [[ ! -x "$app_singbox" ]]; then
-    printf '%s\n' "  [NOTICE] Deployment gap: upstream VPNRouter.Core resolves sing-box strictly at:"
-    printf '%s\n' "           $app_singbox"
-    printf '%s\n' "           Packaged sing-box resides in $plugin_dir/bin/backend/sing-box."
-    printf '%s\n' "           Backend runtime binary selection and TUN privilege integration are still required."
-    printf '%s\n' "           A staged binary alone does not verify a working connection."
-  fi
+  printf '%s\n' "  [NOTICE] Headless uses only this system runtime, not plugin payload, PATH or user config binaries."
+  printf '%s\n' "           Backend checks ownership, permissions and CAP_NET_ADMIN; file presence alone does not verify readiness."
 
   printf '%s\n' "  [NOTICE] Privileged firewall operations (killSwitch, DNS lockdown) are not implemented via Polkit; pending privileged broker"
 
