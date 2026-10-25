@@ -326,6 +326,7 @@ Item {
               }
 
               Row {
+                height: latencyPill.height
                 spacing: Commons.Style.space(6)
 
                 Rectangle {
@@ -346,6 +347,7 @@ Item {
                 }
 
                 LatencyPill {
+                  id: latencyPill
                   visible: root.showLatency && known
                   latency: modelData.latencyMs
                   label: Model.formatLatency(modelData.latencyMs, ({ t: root.tr }))

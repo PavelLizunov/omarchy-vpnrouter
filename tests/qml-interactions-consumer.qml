@@ -719,6 +719,8 @@ Rectangle {
       consumer.settings={mode:"advanced",showLatency:false,locale:fixture.locale}
       barStateProbe.settings={showLatency:false,locale:fixture.locale}
       wait(25)
+      var measuredHeight=byName("vpnServerRow-manual").height
+      equal(byName("vpnServerRow-sub").height,measuredHeight,"Known and unknown latency keep the same row height")
       var pills=fixture.all(page("Servers"),function(x){return x.known!==undefined && x.latency!==undefined},[])
       expect(pills.length>0,"Real list latency pills exist")
       for(var pill of pills) expect(!pill.visible,"Latency preference hides real list pills")
@@ -726,6 +728,8 @@ Rectangle {
       expect(barStateProbe.barTooltip.indexOf(backend.tr("latency.ms",[42]))===-1,"Disabled latency is absent from bar tooltip")
       consumer.settings={mode:"simple",showLatency:true,locale:fixture.locale}
       barStateProbe.settings={showLatency:true,locale:fixture.locale}
+      wait(25)
+      equal(fixture.find(consumer,function(x){return x.objectName==="vpnServerRow-manual"}).height,measuredHeight,"Latency preference does not resize rows")
       backend.configMode="custom";backend.activeServer="Custom configuration (fixture)"
       consumer.setDisplayMode("simple");wait(25)
       equal(byName("vpnHomeServerName").text,backend.activeServer,"Custom mode does not display the stale selected server")
