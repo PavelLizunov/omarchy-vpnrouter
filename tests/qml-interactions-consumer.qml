@@ -408,7 +408,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="probesAndPreferences") probesAndPreferences()
+      if(fixture.suite==="serviceQueue") serviceQueue()
+      else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
       else if(fixture.suite==="custom") customImport()
@@ -775,6 +776,32 @@ Rectangle {
       }
       backend.setLocale(fixture.locale);backend.clearLastError()
       console.log("QML_PASS probesAndPreferences real-latency-controls custom-state-and-navigation empty-subscription probe-pending-results")
+    }
+    function serviceQueue() {
+      var watchdog=null
+      for (var resource of backend.resources) if(resource.objectName==="vpnDeadlineWatchdog") watchdog=resource
+      expect(watchdog!==null,"Service owns the deadline watchdog")
+      wait(30);equal(Object.keys(backend._pendingCallbacks).length,0)
+      equal(watchdog.running,false,"Idle watchdog is stopped")
+      fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
+      equal(watchdog.running,true,"Ordinary pending starts the watchdog")
+      fixture.release(false);wait(20)
+      equal(watchdog.running,false,"Terminal response stops the idle watchdog")
+      fixture.holdMethod="snapshot";backend.sendRequest("snapshot",{},null,null,true);wait(15)
+      equal(watchdog.running,true,"Urgent-only pending starts the watchdog")
+      fixture.release(false);wait(20)
+      equal(watchdog.running,false,"Last urgent response stops the watchdog")
+      fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
+      backend.checkDeadlines(Date.now()+2000000);wait(15)
+      equal(watchdog.running,false,"Deadline finalization stops the watchdog")
+      expect(backend.transportStalled,"A missing terminal closes admission")
+      fixture.held=null;fixture.holdMethod=""
+      backend.backendExited(1);wait(15)
+      equal(watchdog.running,false,"Exit cleanup leaves no watchdog work")
+      backend.backendStarted();wait(15)
+      equal(watchdog.running,false,"A settled restarted helper is idle")
+      backend.clearLastError()
+      console.log("QML_PASS serviceQueue idle ordinary urgent deadline exit recovery watchdog")
     }
     function prepareCapture() {
       if(fixture.capture==="home" || fixture.capture==="home-bottom" || fixture.capture==="first-run") {

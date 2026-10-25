@@ -555,3 +555,10 @@ assert.strictEqual(root.reserveWrite('overflow','x'),false);
 assert.strictEqual(root._writeBacklogBytes,root.maxWriteBacklogBytes);
 assert.strictEqual(root.transportStalled,true);
 console.log('PASS: byte budget, timeout admission closure, reentrant fast-fail, late ACK and restart recovery');
+
+
+const watchdogBinding = read('Service.qml').match(/id: deadlineWatchdog[\s\S]*?running: ([^\n]+)/)[1];
+const watchdogRuns = new Function('root','return '+watchdogBinding);
+for (const [activeRequestId,urgent,expected] of [['',0,false],['ordinary',0,true],['',1,true],['ordinary',4,true]])
+  assert.strictEqual(watchdogRuns({activeRequestId,_pendingUrgentCount:urgent}),expected);
+console.log('PASS: watchdog admission depends on ordinary or urgent pending work');

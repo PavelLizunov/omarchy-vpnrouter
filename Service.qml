@@ -353,9 +353,10 @@ Item {
 
   Timer {
     id: deadlineWatchdog
+    objectName: "vpnDeadlineWatchdog"
     interval: 1000
     repeat: true
-    running: true
+    running: root.activeRequestId !== "" || root._pendingUrgentCount > 0
     onTriggered: root.checkDeadlines()
   }
 
