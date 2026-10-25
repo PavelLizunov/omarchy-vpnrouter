@@ -39,6 +39,7 @@ const timer = {interval: 0, restarts: 0, stopped: false,
   restart() { this.restarts++; this.stopped = false; }, stop() { this.stopped = true; }};
 const root = {
   _pendingCallbacks: {}, _pendingUrgentCount: 0, maxUrgentPending: 4,
+  _unansweredWrites: {}, _writeBacklogBytes: 0, maxWriteBacklogBytes: 5 * Protocol.MAX_FRAME_BYTES, transportStalled: false,
   _requestQueue: Protocol.createRequestQueue(8), _accumulator: {reset() {}},
   _shuttingDown: false, requestDeadlineMs: 15000, retryBackoffMs: 2000, retryCount: 0,
   activeRequestId: '', activeOperation: '', activeProgress: null, revision: 'r1',
@@ -274,8 +275,13 @@ root.fakeBackend={write(text) {written.push(JSON.parse(text));}};ctx.backendProc
 root.verifyServer('probe');
 const expiredId=written.at(-1).id;
 root.checkDeadlines(root._pendingCallbacks[expiredId].deadline+1);
-assert.strictEqual(root.lastErrorKey,'error.timeout');
+assert.strictEqual(root.lastErrorKey,'error.transportStalled');
 assert.strictEqual(root.lastErrorMethod,'servers.verify');
+let stalledError;
+assert.strictEqual(root.refreshSnapshot(null,err=>{stalledError=err;}),null);
+assert.strictEqual(stalledError.code,'transport_stalled');
+root.backendExited(1);root.backendStarted();
+root.setLastError('error.timeout', [], '', 'servers.verify');
 root.refreshSnapshot(); reply(snapshot);
 assert.strictEqual(root.lastErrorMethod,'servers.verify','Snapshot refresh retains the failed verification');
 root.listServers(); reply({items:root.servers,total:root.servers.length});
@@ -464,3 +470,95 @@ for (const code of ['busy','conflict']) {
 }
 root.busy=false;root.clearLastError();
 console.log('PASS: failed reconciliation snapshots are bounded, including conflict errors');
+
+
+// FailedToStart emits runningChanged without exited in Quickshell 0.3.x.
+root.fakeBackend = null; ctx.backendProc.running = false;
+root.processDisabled = false; ctx.processDisabled = false; root._shuttingDown = false;
+root.starting = true; root._startFailureReported = false; root.retryCount = 0; root.retryBackoffMs = 2000;
+const failedStartHandler = read('Service.qml').match(/^    onRunningChanged: (.+)$/m)[1];
+vm.runInContext('var running = false; ' + failedStartHandler, ctx);
+assert.strictEqual(root.starting, false);
+assert.strictEqual(root.helperPresent, false);
+assert.strictEqual(root.lastErrorKey, 'backend.startFailed');
+assert.strictEqual(root.retryCount, 1);
+assert.strictEqual(timer.interval, 2000);
+assert.strictEqual(Model.backendStarting(root), false);
+const failedRetries = timer.restarts;
+root.backendExited(1);
+assert.strictEqual(timer.restarts, failedRetries, 'No double finalization after a start deadline');
+timer.running = true;
+root.refreshSnapshot();
+assert.strictEqual(root.lastErrorKey, 'backend.startFailed', 'Panel reads preserve the managed retry explanation');
+root.checkHelperAndStart();
+assert.strictEqual(root.starting, true);
+assert.strictEqual(root.lastError, '', 'A new start cannot retain the old not-running message');
+assert.strictEqual(root._startFailureReported, false);
+root.backendStartFailed('backend.startTimeout');
+assert.strictEqual(root.starting, false);
+assert.strictEqual(Model.backendStarting(root), false);
+assert.strictEqual(root.lastErrorKey, 'backend.startTimeout');
+const deadlineRetries = timer.restarts;
+root.backendStartFailed('backend.startTimeout');
+root.backendExited(15);
+assert.strictEqual(timer.restarts, deadlineRetries, 'A start failure schedules only one managed retry');
+root.checkHelperAndStart();
+ctx.backendProc.running = false;
+root.checkHelperAndStart();
+root.backendStarted();
+assert.strictEqual(root.starting, false);
+assert.strictEqual(root.helperPresent, true);
+assert.strictEqual(timer.stopped, true);
+root._shuttingDown = true; root.starting = false;
+assert.doesNotThrow(() => vm.runInContext('var running = false; ' + failedStartHandler, ctx));
+console.log('PASS: FailedToStart and startup deadline end Starting, retain an error and schedule one retry');
+
+
+// Bound real request bytes independently of callback deadlines, with reentrant rejection.
+root._shuttingDown = false; root._startFailureReported = false;
+root.backendExited(1); root.backendStarted();
+root.fakeBackend = {write(text) { written.push(JSON.parse(text)); }};
+ctx.backendProc.running = true; root.state = 'connected';
+root.capabilities = {connect:true};
+const queuedErrors = [];
+const large = 'я'.repeat(100000);
+const ordinary = root.sendRequest('fixture-noop', {text:large});
+for(let i=0;i<4;i++) root.sendRequest('fixture-urgent', {text:large}, null, null, true);
+root.sendRequest('fixture-queued', {}, null, err=>{
+  queuedErrors.push(err.code);
+  root.sendRequest('reentrant', {}, null, err=>queuedErrors.push(err.code));
+});
+const retainedBytes = root._writeBacklogBytes;
+assert(retainedBytes > 1000000 && retainedBytes <= root.maxWriteBacklogBytes);
+const beforeStallWrites = written.length;
+root.checkDeadlines(Date.now()+2000000);
+assert.strictEqual(root.transportStalled,true);
+assert.strictEqual(root._writeBacklogBytes,retainedBytes,'Deadlines do not release native buffer credit');
+assert.strictEqual(Object.keys(root._pendingCallbacks).length,0);
+assert.strictEqual(root._requestQueue.size(),0);
+assert.deepStrictEqual(queuedErrors,['transport_stalled','transport_stalled']);
+for(let i=0;i<200;i++) assert.strictEqual(root.sendRequest('fixture-noop',{text:large}),null);
+assert.strictEqual(written.length,beforeStallWrites);
+assert.strictEqual(root.state,'connected','Backpressure never fabricates a disconnected state or stops the helper');
+assert.strictEqual(ctx.backendProc.running,true);
+root.handleResponse(ordinary,false,{},null);
+assert(root._writeBacklogBytes < retainedBytes,'Late terminal frees byte credit without invoking an expired callback');
+assert.strictEqual(root.transportStalled,true,'Late terminals do not reopen a failed session');
+root.backendExited(1);root.backendStarted();
+assert.strictEqual(root.transportStalled,false);
+assert.strictEqual(root._writeBacklogBytes,0);
+assert(root.refreshSnapshot());reply(snapshot);
+assert.strictEqual(root._writeBacklogBytes,0,'Normal responses return their credit');
+// Even a caller attempting to bypass queue admission cannot exceed the byte budget.
+assert.strictEqual(root.reserveWrite('cap', 'x'.repeat(root.maxWriteBacklogBytes)),true);
+assert.strictEqual(root.reserveWrite('overflow','x'),false);
+assert.strictEqual(root._writeBacklogBytes,root.maxWriteBacklogBytes);
+assert.strictEqual(root.transportStalled,true);
+console.log('PASS: byte budget, timeout admission closure, reentrant fast-fail, late ACK and restart recovery');
+
+
+const watchdogBinding = read('Service.qml').match(/id: deadlineWatchdog[\s\S]*?running: ([^\n]+)/)[1];
+const watchdogRuns = new Function('root','return '+watchdogBinding);
+for (const [activeRequestId,urgent,expected] of [['',0,false],['ordinary',0,true],['',1,true],['ordinary',4,true]])
+  assert.strictEqual(watchdogRuns({activeRequestId,_pendingUrgentCount:urgent}),expected);
+console.log('PASS: watchdog admission depends on ordinary or urgent pending work');

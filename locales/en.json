@@ -314,5 +314,8 @@
   "test.pending": "Testing latency…",
   "verify.pending": "Verifying connection…",
   "action.showDetails": "Show details",
-  "action.hideDetails": "Hide details"
+  "action.hideDetails": "Hide details",
+  "backend.startFailed": "VPNRouter service could not start. Retrying…",
+  "backend.startTimeout": "VPNRouter service did not start in time. Retrying…",
+  "error.transportStalled": "VPNRouter service is not responding. New requests are paused until the service restarts."
 }

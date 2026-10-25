@@ -314,5 +314,8 @@
   "test.pending": "Измерение задержки…",
   "verify.pending": "Проверка подключения…",
   "action.showDetails": "Показать подробности",
-  "action.hideDetails": "Скрыть подробности"
+  "action.hideDetails": "Скрыть подробности",
+  "backend.startFailed": "Не удалось запустить службу VPNRouter. Повторяем попытку…",
+  "backend.startTimeout": "Служба VPNRouter не запустилась вовремя. Повторяем попытку…",
+  "error.transportStalled": "Служба VPNRouter не отвечает. Новые запросы приостановлены до её перезапуска."
 }

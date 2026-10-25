@@ -155,7 +155,7 @@ def render(name, theme, properties, reference=False, width=440, height=764):
 
 try:
     if args.mode in ['all', 'check']:
-        suites = ['settingsFooter', 'errorDetails', 'rowProbes', 'loading', 'names', 'brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
+        suites = ['settingsFooter', 'errorDetails', 'rowProbes', 'loading', 'names', 'lazySections', 'serviceQueue', 'brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
                   'servers', 'custom', 'rules', 'settings', 'appsDiscovery', 'actions', 'keyboard', 'pointerForms',
                   'layoutFit', 'focusCues', 'homeReturn', 'probesAndPreferences']
         if args.suites:
@@ -176,6 +176,8 @@ try:
                     render(f'qml-{theme}-{locale}-{state}', theme,
                         {'locale': locale, 'theme': theme, 'stateName': 'disconnected' if state == 'first-run' else state,
                          'capture': 'first-run' if state == 'first-run' else 'home'})
+                render(f'qml-{theme}-{locale}-transport-stalled', theme,
+                       {'locale': locale, 'theme': theme, 'capture': 'transport-stalled', 'stateName': 'connected'})
                 for tab in ['servers', 'settings']:
                     render(f'qml-{theme}-{locale}-{tab}', theme,
                         {'locale': locale, 'theme': theme, 'tab': tab})

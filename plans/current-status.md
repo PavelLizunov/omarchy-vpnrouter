@@ -67,3 +67,10 @@ Every retained fix has exact-commit checks: 13 Node suites, 40 packaging cases i
 Actual-QML regressions cover disclosure, full names on hover/focus, pending/failed/empty reads, row probes and deadlines, stable latency rows, and pinned Settings actions with unobscured focus. Evidence and 21 inspected before/after crop pairs: /home/slovn/.cache/vpnrouter-f1/.
 Deferred as requested: V2-08 Home density, V1-02 Free Pool search, and V1-03 diagnostic localization. V2-01 Servers action-before-details ordering needs F2-owned Panel.qml; V3-L02 and BarWidget contrast also remain for service/host follow-up; independent lead review is pending.
 Not installed, loaded, or published. Only inert offscreen consumers were used; workstation UI, busy VM, real VPN/backend and subscription data were untouched. PR 3, its branch/index, mascot art and host theme/font roles are preserved.
+
+F2 outcome (2026-10-25): failed starts/deadlines retry; unacknowledged writes are capped at 1,310,720 bytes and pause on timeout without stopping the helper; the idle watchdog stops.
+Nine sections load on first visit and retain drafts. V3 harness on d30144d, five paired trials: Panel creation medians 147.7→24.8 ms (2 servers), 465.3→24.1 ms (100); not shell cold-start.
+EN/RU docs describe unsandboxed execution, backend shutdown and complete removal. The unchanged mascot reference moved to tests/fixtures and is excluded from documented archive installs.
+The fix commits passed 13 Node suites, up to 41 packaging and 109 QML cases, qmllint and plugin validation (exit 0); CI passed on each pushed fix SHA.
+No workstation display, VM, real VPN, subscription edit, activation, release, tag or merge was used; live lifecycle and traffic behavior remain unverified.
+AGENTS.md is preserved for agent tooling; its Marketplace inclusion remains the owner's decision. Git-clone installs still include the test-only mascot fixture.

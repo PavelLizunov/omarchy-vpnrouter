@@ -84,7 +84,7 @@ assert.deepStrictEqual(writes.pop(), {mode: 'include', names: []});
 // Exercise the real navigation function and form behavior using inert callbacks.
 const route = {mode: 'simple', setDisplayMode(value) {this.mode = value;}};
 let opened = 0;
-functions('Panel.qml', {root: route, service: null, I18n, Model, subscriptionsView: {openForm() {opened++;}}, flickableContent: {contentY: 99}});
+functions('Panel.qml', {root: route, service: null, I18n, Model, subscriptionsLoader: {item: {openForm() {opened++;}}}, flickableContent: {contentY: 99}});
 route.setDisplayMode = value => {route.mode = value;};
 route.openSubscriptionForm();
 assert.strictEqual(route.mode, 'advanced');

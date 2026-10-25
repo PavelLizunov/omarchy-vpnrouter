@@ -41,6 +41,8 @@ form does not fetch anything. **Change** opens Servers, or Custom Config when a
 custom configuration is active. The home list opens each
 advanced section; its fixed back arrow returns to the originating row. One fitted
 frame and internal scrolling keep the panel stable across sections and forms.
+Advanced sections are created on their first visit. Visited sections and drafts
+remain available across navigation and panel close/reopen until the panel is destroyed.
 Tab traverses controls; Escape closes the panel. Enter submits single-line forms;
 multiline server/configuration editors use Ctrl+Enter.
 
@@ -110,6 +112,14 @@ Free-pool **Apply** requires a successful verification. Application list editing
 waits for each acknowledged update to avoid replacing an in-flight change.
 Service errors are also shown in the open advanced section. Requests fail
 immediately when the helper is absent, so forms do not remain pending forever.
+A failed process start or a five-second start deadline ends the startup display
+and schedules a retry with a 2–30 second backoff. Only a valid snapshot resets it.
+The deadline watchdog runs only while ordinary or urgent requests are pending.
+Unacknowledged writes have a 1,310,720-byte budget. A request deadline or an
+exhausted byte budget pauses new requests until the helper restarts; the plugin
+does not terminate the helper or stop an active VPN to recover from backpressure.
+To restart it deliberately, follow the shutdown steps below, then enable the
+plugin again. This interrupts an active VPN.
 After a backend restart, an open panel reloads its lists and current section.
 Reconnecting the VPN still requires an explicit Connect action.
 
@@ -128,6 +138,17 @@ The Arch `vpnrouter-headless` package supplies `/usr/lib/vpnrouter-headless/VPNR
 
 ---
 
+## Execution model
+
+The QML plugin runs unsandboxed with your user permissions inside the shared,
+long-running `omarchy-shell` process. It can access your files and start commands
+with those permissions. Marketplace checks the listing and manifest; it does not
+sandbox or certify the plugin. Review the plugin and backend sources before
+installation. See the [official plugin model](https://plugins.omarchy.org/develop.html).
+The shell owns one stdio Headless child; there is no separate backend systemd
+service in this version. Unloading the plugin or restarting the shell stops that
+child and can drop an active VPN.
+
 ## Installation & Setup
 
 With the `vpnrouter-headless` package already installed, copy the plugin's committed files into a real directory (not a symlink):
@@ -138,7 +159,7 @@ VPNRouter connection.
 ```bash
 plugin_dir="$HOME/.config/omarchy/plugins/io.github.pavellizunov.vpnrouter"
 mkdir -p "$plugin_dir"
-git archive HEAD | tar -x -C "$plugin_dir"
+git archive HEAD | tar --exclude='tests/fixtures/penguin_mascot_tile.png' -x -C "$plugin_dir"
 omarchy plugin validate "$plugin_dir"
 omarchy-shell shell rescanPlugins
 omarchy plugin enable io.github.pavellizunov.vpnrouter --section right
@@ -191,12 +212,62 @@ Before updating, ensure any active backend process has been stopped. Then re-run
 ```
 Setup verifies no active backend is running, stages in a sibling temp folder, tests protocol framing, backs up the old `bin/backend/`, renames the new payload into place, and validates the plugin structure post-install (rolling back on failure). User configuration in `~/.config/vpnrouter` is preserved.
 
-### Removing the Backend
-To remove the packaged backend binaries:
+### Removing the plugin and stopping the backend
+
+Disconnect in the panel and wait for **Disconnected**. Disable the plugin to
+stop managed retries and unload its service, which sends SIGTERM to its stdio
+backend:
+
+```bash
+omarchy plugin disable io.github.pavellizunov.vpnrouter
+```
+
+If the panel was unresponsive or the backend remains, find the exact process
+owned by your user:
+
+```bash
+pgrep -a -u "$(id -u)" -f '(^|[ /])VPNRouter[.]Headless([.]dll)? --stdio( |$)'
+```
+
+For a remaining matching backend, run `kill -TERM PID`, replacing `PID` with its
+listed numeric PID. Stopping it drops any active VPN. There is no backend unit
+for `systemctl --user stop` in this version. Once it has stopped, remove the plugin:
+
+```bash
+omarchy plugin remove io.github.pavellizunov.vpnrouter
+```
+
+On current Omarchy, a git-cloned plugin directory is deleted. An archive/copied
+installation is moved to a hidden sibling `.io.github.pavellizunov.vpnrouter.bak.*`;
+remove the exact backup directory printed by the command to erase the remaining
+plugin files and any plugin-local backend payload too.
+
+The separately installed Arch package and its system runtime remain. To remove
+that package as well when no other client needs it:
+
+```bash
+sudo pacman -R vpnrouter-headless
+```
+
+These operations retain saved configuration, subscriptions, profiles and keys in
+`${XDG_CONFIG_HOME:-$HOME/.config}/vpnrouter` by default. Erase that directory only
+if you also want to delete those saved data. A custom `--data-dir`, diagnostics
+exports at their displayed paths, source checkouts and external publish directories
+are separate files; uninstall does not remove them. Omarchy may retain the widget's
+saved preferences in its shell configuration.
+
+### Removing only the local backend payload
+
+From the installed plugin directory, after disabling the plugin and stopping the
+backend as above:
+
 ```bash
 ./setup --remove
 ```
-This removes `bin/backend/`. Your VPN profiles, certificates, and routing settings in `~/.config/vpnrouter` remain strictly intact.
+
+This removes the plugin-local `bin/backend/` payload and its staging/backup files.
+It preserves VPN data, the plugin itself and the system `vpnrouter-headless`
+package. If that package remains, the launcher falls back to it on the next start.
 
 ---
 

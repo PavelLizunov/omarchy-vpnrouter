@@ -124,14 +124,14 @@ Ui.Panel {
     if (page === "home") root.setDisplayMode("simple", true)
     else root.openSection(page)
     if (page === "subscriptions" && form === "add") root.openSubscriptionForm()
-    if (page === "servers" && form === "import") serversView.openImportForm()
+    if (page === "servers" && form === "import") serversLoader.item.openImportForm()
   }
 
   function openSubscriptionForm() {
     root.currentTab = "subscriptions"
     root.setDisplayMode("advanced")
     flickableContent.contentY = 0
-    subscriptionsView.openForm()
+    subscriptionsLoader.item.openForm()
   }
 
   function toggleLocale() {
@@ -234,6 +234,16 @@ Ui.Panel {
               onDisconnectRequested: if (root.service) root.service.disconnect()
               onCancelRequested: if (root.service) root.service.cancel()
             }
+            VpnUi.Notice {
+              objectName: "vpnTransportNotice"
+              width: mainColumn.width
+              // The connection hero keeps the last reported VPN state; transport
+              // failure is separate feedback and must remain visible on Home.
+              text: root.service && root.service.transportStalled && (root.service.isConnected || root.service.isConnecting || root.service.isDisconnecting) ? root.service.lastErrorText : ""
+              error: true
+              dismissLabel: root.tr("action.dismiss")
+              onDismissed: if (root.service) root.service.clearLastError()
+            }
             Ui.BorderSurface {
               width: parent.width
               implicitHeight: connectionColumn.implicitHeight
@@ -321,65 +331,126 @@ Ui.Panel {
               dismissLabel: root.tr("action.dismiss")
               onDismissed: if (root.service) root.service.clearLastError()
             }
-            VpnUi.ServersView {
-              id: serversView
-              showLatency: root.showLatency
-              onAddSubscriptionRequested: root.openSubscriptionForm()
-              visible: root.currentTab === "servers"
+            Loader {
+              id: serversLoader
+              objectName: "vpnSectionLoader-servers"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "servers"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.ServersView {
+                showLatency: root.showLatency
+                onAddSubscriptionRequested: root.openSubscriptionForm()
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
-            VpnUi.SubscriptionsView {
-              id: subscriptionsView
-              visible: root.currentTab === "subscriptions"
+            Loader {
+              id: subscriptionsLoader
+              objectName: "vpnSectionLoader-subscriptions"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "subscriptions"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.SubscriptionsView {
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
-            VpnUi.FreePoolView {
-              showLatency: root.showLatency
-              visible: root.currentTab === "free"
+            Loader {
+              id: freeLoader
+              objectName: "vpnSectionLoader-free"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "free"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.FreePoolView {
+                showLatency: root.showLatency
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
-            VpnUi.AppsView {
-              appLibrary: root.hostWidget && root.hostWidget.effectiveShell ? root.hostWidget.effectiveShell.appLibrary : null
-              visible: root.currentTab === "apps"
+            Loader {
+              id: appsLoader
+              objectName: "vpnSectionLoader-apps"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "apps"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.AppsView {
+                appLibrary: root.hostWidget && root.hostWidget.effectiveShell ? root.hostWidget.effectiveShell.appLibrary : null
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
-            VpnUi.ProfilesView {
-              visible: root.currentTab === "profiles"
+            Loader {
+              id: profilesLoader
+              objectName: "vpnSectionLoader-profiles"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "profiles"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.ProfilesView {
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
-            VpnUi.RulesView {
-              visible: root.currentTab === "rules"
+            Loader {
+              id: rulesLoader
+              objectName: "vpnSectionLoader-rules"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "rules"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.RulesView {
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
-            VpnUi.CustomConfigView {
-              visible: root.currentTab === "custom"
+            Loader {
+              id: customLoader
+              objectName: "vpnSectionLoader-custom"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "custom"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.CustomConfigView {
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
-            VpnUi.SettingsView {
-              visible: root.currentTab === "settings"
+            Loader {
+              id: settingsLoader
+              objectName: "vpnSectionLoader-settings"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "settings"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.SettingsView {
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
-            VpnUi.DiagnosticsView {
-              visible: root.currentTab === "diagnostics"
+            Loader {
+              id: diagnosticsLoader
+              objectName: "vpnSectionLoader-diagnostics"
+              property bool visited: false
+              visible: root.mode === "advanced" && root.currentTab === "diagnostics"
+              active: visible || visited
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
+              onLoaded: visited = true
+              sourceComponent: VpnUi.DiagnosticsView {
+                service: root.service
+                i18nRevision: root.i18nRevision
+              }
             }
           }
         }

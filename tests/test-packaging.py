@@ -17,6 +17,7 @@ Validates:
 9. Repository hygiene (GPL-3.0 license provenance, .gitignore, executable permissions).
 """
 
+import io
 import json
 import os
 import pathlib
@@ -24,6 +25,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import unittest
@@ -1378,6 +1380,21 @@ class TestProtocolV1Interaction(PackagingTestBase):
 
 
 class TestRepositoryHygiene(unittest.TestCase):
+    def test_archive_install_excludes_reference_art(self):
+        """The documented tar extraction omits test artwork and keeps runtime art."""
+        payload = io.BytesIO()
+        with tarfile.open(fileobj=payload, mode="w") as archive:
+            for relative in ["assets/penguin_mascot.png", "assets/penguin_mascot_white.png",
+                             "tests/fixtures/penguin_mascot_tile.png"]:
+                archive.add(REPO_ROOT / relative, arcname=relative)
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(["tar", "--exclude=tests/fixtures/penguin_mascot_tile.png", "-x", "-C", directory],
+                           input=payload.getvalue(), check=True, capture_output=True)
+            installed = pathlib.Path(directory)
+            self.assertFalse((installed / "tests/fixtures/penguin_mascot_tile.png").exists())
+            for name in ["penguin_mascot.png", "penguin_mascot_white.png"]:
+                self.assertEqual((installed / "assets" / name).read_bytes(), (REPO_ROOT / "assets" / name).read_bytes())
+
     def test_license_content_and_provenance(self):
         """LICENSE file must contain GPL-3.0 and explicit provenance linking to VPNRouter."""
         license_path = REPO_ROOT / "LICENSE"

@@ -5,6 +5,10 @@ Native QML panel and bar widget for VPNRouter, running inside the Omarchy shell.
 
 [Русский](README.ru.md) · [Releases](https://github.com/PavelLizunov/omarchy-vpnrouter/releases) (no plugin release yet) · [Current status](plans/current-status.md)
 
+The plugin runs **unsandboxed inside the shared `omarchy-shell` process with your
+user permissions**. Its code and dependencies have that same access; Marketplace
+validation is not a security audit. See the [Omarchy execution model](https://plugins.omarchy.org/develop.html).
+
 ## Install
 
 Requires Omarchy Quattro and the `vpnrouter-headless` Arch package.
@@ -18,7 +22,7 @@ VPNRouter connection.
 id=io.github.pavellizunov.vpnrouter
 plugin_dir="$HOME/.config/omarchy/plugins/$id"
 mkdir -p "$plugin_dir"
-git archive HEAD | tar -x -C "$plugin_dir"
+git archive HEAD | tar --exclude='tests/fixtures/penguin_mascot_tile.png' -x -C "$plugin_dir"
 omarchy plugin validate "$plugin_dir"
 omarchy-shell shell rescanPlugins
 omarchy plugin enable "$id" --section right
@@ -55,6 +59,18 @@ configuration, not active kernel state. Search covers loaded pages; lists load
 Automated checks use inert backend responses and an offscreen host adapter.
 They do not certify live shell behavior, VPN traffic routing, leak protection
 or full feature parity. See [current status](plans/current-status.md) for open limits.
+
+## Remove
+
+Disconnect the VPN, then remove the plugin:
+
+```bash
+omarchy plugin remove io.github.pavellizunov.vpnrouter
+```
+
+Unloading the plugin asks its shell-owned backend to stop. The system package,
+saved VPN data and, for archive installs, a hidden plugin backup remain.
+See [complete removal and backend shutdown](docs/guide.md#removing-the-plugin-and-stopping-the-backend).
 
 ## License
 

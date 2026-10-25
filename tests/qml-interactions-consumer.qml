@@ -121,6 +121,7 @@ Rectangle {
   Vpn.Service { id: backend; processDisabled:true;fakeBackend:fixture.respond }
   Vpn.BarWidget { id: barStateProbe; service: backend; settings: ({locale: fixture.locale}); visible: false }
   Vpn.Panel { id: consumer;objectName:"consumer";width:parent.width;height:parent.height;mode:"advanced";service:backend }
+  Component { id: lazyPanelFactory; Vpn.Panel { service:backend; mode:"simple"; width:440; height:764 } }
   Timer {
     interval:80;running:true
     onTriggered: {
@@ -130,7 +131,7 @@ Rectangle {
       if (fixture.stateName === "unavailable") {backend.backendMissing=true;backend.capabilities={connect:false}}
       if (fixture.stateName === "error") backend.lastError=backend.tr("error.timeout")
       if (fixture.stateName === "connecting") {backend.activeOperation="connect";backend.busy=true}
-      var apps=fixture.find(consumer,function(x){return x.objectName==="vpnAppsView"});apps.windowToplevels=[]
+      var apps=fixture.find(consumer,function(x){return x.objectName==="vpnAppsView"});if(apps) apps.windowToplevels=[]
     }
   }
   Timer {
@@ -422,6 +423,8 @@ Rectangle {
       else if(fixture.suite==="rowProbes") rowProbes()
       else if(fixture.suite==="loading") loading()
       else if(fixture.suite==="names") names()
+      else if(fixture.suite==="lazySections") lazySections()
+      else if(fixture.suite==="serviceQueue") serviceQueue()
       else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
@@ -937,6 +940,84 @@ Rectangle {
       backend.setLocale(fixture.locale);backend.clearLastError()
       console.log("QML_PASS probesAndPreferences real-latency-controls custom-state-and-navigation empty-subscription probe-pending-results")
     }
+    function lazySections() {
+      var probe=lazyPanelFactory.createObject(fixture)
+      expect(probe!==null,"Home probe created from the real Panel")
+      var names=["Servers","Subscriptions","FreePool","Apps","Profiles","Rules","CustomConfig","Settings","Diagnostics"]
+      function section(name) {return fixture.find(probe,function(x){return x.objectName==="vpn"+name+"View"})}
+      for(var name of names) equal(section(name),null,"Unvisited section is absent: "+name)
+      probe.open();wait(30)
+      for(var name of names) equal(section(name),null,"First Home open keeps sections uncreated: "+name)
+      probe.navigate("subscriptions","add");wait(35)
+      var subscriptions=section("Subscriptions")
+      expect(subscriptions!==null && subscriptions.showAddForm,"Navigation creates and opens a subscription draft")
+      var input=field(subscriptions,"subscriptions.namePlaceholder");input.text="Retained draft"
+      for(var name of names) if(name!=="Subscriptions") equal(section(name),null,"Only the visited section exists: "+name)
+      probe.openSection("settings");wait(35)
+      expect(section("Settings")!==null,"Settings created on demand")
+      probe.openSection("subscriptions");wait(35)
+      equal(section("Subscriptions"),subscriptions,"Visited section keeps the same instance")
+      equal(input.text,"Retained draft","Back navigation retains an unfinished draft")
+      expect(subscriptions.showAddForm,"The retained form remains open")
+      probe.navigate("servers","import");wait(35)
+      expect(section("Servers").showImportBox,"Navigation creates and opens server import")
+      probe.close();probe.open();wait(35)
+      equal(section("Subscriptions"),subscriptions,"Close/reopen retains visited sections")
+      probe.setDisplayMode("simple");wait(35)
+      equal(probe.mode,"simple","Back reaches Home")
+      var tabs=["servers","subscriptions","free","apps","profiles","rules","custom","settings","diagnostics"]
+      for(var i=0;i<tabs.length;i++) {probe.openSection(tabs[i]);wait(25);expect(section(names[i])!==null,"Every section can be created: "+tabs[i])}
+      probe.destroy();wait(30)
+      console.log("QML_PASS lazySections absent-unvisited forms retain-drafts same-instance reopen all-sections")
+    }
+    function serviceQueue() {
+      var watchdog=null
+      for (var resource of backend.resources) if(resource.objectName==="vpnDeadlineWatchdog") watchdog=resource
+      expect(watchdog!==null,"Service owns the deadline watchdog")
+      wait(30);equal(Object.keys(backend._pendingCallbacks).length,0)
+      // Exercise the real startup Timer without a process; processDisabled stays true.
+      backend.state="unavailable";backend.startDeadlineMs=25;backend.starting=true
+      tryVerify(function(){return !backend.starting},500,"Native start deadline ends Starting")
+      equal(backend.lastErrorKey,"backend.startTimeout","Start deadline has explicit feedback")
+      equal(fixture.find(consumer,function(x){return x.objectName==="vpnHero"}).initializing,false,"Hero leaves startup after the deadline")
+      expect(backend.retryCount>0,"Native start deadline schedules a managed retry")
+      backend._startFailureReported=false;backend.startDeadlineMs=5000;backend.backendStarted()
+      backend.applySnapshot(fixture.snapshot());backend.clearLastError();wait(20)
+      equal(watchdog.running,false,"Idle watchdog is stopped")
+      fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
+      equal(watchdog.running,true,"Ordinary pending starts the watchdog")
+      fixture.release(false);wait(20)
+      equal(watchdog.running,false,"Terminal response stops the idle watchdog")
+      fixture.holdMethod="snapshot";backend.sendRequest("snapshot",{},null,null,true);wait(15)
+      equal(watchdog.running,true,"Urgent-only pending starts the watchdog")
+      fixture.release(false);wait(20)
+      equal(watchdog.running,false,"Last urgent response stops the watchdog")
+      consumer.setDisplayMode("simple");wait(25);backend.state="connected"
+      fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
+      backend.checkDeadlines(Date.now()+2000000);wait(15)
+      equal(backend.state,"connected","Stalled requests do not overwrite the reported VPN state")
+      var notice=byName("vpnTransportNotice")
+      equal(notice.text,backend.tr("error.transportStalled"),"Connected Home shows the transport failure")
+      for(var state of ["connecting","disconnecting","connected"]) {
+        backend.state=state;wait(15)
+        expect(notice.visible,"Transport failure stays visible during "+state)
+      }
+      equal(byName("vpnConnect").text,backend.tr("action.disconnect"),"Connected controls keep their meaning")
+      var dismiss=fixture.find(notice,function(x){return x.tooltipText===backend.tr("action.dismiss")})
+      click(dismiss);expect(!notice.visible,"Transport notice can be dismissed")
+      expect(backend.transportStalled,"Dismissal does not reopen transport admission")
+      equal(backend.disconnect(),null,"A requested action fails fast while stalled");wait(20)
+      expect(notice.visible,"An action rejection restores the explanation")
+      equal(watchdog.running,false,"Deadline finalization stops the watchdog")
+      expect(backend.transportStalled,"A missing terminal closes admission")
+      fixture.held=null;fixture.holdMethod=""
+      backend.backendExited(1);wait(15)
+      equal(watchdog.running,false,"Exit cleanup leaves no watchdog work")
+      backend.backendStarted();wait(15)
+      equal(watchdog.running,false,"A settled restarted helper is idle")
+      backend.clearLastError();consumer.setDisplayMode("advanced");backend.applySnapshot(fixture.snapshot());wait(25)
+      console.log("QML_PASS serviceQueue startup-deadline idle ordinary urgent deadline exit recovery watchdog")
+    }
     function prepareCapture() {
       if(fixture.capture==="home" || fixture.capture==="home-bottom" || fixture.capture==="first-run") {
         consumer.setDisplayMode("simple");wait(25)
@@ -949,6 +1030,12 @@ Rectangle {
       }
 
       else if(fixture.capture.indexOf("simple")===0) {consumer.setDisplayMode("simple");wait(25);if(fixture.capture==="simple-full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}}
+      else if(fixture.capture==="transport-stalled") {
+        consumer.setDisplayMode("simple");wait(30);backend.state=fixture.stateName
+        fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
+        backend.checkDeadlines(Date.now()+2000000);wait(30)
+        consumer.forceActiveFocus();byName("vpnContentViewport").contentY=0
+      }
       else if(fixture.capture==="connected") {backend.state="connected";wait(20)}
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}
       else if(fixture.capture==="subscription-invalid") {consumer.openSubscriptionForm();wait(20);var p=page("Subscriptions");fill(field(p,"subscriptions.namePlaceholder"),"Fixture subscription");fill(field(p,"subscriptions.urlPlaceholder"),"invalid");activate(field(p,"subscriptions.namePlaceholder"))}

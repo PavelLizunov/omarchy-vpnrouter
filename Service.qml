@@ -56,6 +56,8 @@ Item {
   property bool subscriptionsLoaded: false
   property bool snapshotLoaded: false
   property bool starting: false
+  property int startDeadlineMs: 5000
+  property bool _startFailureReported: false
   property int retryCount: 0
   property int retryBackoffMs: 2000
 
@@ -66,6 +68,12 @@ Item {
   property int requestDeadlineMs: 15000
   property var _requestQueue: Protocol.createRequestQueue(8)
   property var _accumulator: null
+  // Process.write has no bytesToWrite API. A terminal response proves its whole
+  // request left the pipe; deadlines do not. Keep that byte credit until ACK/exit.
+  readonly property int maxWriteBacklogBytes: 5 * Protocol.MAX_FRAME_BYTES
+  property var _unansweredWrites: ({})
+  property int _writeBacklogBytes: 0
+  property bool transportStalled: false
 
   // ---- Reactive State Model --------------------------------------------------
   property string state: "unavailable"
@@ -309,6 +317,7 @@ Item {
       }
     }
 
+    if (timedOutIds.length) root.pauseTransport()
     for (var i = 0; i < timedOutIds.length; i++) {
       var tid = timedOutIds[i]
       var timedOutCb = root._pendingCallbacks[tid]
@@ -330,7 +339,7 @@ Item {
       }
 
       var errObj = { code: "timeout", message: I18n.t("error.timeout") }
-      root.setLastError("error.timeout", [], "", timedOutCb.method)
+      root.setLastError("error.transportStalled", [], "", timedOutCb.method)
       root.errorNotice("timeout", errObj.message)
       if (timedOutCb.onError && typeof timedOutCb.onError === "function") {
         timedOutCb.onError(errObj)
@@ -344,9 +353,10 @@ Item {
 
   Timer {
     id: deadlineWatchdog
+    objectName: "vpnDeadlineWatchdog"
     interval: 1000
     repeat: true
-    running: true
+    running: root.activeRequestId !== "" || root._pendingUrgentCount > 0
     onTriggered: root.checkDeadlines()
   }
 
@@ -364,7 +374,9 @@ Item {
     if (processDisabled) return
     if (backendProc.running) return
     root._shuttingDown = false
-    starting = true
+    root._startFailureReported = false
+    root.clearLastError()
+    root.starting = true
     backendProc.running = true
   }
 
@@ -391,11 +403,37 @@ Item {
       }
     }
 
+    onRunningChanged: if (root && root.starting && !running) root.backendStartFailed("backend.startFailed")
     onStarted: if (root) root.backendStarted()
     onExited: function(exitCode) { root.backendExited(exitCode) }
   }
 
+  Timer {
+    id: startDeadline
+    interval: root.startDeadlineMs
+    running: root.starting
+    onTriggered: {
+      root.backendStartFailed("backend.startTimeout")
+      // Only an attempt which never emitted started is stopped by this deadline.
+      backendProc.running = false
+    }
+  }
+
+  function backendStartFailed(messageKey) {
+    if (!root.starting) return
+    root._startFailureReported = true
+    root.backendExited(-1, messageKey)
+  }
+
   function backendStarted() {
+    if (root._startFailureReported || root._shuttingDown) {
+      backendProc.running = false
+      return
+    }
+    retryTimer.stop()
+    root._unansweredWrites = ({})
+    root._writeBacklogBytes = 0
+    root.transportStalled = false
     root.helperPresent = true
     root.backendMissing = false
     root.snapshotLoaded = false
@@ -406,8 +444,13 @@ Item {
     })
   }
 
-  function backendExited(exitCode) {
+  function backendExited(exitCode, startFailureKey) {
+    // A timed-out start may subsequently emit exited. Finalize it just once.
+    if (root._startFailureReported && !startFailureKey) return
     root.starting = false
+    root._unansweredWrites = ({})
+    root._writeBacklogBytes = 0
+    root.transportStalled = false
     root.helperPresent = false
     root.backendMissing = exitCode === 127
     root.state = "unavailable"
@@ -441,7 +484,7 @@ Item {
       retryTimer.stop()
       return
     }
-    root.setLastError("backend.retrying", [exitCode], "", "snapshot")
+    root.setLastError(startFailureKey || "backend.retrying", startFailureKey ? [] : [exitCode], "", "snapshot")
     root.retryBackoffMs = Math.min(30000, Math.round(root.retryBackoffMs * (root.retryCount > 0 ? 1.5 : 1)))
     root.retryCount++
     retryTimer.interval = root.retryBackoffMs
@@ -452,7 +495,9 @@ Item {
     id: retryTimer
     repeat: false
     onTriggered: {
-      root.checkHelperAndStart()
+      // Wait for a timed-out attempt to exit before creating another process.
+      if (backendProc.running && !root.helperPresent) retryTimer.restart()
+      else root.checkHelperAndStart()
     }
   }
 
@@ -490,6 +535,9 @@ Item {
   }
 
   function handleResponse(reqId, isError, result, error) {
+    var acknowledgedBytes = typeof root._unansweredWrites[reqId] === "number" ? root._unansweredWrites[reqId] : 0
+    delete root._unansweredWrites[reqId]
+    root._writeBacklogBytes -= acknowledgedBytes
     var cb = root._pendingCallbacks[reqId]
     // A deadline/exit already finalized this request. Ignore its late terminal frame.
     if (!cb) return
@@ -567,8 +615,45 @@ Item {
   }
 
   // ---- Dispatch and Queue ---------------------------------------------------
+  function transportError(method, onError) {
+    root.setLastError("error.transportStalled", [], "", method)
+    var error = { code: "transport_stalled", message: root.lastErrorText, messageKey: "error.transportStalled" }
+    root.errorNotice(error.code, error.message)
+    if (onError) onError(error)
+    return null
+  }
+
+  function pauseTransport() {
+    if (root.transportStalled) return
+    root.transportStalled = true
+    // Do not terminate the helper: it may still own an active VPN.
+    var queued = root._requestQueue.flushQueued()
+    root.transportError("", null)
+    for (var i = 0; i < queued.length; i++) {
+      if (queued[i].onError) queued[i].onError({ code: "transport_stalled",
+        message: root.tr("error.transportStalled"), messageKey: "error.transportStalled" })
+    }
+  }
+
+  function reserveWrite(reqId, text) {
+    var bytes = Protocol.getUtf8ByteLength(text)
+    if (root.transportStalled || root._writeBacklogBytes + bytes > root.maxWriteBacklogBytes) {
+      root.pauseTransport()
+      return false
+    }
+    root._unansweredWrites[reqId] = bytes
+    root._writeBacklogBytes += bytes
+    return true
+  }
+
   function sendRequest(method, params, onDone, onError, isUrgent, customTimeoutMs) {
+    if (root.transportStalled) return root.transportError(method, onError)
     if (!backendProc.running && !root.fakeBackend) {
+      if (root.starting || retryTimer.running) {
+        var startupMessage = root.starting ? root.tr("backend.startingDetail") : root.lastErrorText
+        if (onError) onError({ code: "not_running", message: startupMessage })
+        return null
+      }
       root.setLastError("backend.notRunning", [], "", method)
       root.errorNotice("not_running", root.lastError)
       if (onError) onError({ code: "not_running", message: root.lastError })
@@ -610,6 +695,7 @@ Item {
         return null
       }
 
+      if (!root.reserveWrite(reqId, urgentFormatted.text)) return root.transportError(method, onError)
       root._pendingUrgentCount++
       root._pendingCallbacks[reqId] = {
         onDone: onDone,
@@ -629,6 +715,8 @@ Item {
       } else {
         root._pendingUrgentCount--
         delete root._pendingCallbacks[reqId]
+        root._writeBacklogBytes -= root._unansweredWrites[reqId] || 0
+        delete root._unansweredWrites[reqId]
         if (onError) onError({ code: "not_running", message: I18n.t("backend.notRunning") })
         return null
       }
@@ -658,6 +746,7 @@ Item {
   }
 
   function pumpQueue() {
+    if (root.transportStalled) return
     if (!backendProc.running && !fakeBackend) return
     var next = root._requestQueue.dequeueNext()
     if (!next) return
@@ -682,6 +771,14 @@ Item {
       root._requestQueue.clearActive()
       if (next.onError) next.onError({ code: "format_error", message: I18n.t("error.format") })
       root.pumpQueue()
+      return
+    }
+
+    if (!root.reserveWrite(next.id, reqResult.text)) {
+      root.activeRequestId = ""
+      root.activeOperation = ""
+      root._requestQueue.clearActive()
+      root.transportError(next.method, next.onError)
       return
     }
 
