@@ -22,6 +22,9 @@ parser.add_argument('--renderer-root', type=Path, default=ROOT.parent / 'qml-pre
 parser.add_argument('--references-only', action='store_true')
 parser.add_argument('--case-suffix', help='Render only case names ending in this suffix')
 parser.add_argument('--suites', help='Optional comma-separated native suites')
+parser.add_argument('--width', type=int, default=440, help='Logical card width')
+parser.add_argument('--height', type=int, default=764, help='Logical card height')
+parser.add_argument('--dpr', type=int, choices=[1, 2], default=2, help='Physical pixels per logical unit')
 parser.add_argument('--mode', choices=['render', 'check', 'all'], default='all')
 args = parser.parse_args()
 base = args.evidence_dir.resolve()
@@ -122,7 +125,9 @@ wrapper.write_text("import os,sys\nos.execve(sys.executable, [sys.executable, '-
 client = Client(base, wrapper=wrapper)
 
 
-def render(name, theme, properties, reference=False, width=440, height=764):
+def render(name, theme, properties, reference=False, width=None, height=None):
+    width = args.width if width is None else width
+    height = args.height if height is None else height
     if args.case_suffix and not name.endswith(args.case_suffix):
         return
     theme_link = current / 'theme'
@@ -132,10 +137,10 @@ def render(name, theme, properties, reference=False, width=440, height=764):
     properties = {**properties, 'width': width, 'height': height}
     qml = host / 'vpnrouter' / ('tests/qml-native-reference.qml' if reference else 'tests/qml-interactions-consumer.qml')
     response = client.call({'qmlPath': str(qml), 'outputPath': str(base / (name + '.png')),
-        'width': width, 'height': height, 'dpr': 2, 'timeoutMs': 10000,
+        'width': width, 'height': height, 'dpr': args.dpr, 'timeoutMs': 10000,
         'importPaths': [str(host), str(imports)], 'readyProperty': 'previewReady',
         'initialProperties': properties, 'imageMode': 'path',
-        'measureObjects': [] if reference else ['vpnContentViewport', 'vpnSectionHeader', 'vpnHero', 'vpnEmblem', 'vpnConnect']})
+        'measureObjects': [] if reference else ['vpnContentViewport', 'vpnSectionHeader', 'vpnHero', 'vpnEmblem', 'vpnConnect', 'vpnHomeServerName', 'vpnStateTitle', 'vpnHomeNavigationViewport']})
     (base / (name + '.json')).write_text(json.dumps(response, indent=2))
     result = response['result']
     meta = result.get('structuredContent', {})
@@ -155,7 +160,7 @@ def render(name, theme, properties, reference=False, width=440, height=764):
 
 try:
     if args.mode in ['all', 'check']:
-        suites = ['settingsFooter', 'errorDetails', 'helperRecovery', 'dangerContrast', 'barContrast', 'rowProbes', 'loading', 'names', 'lazySections', 'serviceQueue', 'brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
+        suites = ['compactLayout', 'settingsFooter', 'errorDetails', 'helperRecovery', 'dangerContrast', 'barContrast', 'rowProbes', 'loading', 'names', 'lazySections', 'serviceQueue', 'brand', 'states', 'routing', 'summary', 'geometry', 'subscriptions',
                   'servers', 'custom', 'rules', 'settings', 'appsDiscovery', 'actions', 'keyboard', 'pointerForms',
                   'layoutFit', 'focusCues', 'homeReturn', 'probesAndPreferences']
         if args.suites:

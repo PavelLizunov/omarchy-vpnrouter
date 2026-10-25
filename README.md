@@ -35,10 +35,25 @@ plugin-local payload exists. Copying files does not provision sing-box or enable
 VPN connectivity. The optional [local backend setup](docs/guide.md#installation--setup)
 requires Python 3 and a trusted publish directory; setup does not download binaries.
 
+If the service reports missing network permissions, run this once in a terminal:
+
+```bash
+sudo setcap cap_net_admin,cap_net_raw+ep /usr/lib/vpnrouter-headless/runtime/sing-box
+```
+
+A filesystem without extended attributes cannot retain these permissions; install
+the package on a filesystem that supports them. Use an up-to-date Headless package
+for noninteractive DNS cleanup. Plugin setup and its launcher do not request root.
+
 ## Use
 
 Click the bar icon to open Home. Add a subscription or import servers, select a
 server, then use Connect when the backend reports that connection is available.
+Home keeps the connection action, status and current server above its scrolling
+navigation. Server rows scroll below a fixed search field; Settings keeps Save
+and Revert at the bottom of the visible page. On short screens the extra Home
+emblem is hidden and routing controls remain in the scrolling area.
+
 Right-click the icon toggles the connection; middle-click refreshes status.
 Advanced sections expose servers, subscriptions, apps, routing rules, profiles,
 custom configs, settings, diagnostics and the free pool.

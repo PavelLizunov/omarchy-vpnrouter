@@ -208,7 +208,7 @@
   "diagnostics.severity.unknown": "Unknown",
   "diagnostics.notConfigured": "Not configured yet: add a subscription or a server.",
   "backend.reason.runtime-missing": "The VPN component is missing. Install the vpnrouter-headless package.",
-  "backend.reason.runtime-capabilities": "The VPN component lacks network permissions. Reinstall the vpnrouter-headless package.",
+  "backend.reason.runtime-capabilities": "The VPN component lacks CAP_NET_ADMIN. Run once in a terminal:\nsudo setcap cap_net_admin,cap_net_raw+ep /usr/lib/vpnrouter-headless/runtime/sing-box\nIf setcap is unsupported, install the package on a filesystem with xattr support.",
   "backend.reason.runtime-untrusted": "The VPN component did not pass the trust check. Reinstall the vpnrouter-headless package.",
   "backend.reason.sandbox": "This environment restricts VPN access.",
   "backend.reason.ownership": "VPN files have incompatible ownership or permissions.",

@@ -38,7 +38,10 @@ Ui.Panel {
   onOpenedChanged: {
     if (opened) {
       // A fresh open shows the connection status, not the last scroll position.
-      if (mode === "simple") flickableContent.contentY = 0
+      if (mode === "simple") {
+        flickableContent.contentY = 0
+        homeDetailsViewport.contentY = 0
+      }
       if (service) {
         service.refreshSnapshot()
         root.refreshPanelData()
@@ -107,6 +110,10 @@ Ui.Panel {
       mainColumn.forceLayout()
       if (nextMode === "advanced") backButton.forceActiveFocus()
       else if (!keepTop) homeNavigation.restoreFocus(root.currentTab)
+      else {
+        keyCatcher.forceActiveFocus()
+        homeDetailsViewport.contentY = 0
+      }
     })
     if (nextMode === "advanced") {
       refreshTab(currentTab)
@@ -211,7 +218,8 @@ Ui.Panel {
         anchors.left: parent.left; anchors.right: parent.right
         anchors.top: sectionHeader.bottom; anchors.bottom: parent.bottom
         contentWidth: width
-        contentHeight: mainColumn.implicitHeight + Commons.Style.space(32)
+        contentHeight: root.mode === "simple" || root.currentTab === "servers" ? height : mainColumn.implicitHeight + Commons.Style.space(32)
+        interactive: root.mode !== "simple" && root.currentTab !== "servers"
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         flickableDirection: Flickable.VerticalFlick
@@ -222,27 +230,20 @@ Ui.Panel {
           width: flickableContent.width - Commons.Style.space(32)
           spacing: Commons.Style.space(14)
           Column {
+            id: homeColumn
             visible: root.mode === "simple"
             width: parent.width
-            spacing: Commons.Style.space(14)
+            height: flickableContent.height - Commons.Style.space(32)
+            spacing: Commons.Style.space(8)
             VpnUi.HeroCard {
               id: hero
+              compact: flickableContent.height < Commons.Style.space(660)
               width: parent.width
               service: root.service
               i18nRevision: root.i18nRevision
               onConnectRequested: if (root.service) root.service.connect()
               onDisconnectRequested: if (root.service) root.service.disconnect()
               onCancelRequested: if (root.service) root.service.cancel()
-            }
-            VpnUi.Notice {
-              objectName: "vpnTransportNotice"
-              width: mainColumn.width
-              // The connection hero keeps the last reported VPN state; transport
-              // failure is separate feedback and must remain visible on Home.
-              text: root.service && root.service.transportStalled && (root.service.isConnected || root.service.isConnecting || root.service.isDisconnecting) ? root.service.lastErrorText : ""
-              error: true
-              dismissLabel: root.tr("action.dismiss")
-              onDismissed: if (root.service) root.service.clearLastError()
             }
             Ui.BorderSurface {
               width: parent.width
@@ -254,7 +255,7 @@ Ui.Panel {
                 id: connectionColumn
                 width: parent.width
                 Item {
-                  width: parent.width; height: Commons.Style.space(70)
+                  width: parent.width; height: Commons.Style.space(64)
                   Rectangle {
                     x: Commons.Style.space(16); anchors.verticalCenter: parent.verticalCenter
                     width: Commons.Style.space(40); height: width; radius: Commons.Style.cornerRadius
@@ -300,7 +301,8 @@ Ui.Panel {
                 Rectangle { width: parent.width; height: 1; color: Commons.Style.normalBorderColor }
                 Item {
                   width: parent.width
-                  height: summary.implicitHeight + Commons.Style.space(30)
+                  visible: !hero.compact
+                  height: visible ? summary.implicitHeight + Commons.Style.space(30) : 0
                   VpnUi.RoutingSummary {
                     id: summary
                     x: Commons.Style.space(16); y: Commons.Style.space(14)
@@ -311,13 +313,53 @@ Ui.Panel {
                 }
               }
             }
-            VpnUi.Navigation {
-              id: homeNavigation
-              objectName: "vpnHomeNavigation"
+            Flickable {
+              id: homeDetailsViewport
+              objectName: "vpnHomeNavigationViewport"
               width: parent.width
-              service: root.service
-              i18nRevision: root.i18nRevision
-              onTabSelected: function(tabId) { root.openSection(tabId) }
+              height: Math.max(Commons.Style.space(36), homeColumn.height - y)
+              clip: true
+              contentWidth: width
+              contentHeight: navigationContent.implicitHeight
+              boundsBehavior: Flickable.StopAtBounds
+              ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+              Column {
+                id: navigationContent
+                width: parent.width
+                spacing: Commons.Style.space(12)
+                VpnUi.Notice {
+                  objectName: "vpnHomeErrorDetails"
+                  width: parent.width
+                  service: root.service
+                  text: hero.longError ? hero.availability : ""
+                  error: true
+                  detailsOnly: true
+                }
+                VpnUi.Notice {
+                  objectName: "vpnTransportNotice"
+                  width: mainColumn.width
+                  // The connection hero keeps the last reported VPN state; transport
+                  // failure is separate feedback and must remain visible on Home.
+                  text: root.service && root.service.transportStalled && (root.service.isConnected || root.service.isConnecting || root.service.isDisconnecting) ? root.service.lastErrorText : ""
+                  error: true
+                  dismissLabel: root.tr("action.dismiss")
+                  onDismissed: if (root.service) root.service.clearLastError()
+                }
+                VpnUi.Navigation {
+                  id: homeNavigation
+                  objectName: "vpnHomeNavigation"
+                  width: parent.width
+                  service: root.service
+                  i18nRevision: root.i18nRevision
+                  onTabSelected: function(tabId) { root.openSection(tabId) }
+                }
+                VpnUi.RoutingSummary {
+                  visible: hero.compact
+                  width: parent.width
+                  service: root.service
+                  i18nRevision: root.i18nRevision
+                }
+              }
             }
           }
           Column {
@@ -340,6 +382,7 @@ Ui.Panel {
               width: parent.width
               onLoaded: visited = true
               sourceComponent: VpnUi.ServersView {
+                availableHeight: flickableContent.height - Commons.Style.space(32)
                 showLatency: root.showLatency
                 onAddSubscriptionRequested: root.openSubscriptionForm()
                 service: root.service
