@@ -161,7 +161,7 @@ backend в этой версии нет. Выгрузка плагина или 
 ```bash
 plugin_dir="$HOME/.config/omarchy/plugins/io.github.pavellizunov.vpnrouter"
 mkdir -p "$plugin_dir"
-git archive HEAD | tar -x -C "$plugin_dir"
+git archive HEAD | tar --exclude='tests/fixtures/penguin_mascot_tile.png' -x -C "$plugin_dir"
 omarchy plugin validate "$plugin_dir"
 omarchy-shell shell rescanPlugins
 omarchy plugin enable io.github.pavellizunov.vpnrouter --section right

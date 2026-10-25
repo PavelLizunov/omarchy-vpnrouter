@@ -22,7 +22,7 @@ Marketplace не является аудитом безопасности. См.
 id=io.github.pavellizunov.vpnrouter
 plugin_dir="$HOME/.config/omarchy/plugins/$id"
 mkdir -p "$plugin_dir"
-git archive HEAD | tar -x -C "$plugin_dir"
+git archive HEAD | tar --exclude='tests/fixtures/penguin_mascot_tile.png' -x -C "$plugin_dir"
 omarchy plugin validate "$plugin_dir"
 omarchy-shell shell rescanPlugins
 omarchy plugin enable "$id" --section right
