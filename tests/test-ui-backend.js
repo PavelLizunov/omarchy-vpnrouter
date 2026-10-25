@@ -565,3 +565,13 @@ const watchdogRuns = new Function('root','return '+watchdogBinding);
 for (const [activeRequestId,urgent,expected] of [['',0,false],['ordinary',0,true],['',1,true],['ordinary',4,true]])
   assert.strictEqual(watchdogRuns({activeRequestId,_pendingUrgentCount:urgent}),expected);
 console.log('PASS: watchdog admission depends on ordinary or urgent pending work');
+for(const locale of ['en','ru']) {
+  I18n.setLocale(locale);
+  root.feedChunk(JSON.stringify({v:1,id:null,error:{code:'controller_busy',message:'Fixture'}})+'\n');
+  assert.strictEqual(root.controllerBusy,true);
+  assert.strictEqual(root.lastError,I18n.t('backend.controllerBusy'));
+  root.backendExited(0);
+  assert.strictEqual(root.lastErrorKey,'backend.controllerBusy','Relay exit retains actionable controller error');
+}
+I18n.setLocale('en');root.controllerBusy=false;root.clearLastError();
+console.log('PASS: real wire errors finish callbacks and controller rejection remains localized after relay exit');

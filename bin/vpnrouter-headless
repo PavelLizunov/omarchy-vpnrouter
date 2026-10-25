@@ -9,7 +9,7 @@
 #    NEVER searches PATH; NEVER performs network downloads; NEVER elevates via sudo/pkexec.
 #    NO environment variable overrides or testing backdoors.
 # 2. Strict protocol v1 argument filtering: forwards ONLY authorized arguments
-#    (--stdio, --data-dir <ABSOLUTE_DIR>).
+#    (--auto, --stdio, --data-dir <ABSOLUTE_DIR>).
 #    Optional --help / -h is generated locally without executing the backend.
 #    Rejects unauthorized flags and arbitrary input to prevent command/argument injection.
 # 3. Preserves process lifecycle via exec: direct standard I/O streams, signal handling.
@@ -50,12 +50,13 @@ fi
 
 show_help() {
   cat << 'EOF'
-Usage: vpnrouter-headless [--stdio] [--data-dir ABSOLUTE_PATH] [--help]
+Usage: vpnrouter-headless [--auto | --stdio] [--data-dir ABSOLUTE_PATH] [--help]
 
 Bounded launcher wrapper for VPNRouter.Headless under Omarchy Quattro.
 
 Arguments:
-  --stdio                    Run in standard I/O wire protocol v1 mode (required by host)
+  --auto                     Attach to packaged user service when present, otherwise stdio
+  --stdio                    Run in standard I/O wire protocol v1 mode
   --data-dir ABSOLUTE_PATH   Specify absolute configuration and data directory
   --help, -h                 Display this help message (generated locally)
 EOF
@@ -63,10 +64,16 @@ EOF
 
 # Parse and validate arguments against Protocol v1 contract
 data_dir=""
+transport="stdio"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --stdio)
+      transport="stdio"
+      shift
+      ;;
+    --auto)
+      transport="auto"
       shift
       ;;
     --data-dir)
@@ -91,6 +98,21 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# A failed installed service is an error, never a reason to spawn a second owner.
+unit=/usr/lib/systemd/user/vpnrouter-headless.service
+if [[ "$transport" == auto && -z "$data_dir" && "$backend_bin" == "$system_bin" && -f "$unit" && ! -L "$unit" ]]; then
+  /usr/bin/timeout 10s /usr/bin/systemctl --user start vpnrouter-headless.service >&2
+  # Type=exec proves exec, not listener readiness. Wait for the private socket.
+  for ((attempt=0; attempt<100; attempt++)); do
+    if [[ -n "${XDG_RUNTIME_DIR:-}" && -S "$XDG_RUNTIME_DIR/vpnrouter-headless/control.sock" ]]; then
+      exec "$backend_bin" --attach
+    fi
+    /usr/bin/sleep 0.05
+  done
+  printf '%s\n' "vpnrouter-headless: error: session service socket is unavailable." >&2
+  exit 1
+fi
 
 # Execute backend with strict contract: --stdio and optional --data-dir
 if [[ -n "$data_dir" ]]; then

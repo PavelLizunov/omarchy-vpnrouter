@@ -15,8 +15,12 @@ Requires Omarchy Quattro and the `vpnrouter-headless` Arch package.
 See the backend's [package instructions](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/packaging/arch/README.md).
 From this repository at the reviewed commit:
 
-Restarting the shell stops the VPNRouter backend and drops any active
-VPNRouter connection.
+With the coordinated lifetime-candidate backend, the plugin starts the systemd
+user service and attaches to its private socket. A shell restart detaches the
+UI while the service retains the session. With an older package or plugin-local
+payload, stdio fallback still stops the backend and drops an active connection.
+Connected-session survival across restart remains unverified. See the
+[candidate contract](plans/session-lifetime-candidate.md).
 
 ```bash
 id=io.github.pavellizunov.vpnrouter
