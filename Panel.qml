@@ -237,9 +237,9 @@ Ui.Panel {
             VpnUi.Notice {
               objectName: "vpnTransportNotice"
               width: mainColumn.width
-              // The connected hero keeps the last reported VPN state; transport
+              // The connection hero keeps the last reported VPN state; transport
               // failure is separate feedback and must remain visible on Home.
-              text: root.service && root.service.transportStalled && root.service.isConnected ? root.service.lastErrorText : ""
+              text: root.service && root.service.transportStalled && (root.service.isConnected || root.service.isConnecting || root.service.isDisconnecting) ? root.service.lastErrorText : ""
               error: true
               dismissLabel: root.tr("action.dismiss")
               onDismissed: if (root.service) root.service.clearLastError()

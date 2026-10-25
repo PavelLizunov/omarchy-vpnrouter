@@ -837,6 +837,10 @@ Rectangle {
       equal(backend.state,"connected","Stalled requests do not overwrite the reported VPN state")
       var notice=byName("vpnTransportNotice")
       equal(notice.text,backend.tr("error.transportStalled"),"Connected Home shows the transport failure")
+      for(var state of ["connecting","disconnecting","connected"]) {
+        backend.state=state;wait(15)
+        expect(notice.visible,"Transport failure stays visible during "+state)
+      }
       equal(byName("vpnConnect").text,backend.tr("action.disconnect"),"Connected controls keep their meaning")
       var dismiss=fixture.find(notice,function(x){return x.tooltipText===backend.tr("action.dismiss")})
       click(dismiss);expect(!notice.visible,"Transport notice can be dismissed")
@@ -866,7 +870,7 @@ Rectangle {
 
       else if(fixture.capture.indexOf("simple")===0) {consumer.setDisplayMode("simple");wait(25);if(fixture.capture==="simple-full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}}
       else if(fixture.capture==="transport-stalled") {
-        consumer.setDisplayMode("simple");wait(30);backend.state="connected"
+        consumer.setDisplayMode("simple");wait(30);backend.state=fixture.stateName
         fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
         backend.checkDeadlines(Date.now()+2000000);wait(30)
         consumer.forceActiveFocus();byName("vpnContentViewport").contentY=0
