@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import qs.Ui as Ui
 import qs.Commons as Commons
 import "../lib/Model.js" as Model
@@ -13,6 +14,36 @@ Item {
   property string saveNotice: ""
   property bool noticeError: false
   property bool pending: false
+  readonly property var viewport: {
+    var owner = parent
+    while (owner && owner.objectName !== "vpnContentViewport") owner = owner.parent
+    return owner
+  }
+  readonly property real viewportOffset: {
+    if (!root.viewport) return 0
+    var offset = 0, item = root
+    while (item && item !== root.viewport.contentItem) { offset += item.y; item = item.parent }
+    return offset
+  }
+
+  readonly property var focusedControl: root.Window.window ? root.Window.window.activeFocusItem : null
+  onFocusedControlChanged: Qt.callLater(revealFocusedControl)
+  function revealFocusedControl() {
+    var item = root.focusedControl, control = item
+    while (item && item !== column && item !== root) {
+      if (item.activeFocusOnTab) control = item
+      item = item.parent
+    }
+    if (item !== column || !control) return
+    Qt.callLater(function() {
+      if (!control || !control.activeFocus || !root.visible || !root.viewport) return
+      var point = control.mapToItem(root.viewport.contentItem, 0, 0)
+      var bottom = root.viewport.contentY + root.viewport.height - actionBar.height
+      if (point.y < root.viewport.contentY) root.viewport.contentY = Math.max(0, point.y)
+      else if (point.y + control.height > bottom)
+        root.viewport.contentY = Math.min(Math.max(0, root.viewport.contentHeight - root.viewport.height), point.y + control.height + actionBar.height - root.viewport.height)
+    })
+  }
 
   function tr(key, args) {
     var _ = i18nRevision
@@ -124,7 +155,7 @@ Item {
   }
 
   implicitWidth: parent ? parent.width : Commons.Style.space(480)
-  implicitHeight: column.implicitHeight
+  implicitHeight: column.implicitHeight + actionBar.height + Commons.Style.space(12)
 
   Column {
     id: column
@@ -335,20 +366,38 @@ Item {
           }
 
         }
-
-        Flow {
-          width: parent.width
-          spacing: Commons.Style.space(8)
-          Button {
-            text: root.tr("settings.save")
-            variant: "primary"
-            onClicked: root.submit()
-          }
-          Button {
-            text: root.tr("settings.revert")
-            onClicked: { root.resetDraft(); root.saveNotice = "settings.reverted"; root.noticeError = false }
-          }
-        }
+      }
+    }
+  }
+  Ui.BorderSurface {
+    id: actionBar
+    objectName: "vpnSettingsActions"
+    z: 2
+    width: parent.width
+    height: actions.implicitHeight + Commons.Style.space(32)
+    y: root.viewport ? Math.max(0, root.viewport.contentY + root.viewport.height - root.viewportOffset - height)
+      : column.implicitHeight + Commons.Style.space(12)
+    color: Commons.Color.popups.background
+    radius: Commons.Style.cornerRadius
+    borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
+    Flow {
+      id: actions
+      x: Commons.Style.space(8); y: Commons.Style.space(8)
+      width: parent.width - Commons.Style.space(16)
+      spacing: Commons.Style.space(8)
+      Button {
+        objectName: "vpnSettingsSave"
+        text: root.tr("settings.save")
+        variant: "primary"
+        enabled: !root.pending
+        busy: root.pending
+        onClicked: root.submit()
+      }
+      Button {
+        objectName: "vpnSettingsRevert"
+        text: root.tr("settings.revert")
+        enabled: !root.pending
+        onClicked: { root.resetDraft(); root.saveNotice = "settings.reverted"; root.noticeError = false }
       }
     }
   }

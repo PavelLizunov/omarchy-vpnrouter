@@ -417,7 +417,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="errorDetails") errorDetails()
+      if(fixture.suite==="settingsFooter") settingsFooter()
+      else if(fixture.suite==="errorDetails") errorDetails()
       else if(fixture.suite==="rowProbes") rowProbes()
       else if(fixture.suite==="loading") loading()
       else if(fixture.suite==="names") names()
@@ -729,6 +730,43 @@ Rectangle {
       var close=byName("vpnClose");activate(close);expect(!consumer.opened,"Close action")
       consumer.open();wait(30);go("apps")
       console.log("QML_PASS brand host-luminance host-font change-server first-run language close")
+    }
+    function settingsFooter() {
+      go("settings")
+      var p=page("Settings"),view=byName("vpnContentViewport"),footer=byName("vpnSettingsActions")
+      var save=byName("vpnSettingsSave"),revert=byName("vpnSettingsRevert")
+      var originalWidth=fixture.width,originalHeight=fixture.height
+      for(var size of [[440,764],[400,560],[500,800]]) {
+        fixture.width=size[0];fixture.height=size[1];wait(40)
+        var previousY=-1
+        for(var fraction of [0,0.5,1]) {
+          view.contentY=Math.max(0,view.contentHeight-view.height)*fraction;wait(25)
+          for(var action of [save,revert]) {
+            var point=action.mapToItem(view,0,0)
+            expect(point.y>=0 && point.y+action.height<=view.height,"Settings action is visible at every scroll position")
+          }
+          var y=footer.mapToItem(view,0,0).y
+          if(previousY>=0) expect(Math.abs(y-previousY)<0.1,"Footer stays pinned during scrolling")
+          previousY=y
+        }
+        var editor=byName("vpnSettingsCidrs"),editorBottom=editor.mapToItem(view,0,editor.height).y
+        expect(editorBottom<footer.mapToItem(view,0,0).y,"Final editor can scroll clear of the pinned actions")
+      }
+      fixture.width=originalWidth;fixture.height=originalHeight;view.contentY=0;wait(30)
+      var editor=byName("vpnSettingsCidrs")
+      editor.forceActiveFocus();wait(35)
+      expect(editor.mapToItem(view,0,editor.height).y<=footer.mapToItem(view,0,0).y+1,"Pinned actions do not obscure the focused editor")
+      view.contentY=0;wait(20)
+      var mtu=fixture.find(p,function(x){return x.placeholderText==="1420"})
+      fill(mtu,"1400");fixture.holdMethod="settings.set";click(save)
+      expect(p.pending && !save.enabled && !revert.enabled,"Footer respects pending settings")
+      fixture.release(false);wait(30);equal(fixture.savedSettings.mtu,1400,"Pinned Save commits the draft")
+      fill(mtu,"1500");click(revert);equal(mtu.text,"1400","Pinned Revert restores the acknowledged values")
+      backend.lastError=backend.tr("error.timeout");wait(35)
+      var point=save.mapToItem(view,0,0)
+      expect(point.y>=0 && point.y+save.height<=view.height,"A global notice does not displace the footer")
+      backend.clearLastError()
+      console.log("QML_PASS settingsFooter fixed-actions top-middle-bottom three-sizes save-pending-revert editor-clearance")
     }
     function errorDetails() {
       consumer.setDisplayMode("simple",true);wait(30)
