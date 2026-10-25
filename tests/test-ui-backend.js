@@ -596,3 +596,16 @@ assert.strictEqual(root.controllerBusy,false,'Validated handshake clears prior c
 assert.strictEqual(root.lastError,'');
 I18n.setLocale('en');
 console.log('PASS: offline Home reads and failed attach retries preserve controller reason until valid handshake');
+
+root.fakeBackend = {write(text) { written.push(JSON.parse(text)); }};
+ctx.backendProc.running = true;
+root._requestQueue.clearAll(); root._pendingCallbacks = {}; root.activeRequestId = '';
+root.refreshSnapshot();
+reply({...snapshot, state:'connecting', busy:true});
+assert.strictEqual(root.busy,true,'Reattach snapshot cannot clear an operation owned by the service');
+assert.strictEqual(root.state,'connecting');
+root.handleEvent('state',{...snapshot,state:'connected',busy:false,telemetry:{connectedSinceUnixMs:12345,downloadBytes:1,uploadBytes:2}});
+assert.strictEqual(root.telemetry.connectedSinceUnixMs,12345);
+root.backendExited(1);
+assert.strictEqual(root.telemetry,null,'Lost service invalidates live telemetry');
+console.log('PASS: reattach preserves backend busy and refreshes session-owned telemetry');

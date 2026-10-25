@@ -23,3 +23,4 @@ StatusBadge 1.0 StatusBadge.qml
 SubscriptionsView 1.0 SubscriptionsView.qml
 TextField 1.0 TextField.qml
 Toggle 1.0 Toggle.qml
+SessionStatus 1.0 SessionStatus.qml

@@ -145,20 +145,20 @@ long-running `omarchy-shell` process. It can access your files and start command
 with those permissions. Marketplace checks the listing and manifest; it does not
 sandbox or certify the plugin. Review the plugin and backend sources before
 installation. See the [official plugin model](https://plugins.omarchy.org/develop.html).
-The shell owns one stdio Headless child; there is no separate backend systemd
-service in this version. Unloading the plugin or restarting the shell stops that
-child and can drop an active VPN.
+With the packaged user unit, the shell owns only an attach relay; the independent
+Headless service retains the VPN when that relay exits. Older packages and
+plugin-local payloads use stdio, where shell exit still stops the VPN.
 
 ## Installation & Setup
 
 With the `vpnrouter-headless` package already installed, copy the plugin's committed files into a real directory (not a symlink):
 
-With the coordinated lifetime-candidate backend, the plugin starts the systemd
+With the coordinated user-service backend, the plugin starts the systemd
 user service and attaches to its private socket. A shell restart detaches the
 UI while the service retains the session. With an older package or plugin-local
 payload, stdio fallback still stops the backend and drops an active connection.
-Connected-session survival across restart remains unverified. See the
-[candidate contract](../plans/session-lifetime-candidate.md).
+The panel restores the live server, connection duration and TUN byte totals
+on reattach. See the [session contract](../plans/session-lifetime-candidate.md).
 
 ```bash
 plugin_dir="$HOME/.config/omarchy/plugins/io.github.pavellizunov.vpnrouter"
@@ -219,14 +219,19 @@ Setup verifies no active backend is running, stages in a sibling temp folder, te
 ### Removing the plugin and stopping the backend
 
 Disconnect in the panel and wait for **Disconnected**. Disable the plugin to
-stop managed retries and unload its service, which sends SIGTERM to its stdio
-backend:
+stop managed retries and detach its relay:
 
 ```bash
 omarchy plugin disable io.github.pavellizunov.vpnrouter
 ```
 
-If the panel was unresponsive or the backend remains, find the exact process
+With the packaged unit, explicitly stop the service:
+
+```bash
+systemctl --user stop vpnrouter-headless.service
+```
+
+For an older package or plugin-local stdio backend, find the exact process
 owned by your user:
 
 ```bash
@@ -234,8 +239,7 @@ pgrep -a -u "$(id -u)" -f '(^|[ /])VPNRouter[.]Headless([.]dll)? --stdio( |$)'
 ```
 
 For a remaining matching backend, run `kill -TERM PID`, replacing `PID` with its
-listed numeric PID. Stopping it drops any active VPN. There is no backend unit
-for `systemctl --user stop` in this version. Once it has stopped, remove the plugin:
+listed numeric PID. Stopping it drops any active VPN. Once it has stopped, remove the plugin:
 
 ```bash
 omarchy plugin remove io.github.pavellizunov.vpnrouter
@@ -372,12 +376,12 @@ It does not test live shell integration, binary authenticity or a VPN connection
 
 GNU General Public License v3.0 (GPL-3.0). See [LICENSE](../LICENSE) for full text and provenance details.
 
-## Independent session service candidate
+## Independent session service
 
 The coordinated backend package ships `vpnrouter-headless.service` as a systemd
 user unit. After upgrading the package, run `systemctl --user daemon-reload`.
-The plugin starts the unit on demand; it is not enabled at boot and has no
-graphical-session stop dependency. Closing the UI or restarting the shell
+The plugin starts the unit on demand; it is not enabled at boot. The unit belongs
+to `graphical-session.target`, so logout stops it even when user lingering is enabled. Closing the UI or restarting the shell
 detaches the relay. The next attachment receives a fresh snapshot.
 `systemctl --user stop vpnrouter-headless.service` explicitly tears down the
 session; ordinary plugin removal leaves a running service alone. An enabled plugin
@@ -385,6 +389,9 @@ retries and starts a lost service again, so disable the plugin before stopping
 the unit if it should remain stopped.
 A second controller receives `controller_busy`. Socket errors never trigger
 stdio fallback when the installed unit exists. Without the unit, or with a
-plugin-local payload, stdio behavior remains unchanged. No kill-switch, crash
-recovery, lingering, or automatic reconnect is added. See the
+plugin-local payload, stdio behavior remains unchanged. A failed service has bounded systemd restart, with a fresh disconnected session.
+No kill-switch, lingering or automatic VPN reconnect is added. Package upgrades
+stop active services before replacing files, then restore the control service
+disconnected. A visible connected panel refreshes counters every two seconds;
+closed panels do not poll. See the
 [candidate contract](../plans/session-lifetime-candidate.md).

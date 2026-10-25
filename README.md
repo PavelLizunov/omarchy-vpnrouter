@@ -15,12 +15,12 @@ Requires Omarchy Quattro and the `vpnrouter-headless` Arch package.
 See the backend's [package instructions](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/packaging/arch/README.md).
 From this repository at the reviewed commit:
 
-With the coordinated lifetime-candidate backend, the plugin starts the systemd
+With the coordinated user-service backend, the plugin starts the systemd
 user service and attaches to its private socket. A shell restart detaches the
 UI while the service retains the session. With an older package or plugin-local
 payload, stdio fallback still stops the backend and drops an active connection.
-Connected-session survival across restart remains unverified. See the
-[candidate contract](plans/session-lifetime-candidate.md).
+The panel restores the live server, connection duration and TUN byte totals
+on reattach. See the [session contract](plans/session-lifetime-candidate.md).
 
 ```bash
 id=io.github.pavellizunov.vpnrouter
@@ -72,8 +72,8 @@ Disconnect the VPN, then remove the plugin:
 omarchy plugin remove io.github.pavellizunov.vpnrouter
 ```
 
-Unloading the plugin asks its shell-owned backend to stop. The system package,
-saved VPN data and, for archive installs, a hidden plugin backup remain.
+Unloading the plugin detaches its relay. The independent service and saved VPN
+data remain; stop the service explicitly as described in the guide.
 See [complete removal and backend shutdown](docs/guide.md#removing-the-plugin-and-stopping-the-backend).
 
 ## License

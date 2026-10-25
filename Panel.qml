@@ -46,6 +46,13 @@ Ui.Panel {
     }
   }
 
+  Timer {
+    interval: 2000
+    repeat: true
+    running: root.opened && !!root.service && root.service.isConnected && !root.service.transportStalled && !root.service.busy
+    onTriggered: if (root.service && !root.service.activeRequestId) root.service.refreshSnapshot()
+  }
+
   function refreshPanelData() {
     if (!root.service) return
     root.service.listSubscriptions(0, 100)
@@ -233,6 +240,11 @@ Ui.Panel {
               onConnectRequested: if (root.service) root.service.connect()
               onDisconnectRequested: if (root.service) root.service.disconnect()
               onCancelRequested: if (root.service) root.service.cancel()
+            }
+            VpnUi.SessionStatus {
+              width: parent.width
+              service: root.service
+              active: root.opened
             }
             VpnUi.Notice {
               objectName: "vpnTransportNotice"

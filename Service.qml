@@ -82,6 +82,7 @@ Item {
   property string revision: ""
   property string backendVersion: ""
   property string activeServer: ""
+  property var telemetry: null
   property string routingMode: "split"
   property string routingAppsMode: "include"
   property string configMode: "generated"
@@ -456,6 +457,7 @@ Item {
     root.helperPresent = false
     root.backendMissing = exitCode === 127
     root.state = "unavailable"
+    root.telemetry = null
     root.capabilities = ({ connect: false, killSwitch: false, dnsLockdown: false })
     root.unavailableReason = ""
     root.unavailableReasonCode = null
@@ -603,7 +605,7 @@ Item {
     if (isOrdinaryActive) {
       // Mutation results are captured while backend busy=true; their terminal
       // response means that this serialized operation has finished.
-      if (!isError) root.busy = false
+      if (!isError && cb.method !== "snapshot") root.busy = false
       root.pumpQueue()
     }
   }
@@ -614,6 +616,7 @@ Item {
     root.revision = norm.revision
     root.backendVersion = norm.backendVersion
     root.activeServer = norm.activeServer
+    root.telemetry = norm.telemetry
     root.routingMode = norm.routingMode
     root.routingAppsMode = norm.routingAppsMode
     root.configMode = norm.configMode
@@ -660,7 +663,7 @@ Item {
   function sendRequest(method, params, onDone, onError, isUrgent, customTimeoutMs) {
     if (root.transportStalled) return root.transportError(method, onError)
     if (!backendProc.running && !root.fakeBackend) {
-      if (root.starting || retryTimer.running) {
+      if (!root.controllerBusy && (root.starting || retryTimer.running)) {
         var startupMessage = root.starting ? root.tr("backend.startingDetail") : root.lastErrorText
         if (onError) onError({ code: "not_running", message: startupMessage })
         return null

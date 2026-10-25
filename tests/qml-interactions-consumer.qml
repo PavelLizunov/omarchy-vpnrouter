@@ -16,6 +16,7 @@ Rectangle {
   property string capture: ""
   property string theme: "catppuccin-latte"
   property string stateName: "disconnected"
+  property var sessionTelemetry: null
   property int captureDelay: 400
   property int settleDelay: 180
   property bool reducedMotion: false
@@ -65,7 +66,7 @@ Rectangle {
     for(var i=0;i<children.length;i++) all(children[i],predicate,list)
     return list
   }
-  function snapshot() { return {state:fixture.stateName,revision:"fixture",activeServer:(fixture.servers.find(function(x){return x.id===fixture.selectedServer}) || {name:fixture.selectedServer}).name,routingMode:fixture.route,routingAppsMode:fixture.appRule,configMode:"generated",capabilities:{connect:true}} }
+  function snapshot() { return {state:fixture.stateName,telemetry:fixture.sessionTelemetry,revision:"fixture",activeServer:(fixture.servers.find(function(x){return x.id===fixture.selectedServer}) || {name:fixture.selectedServer}).name,routingMode:fixture.route,routingAppsMode:fixture.appRule,configMode:"generated",capabilities:{connect:true}} }
   function complete(request, forcedError) {
     var method=request.method, p=request.params, result=fixture.snapshot(), error=null
     if (forcedError) error={code:"invalid_argument",message:"Fixture rejected input"}
@@ -429,6 +430,7 @@ Rectangle {
       else if(fixture.suite==="names") names()
       else if(fixture.suite==="lazySections") lazySections()
       else if(fixture.suite==="serviceQueue") serviceQueue()
+      else if(fixture.suite==="sessionLifetime") sessionLifetime()
       else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
@@ -1027,6 +1029,29 @@ Rectangle {
       probe.destroy();wait(30)
       console.log("QML_PASS lazySections absent-unvisited forms retain-drafts same-instance reopen all-sections")
     }
+    function sessionLifetime() {
+      consumer.setDisplayMode("simple")
+      fixture.stateName="connected"
+      fixture.sessionTelemetry={connectedSinceUnixMs:Date.now()-65000,downloadBytes:1048576,uploadBytes:2097152}
+      backend.applySnapshot(fixture.snapshot());backend.clearLastError();wait(35)
+      var status=byName("vpnSessionTelemetry")
+      expect(status.text.indexOf("1.0")!==-1 && status.text.indexOf("2.0")!==-1,"Live TUN totals render")
+      var since=backend.telemetry.connectedSinceUnixMs
+      backend.backendExited(1);wait(10)
+      equal(backend.telemetry,null,"Lost service invalidates telemetry")
+      expect(!status.visible,"Unknown session cannot keep showing live counters")
+      backend._startFailureReported=false
+      backend.applySnapshot(fixture.snapshot());backend.clearLastError();wait(30)
+      equal(backend.telemetry.connectedSinceUnixMs,since,"Reattach restores the session clock")
+      expect(status.visible,"Reattached telemetry renders")
+      fixture.stateName="connecting";backend.applySnapshot(Object.assign(fixture.snapshot(),{busy:true}));wait(15)
+      backend.refreshSnapshot();wait(35)
+      // The fixture snapshot is the authoritative server result.
+      equal(backend.telemetry,null,"Connecting is not connected telemetry")
+      fixture.stateName="connected";backend.applySnapshot(fixture.snapshot());backend.clearLastError();wait(30)
+      console.log("QML_PASS sessionLifetime detach reattach live-counters unknown session-clock")
+    }
+
     function serviceQueue() {
       var watchdog=null
       for (var resource of backend.resources) if(resource.objectName==="vpnDeadlineWatchdog") watchdog=resource

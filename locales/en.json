@@ -319,5 +319,6 @@
   "action.hideDetails": "Hide details",
   "backend.startFailed": "VPNRouter service could not start. Retrying…",
   "backend.startTimeout": "VPNRouter service did not start in time. Retrying…",
-  "error.transportStalled": "VPNRouter service is not responding. New requests are paused until the service restarts."
+  "error.transportStalled": "VPNRouter service is not responding. New requests are paused until the service restarts.",
+  "home.sessionTelemetry": "{0} · ↓ {1} MiB · ↑ {2} MiB"
 }

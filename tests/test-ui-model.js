@@ -160,3 +160,21 @@ console.log("ALL MODEL TESTS PASSED!\n");
   service.activeOperation='';assert.strictEqual(Model.probeOperation(service,'servers','two'),'');
   assert.strictEqual(Model.probeOperation(null,'servers','one'),'');
 }
+
+// A reattached view uses the session clock and kernel counters, with explicit unknowns.
+{
+  const value = {connectedSinceUnixMs: 100000, downloadBytes: 1048576, uploadBytes: 0};
+  assert.deepStrictEqual(Model.normalizeTelemetry(value), value);
+  assert.strictEqual(Model.connectionElapsed(value, 165000), '1:05');
+  assert.strictEqual(Model.connectionElapsed(value, 3765000), '1:01:05');
+  assert.strictEqual(Model.connectionElapsed(value, 99999), '0:00');
+  assert.strictEqual(Model.trafficMiB(1048576), '1.0');
+  assert.strictEqual(Model.trafficMiB(0), '0.0');
+  for (const bad of [undefined, null, -1, '0', NaN, Infinity]) {
+    assert.strictEqual(Model.trafficMiB(bad), '—');
+    assert.strictEqual(Model.normalizeTelemetry({connectedSinceUnixMs:bad}), null);
+  }
+  assert.strictEqual(Model.normalizeSnapshot({state:'disconnected',telemetry:value}).telemetry,null);
+  assert.deepStrictEqual(Model.normalizeSnapshot({state:'connected',telemetry:value}).telemetry,value);
+  console.log('PASS: reattach telemetry normalization, elapsed clock, zero and unknown counters');
+}
