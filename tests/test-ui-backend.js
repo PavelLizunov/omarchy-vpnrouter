@@ -388,3 +388,79 @@ for (const locale of ['en','ru']) {
 }
 I18n.setLocale('en');root.clearLastError();
 console.log('PASS: eight backend error codes use EN/RU catalogs through split wire chunks and callbacks');
+
+// Every public request wrapper must finalize a wire error once and permit retry.
+const requestActions = [
+  ['refreshSnapshot',[]], ['connect',[]], ['disconnect',[]], ['cancel',['fixture-target']],
+  ['listServers',[0,100]], ['selectServer',['probe']], ['importServers',['fixture']],
+  ['removeServer',['probe']], ['testServer',['probe']], ['verifyServer',['probe']],
+  ['listSubscriptions',[0,100]], ['addSubscription',['Fixture','https://example.invalid/sub']],
+  ['removeSubscription',['one']], ['refreshSubscription',['one']], ['enableSubscription',['one',false]],
+  ['listFree',[0,100]], ['refreshFree',[]], ['testFree',['free']], ['verifyFree',['free']], ['applyFree',['free']],
+  ['getApps',[]], ['setApps',['include',['ExactCase']]], ['setRouting',['split','include']],
+  ['listProfiles',[]], ['selectProfiles',[['one']]], ['refreshProfiles',[]], ['getRules',[]],
+  ['setRules',['DOMAIN,example.invalid,proxy','toggles_first']], ['importRules',['{}','json']], ['exportRules',['json']],
+  ['listCustom',[]], ['importCustom',['Fixture','{}']], ['selectCustom',['one']], ['removeCustom',['one']],
+  ['getSettings',[]], ['setSettings',[{mtu:1400}]], ['checkDiagnostics',[]], ['exportDiagnostics',[]]
+];
+const exercisedMethods = new Set();
+for (const [action,args] of requestActions) {
+  root.state='disconnected';root.capabilities={connect:true};root.configMode='custom';root.activeServer='Fixture';
+  root.clearLastError();
+  let successes=0, failures=0, notices=0;
+  root.errorNotice=()=>{notices++;};
+  const before=written.length;
+  const requestId=root[action](...args,()=>{successes++;},err=>{failures++;assert.strictEqual(err.code,'invalid_argument');});
+  assert(requestId,`${action}: request admitted`);
+  const request=written.at(-1);exercisedMethods.add(request.method);
+  root.feedChunk(JSON.stringify({v:1,id:request.id,error:{code:'invalid_argument',message:'Fixture'}})+'\n');
+  assert.strictEqual(successes,0,`${action}: error cannot enter success handler`);
+  assert.strictEqual(failures,action==='cancel'?0:1,`${action}: error callback runs once`);
+  assert.strictEqual(notices,1,`${action}: one error signal`);
+  const recoveryRead = action==='connect' || action==='disconnect';
+  if (recoveryRead) {
+    assert.strictEqual(written.at(-1).method,'snapshot',`${action}: one recovery read`);
+    reply(snapshot);
+  }
+  assert.strictEqual(root.activeOperation,'',`${action}: busy operation released`);
+  assert.strictEqual(root._pendingUrgentCount,0);
+  assert.strictEqual(Object.keys(root._pendingCallbacks).length,0);
+  assert.strictEqual(root._requestQueue.size(),0);
+  assert.strictEqual(written.length,before+(recoveryRead?2:1),`${action}: rejection starts only the required recovery read`);
+  if(action!=='cancel') assert.strictEqual(root.lastError,'',`${action}: handled failure has no duplicate global notice`);
+  root.feedChunk(JSON.stringify({v:1,id:request.id,error:{code:'invalid_argument',message:'Late duplicate'}})+'\n');
+  assert.strictEqual(notices,1,`${action}: late duplicate is ignored`);
+}
+const declaredMethods = new Set([...read('Service.qml').matchAll(/sendRequest\("([^"]+)"/g)].map(match=>match[1]));
+assert.deepStrictEqual([...exercisedMethods].sort(),[...declaredMethods].sort(),'Every request wrapper is exercised');
+root.errorNotice=()=>{};root.clearLastError();
+console.log('PASS: all 38 request wrappers finalize wire rejection once without success-only refreshes or stranded requests');
+
+// State events may be dropped/coalesced by the bounded backend output queue.
+root.busy=true;root.state='disconnected';
+root.setSettings({mtu:1400},null,()=>{});
+root.feedChunk(JSON.stringify({v:1,id:written.at(-1).id,error:{code:'storage_error',message:'Fixture'}})+'\n');
+assert.strictEqual(written.at(-1).method,'snapshot','A terminal error must reconcile a possibly dropped busy=false state');
+reply({...snapshot,busy:false});
+assert.strictEqual(root.busy,false,'Failed mutation cannot leave Home disabled by stale busy state');
+root.state='disconnected';root.capabilities={connect:true};root.configMode='custom';root.activeServer='Fixture';
+root.connect();
+root.handleEvent('state',{...snapshot,state:'connecting',busy:true});
+root.feedChunk(JSON.stringify({v:1,id:written.at(-1).id,error:{code:'connect_failed',message:'Fixture'}})+'\n');
+assert.strictEqual(written.at(-1).method,'snapshot','Lifecycle errors reconcile even if terminal state is missing');
+reply({...snapshot,state:'error',errorCode:'connect_failed',busy:false});
+assert.strictEqual(root.state,'error');assert.strictEqual(root.busy,false);
+assert.strictEqual(root.lastErrorKey,'error.connectFailed','Recovery read retains the original operation error');
+root.clearLastError();
+console.log('PASS: wire rejection reconciles dropped final busy/lifecycle state without erasing the operation error');
+
+root.busy=true;root.setSettings({mtu:1400},null,()=>{});
+reply({code:'storage_error',message:'Fixture'},true);
+const recoveryWrites=written.length;
+for (const code of ['busy','conflict']) {
+  if(code==='conflict') root.refreshSnapshot();
+  reply({code,message:'Fixture'},true);
+  assert.strictEqual(written.length,recoveryWrites+(code==='conflict'?1:0),'Snapshot errors never recurse');
+}
+root.busy=false;root.clearLastError();
+console.log('PASS: failed reconciliation snapshots are bounded, including conflict errors');

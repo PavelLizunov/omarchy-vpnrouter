@@ -93,3 +93,20 @@ for(const [value,expected] of [['https://example.invalid:8443/sub?fixture=yes','
   root.submit();assert.equal(label,expected,'Default name is a host, never userinfo, query or port');
 }
 console.log('PASS: optional subscription names strip URL userinfo and preserve IPv6 hosts');
+
+{
+  const manual = input('ExactCaseApp');let done, sends=0;
+  const root = load('ui/AppsView.qml',{...base(),configuredApps:[],routingAppsMode:'include',service:{
+    setApps(mode,names,ok) {sends++;done=ok;assert.equal(mode,'include');assert.deepEqual(Array.from(names),['ExactCaseApp']);}
+  }},{customAppInput:manual});
+  const source=fs.readFileSync(path.join(__dirname,'../ui/AppsView.qml'),'utf8');
+  const accepted=new Function('root','customAppInput','text','clear',source.match(/^        onAccepted: (.+)$/m)[1]);
+  const submit=()=>accepted(root,manual,manual.text,manual.clear.bind(manual));
+  submit();assert.equal(manual.text,'ExactCaseApp','Manual app draft must remain until backend success');
+  // Rejection never calls success; keep the exact name available for a retry.
+  assert.equal(manual.text,'ExactCaseApp');
+  submit();assert.equal(sends,2);assert.equal(typeof done,'function');done();assert.equal(manual.text,'');
+  root.configuredApps=['ExactCaseApp'];manual.text='ExactCaseApp';submit();
+  assert.equal(sends,2,'An already configured name does not resend');assert.equal(manual.text,'');
+}
+console.log('PASS: actual manual-app input handler retains the exact draft until acknowledgement and supports retry');

@@ -49,3 +49,14 @@ E1 outcome (2026-10-25, workstation, backend r33): `setup --status` no longer
 creates its probe directory inside the watched plugin tree, which had reloaded the
 plugin and restarted the helper; a late Process `started` signal on a destroyed
 service is ignored. Both have regressions.
+
+C3 outcome (2026-10-25, isolated checks): native disclosure, process search and
+reactive window-list scenarios are restored in the current QML consumer. Eight
+backend error codes now have EN/RU messages (307 matching catalog keys).
+Manual app names survive rejection until a successful acknowledgement; delayed
+focus callbacks tolerate destroyed controls. A terminal error reconciles stale
+busy/lifecycle state with one snapshot when the final state event is absent.
+All 38 request wrappers have wire-error regressions; native form failures check
+released controls and one notice. The final local gate passed 13 Node suites,
+40 packaging cases, 99 QML cases, qmllint and plugin validation. No live backend,
+VM, shell restart, VPN operation or deployment was used for C3.

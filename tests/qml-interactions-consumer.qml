@@ -106,7 +106,7 @@ Rectangle {
       case "diagnostics.export": result={path:"/tmp/vpnrouter-fixture/very-long-directory-for-export-feedback/diagnostics-2026-10-23-fixture.zip"};break
       default: throw new Error("Unexpected mock request: "+method)
     }
-    backend.feedFrame({type:"response",id:request.id,isError:!!error,result:result,error:error})
+    backend.feedChunk(JSON.stringify(error ? {v:1,id:request.id,error:error} : {v:1,id:request.id,result:result})+"\n")
   }
   function respond(line) {
     var request=JSON.parse(line)
@@ -183,6 +183,14 @@ Rectangle {
       var view=byName("vpnContentViewport"),point=notice.mapToItem(view,0,0)
       expect(point.y>=-1 && point.y+notice.height<=view.height+1,"Feedback is inside visible viewport: "+key+" y="+point.y)
     }
+    function handledFailure(p,key) {
+      expect(!p.pending,"Rejected form is no longer pending")
+      equal(backend.activeOperation,"","Rejected request releases controls")
+      equal(backend.lastError,"","Handled error has no duplicate global notice")
+      var notices=fixture.all(consumer,function(x){return x.visible && x.objectName==="vpnNoticeText" && x.text.length>0},[])
+      equal(notices.length,1,"Handled error has one visible notice")
+      visibleNotice(key)
+    }
     function subscriptions() {
       go("subscriptions");var p=page("Subscriptions")
       click(button(p,"subscriptions.addTitle"));expect(p.showAddForm)
@@ -196,13 +204,13 @@ Rectangle {
       click(button(p,"subscriptions.addTitle"));fill(name,"Fixture subscription");fill(url,"https://example.invalid/sub")
       fixture.holdMethod="subscriptions.add";activate(name);expect(p.pending);expect(p.showAddForm);equal(url.text,"https://example.invalid/sub");visibleNotice("operation.pending")
       activate(name);equal(count("subscriptions.add"),before+1,"Pending cannot duplicate")
-      fixture.release(true);wait(35);expect(!p.pending);expect(p.showAddForm);visibleNotice("subscriptions.addFailed");equal(url.text,"https://example.invalid/sub")
+      fixture.release(true);wait(35);expect(!p.pending);expect(p.showAddForm);handledFailure(p,"subscriptions.addFailed");equal(url.text,"https://example.invalid/sub")
       activate(name);expect(!p.showAddForm);equal(url.text,"");equal(name.text,"");visibleNotice("subscriptions.added")
       backend.listServers();tryVerify(function(){return backend.serversLoaded},2000,"Server fixture loaded")
       var keptServers=JSON.stringify(backend.servers)
       fixture.holdMethod="subscriptions.refresh";activate(button(p,"subscriptions.refreshAll"))
       var refreshRequest=fixture.held;fixture.held=null;fixture.holdMethod=""
-      backend.feedFrame({type:"response",id:refreshRequest.id,isError:true,error:{code:"subscription_refresh_failed",message:"Fixture backend failure"}})
+      backend.feedChunk(JSON.stringify({v:1,id:refreshRequest.id,error:{code:"subscription_refresh_failed",message:"Fixture backend failure"}})+"\n")
       wait(25);visibleNotice("subscriptions.refreshFailed")
       equal(JSON.stringify(backend.servers),keptServers,"Refresh failure keeps the displayed servers")
       backend.setLocale(fixture.locale==="ru"?"en":"ru");wait(15);visibleNotice("subscriptions.refreshFailed")
@@ -213,8 +221,8 @@ Rectangle {
       go("servers");var p=page("Servers");click(button(p,"action.import"));expect(p.showImportBox)
       var area=byName("vpnServerImport"),before=count("servers.import")
       area.forceActiveFocus();keyClick(Qt.Key_Return,Qt.ControlModifier);wait(25);equal(count("servers.import"),before);visibleNotice("form.required")
-      fill(area,"invalid server");fixture.failNext="servers.import";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(45)
-      expect(p.showImportBox);equal(area.text,"invalid server");visibleNotice("servers.invalidImport")
+      fill(area,"invalid server");fixture.holdMethod="servers.import";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);expect(p.pending);fixture.release(true);wait(45)
+      expect(p.showImportBox);equal(area.text,"invalid server");handledFailure(p,"servers.invalidImport")
       fill(area,"vless://fixture@example.invalid:443#Fixture");fixture.holdMethod="servers.import";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);expect(p.pending);visibleNotice("operation.pending")
       fixture.release(false);wait(45);expect(!p.showImportBox);equal(area.text,"");visibleNotice("servers.imported")
       click(button(p,"action.import"));fill(area,"discard me");click(button(p,"action.cancel"));expect(!p.showImportBox);equal(area.text,"")
@@ -226,7 +234,7 @@ Rectangle {
       area.forceActiveFocus();keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);visibleNotice("form.required");equal(count("custom.import"),before)
       fill(name,"Fixture config");fill(area,"{");keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);visibleNotice("custom.invalidJson");equal(count("custom.import"),before)
       fill(area,"[]");keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);visibleNotice("custom.invalidJson");equal(count("custom.import"),before)
-      fill(area,'{"outbounds":[]}');fixture.failNext="custom.import";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(45);visibleNotice("custom.invalidConfig");expect(p.showImportForm);equal(area.text,'{"outbounds":[]}')
+      fill(area,'{"outbounds":[]}');fixture.holdMethod="custom.import";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);expect(p.pending);fixture.release(true);wait(45);handledFailure(p,"custom.invalidConfig");expect(p.showImportForm);equal(area.text,'{"outbounds":[]}')
       fixture.holdMethod="custom.import";area.forceActiveFocus();keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);expect(p.pending)
       fixture.release(false);wait(45);expect(!p.showImportForm);equal(area.text,"");equal(name.text,"");visibleNotice("custom.imported")
       click(button(p,"custom.addTitle"));fill(name,"Discard");fill(area,"{}");click(button(p,"action.cancel"));equal(area.text,"");equal(name.text,"")
@@ -234,11 +242,11 @@ Rectangle {
     }
     function rules() {
       go("rules");var p=page("Rules"),area=byName("vpnRulesEditor")
-      fill(area,"invalid rule");fixture.failNext="rules.set";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(45);visibleNotice("rules.invalid");equal(area.text,"invalid rule")
+      fill(area,"invalid rule");fixture.holdMethod="rules.set";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);expect(p.pending);fixture.release(true);wait(45);handledFailure(p,"rules.invalid");equal(area.text,"invalid rule")
       fill(area,"DOMAIN,edited.invalid,proxy");var priority=byName("vpnRulesPriority");priority.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Space);wait(5);equal(p.selectedPriority,"custom_first")
       activate(button(p,"rules.saveBtn"));wait(35);equal(fixture.rulesText,"DOMAIN,edited.invalid,proxy");visibleNotice("rules.saved")
       fill(area,"");activate(button(p,"rules.importBtn"));visibleNotice("form.required")
-      fill(area,"bad-json");fixture.failNext="rules.import";activate(button(p,"rules.importBtn"));visibleNotice("rules.invalid");equal(area.text,"bad-json")
+      fill(area,"bad-json");fixture.failNext="rules.import";activate(button(p,"rules.importBtn"));handledFailure(p,"rules.invalid");equal(area.text,"bad-json")
       fill(area,'{"rules":[]}');activate(button(p,"rules.importBtn"));wait(25);visibleNotice("rules.importedSuccess");equal(area.text,"DOMAIN,imported.invalid,proxy")
       fill(area,"UNSAVED DRAFT");var format=byName("vpnRulesFormat");format.forceActiveFocus();keyClick(Qt.Key_Right);keyClick(Qt.Key_Return);equal(p.importExportFormat,"csv")
       fixture.holdMethod="rules.export";activate(button(p,"rules.exportBtn"));expect(p.pending);fixture.release(false);wait(25)
@@ -251,7 +259,7 @@ Rectangle {
       go("settings");var p=page("Settings"),mtu=fixture.find(p,function(x){return x.placeholderText==="1420"}),cidr=byName("vpnSettingsCidrs")
       fill(mtu,"");keyClick(Qt.Key_1);keyClick(Qt.Key_4);keyClick(Qt.Key_0);keyClick(Qt.Key_0);equal(mtu.text,"1400","MTU typing is not clamped per keystroke")
       fill(mtu,"abc");activate(mtu);visibleNotice("settings.invalidMtu");equal(fixture.savedSettings.mtu,1420)
-      fill(mtu,"1400");fill(cidr,"bad subnet");fixture.failNext="settings.set";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(45);visibleNotice("settings.invalid");equal(cidr.text,"bad subnet");equal(fixture.lastParams.values.routeExcludeAddress[0],"bad subnet","No silently discarded CIDR")
+      fill(mtu,"1400");fill(cidr,"bad subnet");fixture.holdMethod="settings.set";keyClick(Qt.Key_Return,Qt.ControlModifier);wait(20);expect(p.pending);fixture.release(true);wait(45);handledFailure(p,"settings.invalid");equal(cidr.text,"bad subnet");equal(fixture.lastParams.values.routeExcludeAddress[0],"bad subnet","No silently discarded CIDR")
       var toggles=fixture.all(p,function(x){return x.toggled!==undefined && x.label!==undefined},[])
       var editable=toggles.filter(function(x){return x.enabled})
       for(var i=0;i<editable.length;i++) activate(editable[i],Qt.Key_Space)
@@ -319,14 +327,30 @@ Rectangle {
         equal(apps.runningApps.length,7,"Closing window demotes process")
         equal(apps.otherProcesses.length,5)
       }
+      var manual=field(apps,"apps.customAppPlaceholder")
+      for(var pointer of [false,true]) {
+        fill(manual,"CustomCaseApp");fixture.holdMethod="apps.set"
+        if(pointer) click(button(apps,"apps.addApp"));else activate(manual)
+        expect(apps.pending && !manual.enabled,"Pending manual name is disabled")
+        equal(manual.text,"CustomCaseApp","Pending name is retained")
+        fixture.release(true);wait(35)
+        expect(!apps.pending && manual.enabled,"Rejected manual entry re-enables")
+        equal(manual.text,"CustomCaseApp","Wire rejection retains the exact process name")
+        expect(backend.apps.include.indexOf("CustomCaseApp")===-1)
+        visibleNotice("form.failed");backend.clearLastError();wait(15)
+        if(pointer) click(button(apps,"apps.addApp"));else activate(manual)
+        equal(manual.text,"","Successful retry clears the field")
+        expect(backend.apps.include.indexOf("CustomCaseApp")!==-1,"Exact-case manual name is stored")
+        click(fixture.find(apps,function(x){return x.tooltipText===backend.tr("apps.removeApp",["CustomCaseApp"])}))
+      }
       equal(JSON.stringify(geometry()),initial,"Disclosure/search/window updates keep panel geometry")
-      console.log("QML_PASS appsDiscovery disclosure-return-space-pointer search-add-remove live-window-class-wayland-refresh stable-geometry")
+      console.log("QML_PASS appsDiscovery disclosure-return-space-pointer search-add-remove live-window-class-wayland-refresh manual-wire-rejection-retry-keyboard-pointer stable-geometry")
     }
     function actions() {
       go("profiles");var p=page("Profiles");activate(button(p,"profiles.refresh"));var selects=fixture.all(p,function(x){return x.clicked!==undefined && x.accessibleLabel!==undefined && x.text===backend.tr("profiles.select") && x.enabled},[]);equal(selects.length,1);activate(selects[0],Qt.Key_Space);wait(20);equal(fixture.selectedProfile,"two");expect(backend.profiles[1].selected)
       go("diagnostics");p=page("Diagnostics");activate(button(p,"diagnostics.checkBtn"));equal(backend.diagnosticsItems.length,2)
       fixture.holdMethod="diagnostics.export";activate(button(p,"diagnostics.exportBtn"));equal(backend.diagnosticsExportPath,"");fixture.release(false);wait(20);expect(backend.diagnosticsExportPath.endsWith("fixture.zip"));expect(fixture.find(p,function(x){return x.objectName==="vpnNoticeText" && x.text.indexOf(backend.diagnosticsExportPath)!==-1})!==null)
-      fixture.failNext="diagnostics.export";activate(button(p,"diagnostics.exportBtn"));equal(backend.diagnosticsExportPath,"");activate(button(p,"diagnostics.exportBtn"));expect(backend.diagnosticsExportPath!=="");activate(fixture.find(p,function(x){return x.tooltipText===backend.tr("action.dismiss")}));equal(backend.diagnosticsExportPath,"")
+      fixture.failNext="diagnostics.export";activate(button(p,"diagnostics.exportBtn"));handledFailure(p,"diagnostics.exportFailed");equal(backend.diagnosticsExportPath,"");activate(button(p,"diagnostics.exportBtn"));expect(backend.diagnosticsExportPath!=="");activate(fixture.find(p,function(x){return x.tooltipText===backend.tr("action.dismiss")}));equal(backend.diagnosticsExportPath,"")
       go("subscriptions");p=page("Subscriptions");var toggle=fixture.find(p,function(x){return x.toggled!==undefined});activate(toggle,Qt.Key_Space);wait(20);equal(backend.subscriptions[0].enabled,false);equal(fixture.find(p,function(x){return x.toggled!==undefined}).checked,false)
       activate(button(p,"subscriptions.refreshAll"));var refresh=fixture.find(p,function(x){return x.tooltipText===backend.tr("action.refresh")});activate(refresh);var remove=fixture.find(p,function(x){return x.tooltipText===backend.tr("action.remove")});activate(remove);wait(20);equal(backend.subscriptions.length,0)
       go("servers");p=page("Servers");var select=byName("vpnServerRow-sub");activate(select,Qt.Key_Space);wait(20);equal(fixture.selectedServer,"sub")
@@ -369,7 +393,7 @@ Rectangle {
       click(button(p,"subscriptions.addTitle"));click(button(p,"action.cancel"));expect(!p.showAddForm);expect(button(p,"subscriptions.addTitle").activeFocus,"Cancel returns focus to Add Subscription")
       fixture.servers=[]
       go("servers");p=page("Servers");click(button(p,"action.import"));editingLayout(p,"servers.empty");fill(byName("vpnServerImport"),"invalid")
-      fixture.failNext="servers.import";click(button(p,"servers.importBtn"));visibleNotice("servers.invalidImport")
+      fixture.failNext="servers.import";click(button(p,"servers.importBtn"));handledFailure(p,"servers.invalidImport")
       fill(byName("vpnServerImport"),"vless://fixture@example.invalid:443");click(button(p,"servers.importBtn"));expect(!p.showImportBox)
       click(button(p,"action.import"));click(button(p,"action.cancel"));expect(!p.showImportBox);expect(button(p,"action.import").activeFocus,"Cancel returns focus to Import Server")
       fixture.configs=[]
@@ -628,6 +652,15 @@ Rectangle {
         expect(button.enabled && !hero.connected && !hero.busy,"Recovered Home permits a new explicit connection")
         expect(fixture.messages.slice(beforeRecovery).every(function(method) {return ["snapshot","servers.list","subscriptions.list","apps.list"].indexOf(method)!==-1}),"Recovery only reads data")
       }
+      var beforeReconcile=count("snapshot")
+      fixture.holdMethod="routing.set";backend.setRouting("full","include");backend.busy=true;wait(20)
+      expect(!button.enabled,"In-flight backend work gates Home")
+      fixture.release(true)
+      tryVerify(function(){return !backend.activeOperation && !backend.busy},2000,"Error reconciles a missing final idle event")
+      equal(count("snapshot"),beforeReconcile+1,"Error performs one reconciliation read")
+      expect(button.enabled && !hero.busy && !arc.visible,"Failed mutation cannot strand Home")
+      equal(backend.lastErrorText,backend.tr("form.failed"),"Reconciliation preserves the mutation error")
+      backend.clearLastError()
       go("settings");var beforeSettings=count("settings.get")
       backend.backendReady()
       tryVerify(function() {return count("settings.get")===beforeSettings+1},2000,"Startup readiness reloads the open advanced section")
@@ -635,7 +668,7 @@ Rectangle {
       backend.backendReady();wait(20)
       equal(fixture.messages.length,beforeClosed,"Closed panels do not refresh on readiness")
       consumer.open();wait(30);consumer.openSection("apps");wait(30)
-      console.log("QML_PASS states disconnected-connected-error-unavailable-connecting disabled-capability rotation-reduced-motion crash-recovery open-section closed-panel")
+      console.log("QML_PASS states disconnected-connected-error-unavailable-connecting disabled-capability rotation-reduced-motion crash-recovery dropped-idle-event-reconciliation open-section closed-panel")
     }
     function summary() {
       consumer.setDisplayMode("simple");wait(30)

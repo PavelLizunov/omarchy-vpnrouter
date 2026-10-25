@@ -522,12 +522,15 @@ Item {
       if (typeof cb.onError !== "function") root.setLastError(errorKey, [], errMsg, cb.method)
       if (errCode === "conflict") {
         root.flushQueuedMutations(I18n.t("error.conflict"))
-        root.refreshSnapshot()
+        if (cb.method !== "snapshot") root.refreshSnapshot()
       }
       root.errorNotice(errCode, errMsg)
       if (cb && typeof cb.onError === "function") {
         cb.onError({ code: errCode, message: errMsg, messageKey: errorKey })
       }
+      // Bounded output may drop the final state event; error frames carry no snapshot.
+      if (errCode !== "conflict" && cb.method !== "snapshot" && (root.busy || cb.method === "connect" || cb.method === "disconnect"))
+        root.refreshSnapshot()
     } else {
       // An unrelated read must not hide a failed mutation or verification.
       if (root.lastErrorMethod === cb.method && (!result || (result.ok !== false && result.reachable !== false)))

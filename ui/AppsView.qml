@@ -43,15 +43,15 @@ Item {
     return Quickshell.iconPath(name, true) || Quickshell.iconPath("application-x-executable", true)
   }
 
-  function addApp(name) {
+  function addApp(name, onDone) {
     if (!name || !root.service || root.pending) return
     var trimmed = String(name).trim()
     if (!trimmed) return
     var list = root.configuredApps.slice()
     if (list.indexOf(trimmed) === -1) {
       list.push(trimmed)
-      root.service.setApps(root.routingAppsMode, list)
-    }
+      root.service.setApps(root.routingAppsMode, list, onDone)
+    } else if (onDone) onDone()
   }
 
   function removeApp(name) {
@@ -86,13 +86,13 @@ Item {
         enabled: !root.pending
         Layout.fillWidth: true
         placeholderText: root.tr("apps.customAppPlaceholder")
-        onAccepted: { root.addApp(text); clear() }
+        onAccepted: root.addApp(text, function() { customAppInput.clear() })
       }
       Button {
         text: root.tr("apps.addApp")
         variant: "primary"
         enabled: !root.pending && customAppInput.text.trim().length > 0
-        onClicked: { root.addApp(customAppInput.text); customAppInput.clear() }
+        onClicked: root.addApp(customAppInput.text, function() { customAppInput.clear() })
       }
     }
 
