@@ -91,6 +91,15 @@ Item {
     }
 
     Notice {
+      objectName: "vpnServersError"
+      width: parent.width
+      text: root.service ? root.service.lastErrorText : ""
+      error: true
+      dismissLabel: root.tr("action.dismiss")
+      onDismissed: if (root.service) root.service.clearLastError()
+    }
+
+    Notice {
       id: feedback
       width: parent.width
       text: root.noticeKey ? root.tr(root.noticeKey) : ""

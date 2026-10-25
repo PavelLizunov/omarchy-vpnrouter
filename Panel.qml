@@ -326,7 +326,7 @@ Ui.Panel {
             spacing: Commons.Style.space(12)
             VpnUi.Notice {
               width: parent.width
-              text: root.service ? root.service.lastErrorText : ""
+              text: root.currentTab !== "servers" && root.service ? root.service.lastErrorText : ""
               error: true
               dismissLabel: root.tr("action.dismiss")
               onDismissed: if (root.service) root.service.clearLastError()
