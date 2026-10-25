@@ -103,3 +103,15 @@ assert.deepStrictEqual(languages,['en','ru','auto']);
 assert.strictEqual(navigate(navRoot,'{"page":"home","locale":"unknown"}'),false);
 assert.strictEqual(languages.length,3);
 console.log('PASS: session-only locale preview validates values without saving host configuration');
+
+const focusSource = fs.readFileSync(path.join(__dirname, '../lib/Focus.js'), 'utf8').replace(/^\.pragma library\s*/m, '');
+const reveal = new Function(focusSource + '\nreturn reveal;')();
+for (const force of [false, true]) {
+  assert.doesNotThrow(() => reveal(null, force), 'A delayed focus callback may outlive its delegate');
+}
+const viewport = {objectName:'vpnContentViewport',contentItem:{},contentY:0,contentHeight:500,height:100};
+const focusItem = {activeFocus:true,parent:viewport,height:30,mapToItem() {return {y:150};}};
+reveal(focusItem);assert.strictEqual(viewport.contentY,80,'Living focused controls are still revealed');
+focusItem.activeFocus=false;viewport.contentY=0;reveal(focusItem);assert.strictEqual(viewport.contentY,0);
+reveal(focusItem,true);assert.strictEqual(viewport.contentY,80,'Forced notice reveal still works');
+console.log('PASS: actual focus helper ignores destroyed delegates and preserves focused/forced scrolling');

@@ -48,5 +48,4 @@ VPN operation or deployment was performed; the runtime limits above remain.
 E1 outcome (2026-10-25, workstation, backend r33): `setup --status` no longer
 creates its probe directory inside the watched plugin tree, which had reloaded the
 plugin and restarted the helper; a late Process `started` signal on a destroyed
-service is ignored. Both have regressions. Known test gap: the removed r5 fixture's
-native disclosure, search and live window-list refresh scenarios were not ported.
+service is ignored. Both have regressions.
