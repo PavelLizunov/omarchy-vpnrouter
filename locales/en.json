@@ -297,5 +297,13 @@
   "verify.http": "The HTTP request through this server failed.",
   "error.notFound": "The requested item is no longer available. Refresh the list.",
   "error.storage": "Could not save the configuration.",
-  "error.stopFailed": "The VPN core did not stop. Check Diagnostics."
+  "error.stopFailed": "The VPN core did not stop. Check Diagnostics.",
+  "error.connectFailed": "Failed to start the VPN connection.",
+  "error.depthLimit": "JSON nesting exceeds the maximum allowed depth.",
+  "error.duplicateKey": "Duplicate key in a JSON object.",
+  "error.invalidId": "Request ID must contain 1–64 ASCII letters, digits or hyphens.",
+  "error.invalidVersion": "Unsupported protocol version.",
+  "error.payloadTooLarge": "Input frame exceeds the maximum allowed size.",
+  "error.unknownMethod": "Unknown request method.",
+  "error.unsupported": "The requested operation or parameter is unsupported."
 }

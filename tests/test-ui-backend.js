@@ -357,3 +357,34 @@ assert.strictEqual(root.lastErrorKey,'subscriptions.refreshFailed');
 assert.strictEqual(Object.keys(root._pendingCallbacks).length,0);
 root.clearLastError();
 console.log('PASS: wire error responses finish callbacks with the typed message');
+
+// Error localization must traverse the same incremental transport as the helper.
+const localizedWireErrors = {
+  connect_failed:'error.connectFailed', depth_limit_exceeded:'error.depthLimit',
+  duplicate_key:'error.duplicateKey', invalid_id:'error.invalidId',
+  invalid_version:'error.invalidVersion', payload_too_large:'error.payloadTooLarge',
+  unknown_method:'error.unknownMethod', unsupported:'error.unsupported'
+};
+for (const locale of ['en','ru']) {
+  I18n.setLocale(locale);
+  for (const [code,key] of Object.entries(localizedWireErrors)) {
+    root.clearLastError();
+    root.refreshSnapshot();
+    const wire = JSON.stringify({v:1,id:written.at(-1).id,error:{code,message:'Backend English fallback'}})+'\n';
+    root.feedChunk(wire.slice(0,17));root.feedChunk(wire.slice(17));
+    assert.strictEqual(root.lastErrorKey,key,`${locale}: ${code} uses its catalog key`);
+    assert.notStrictEqual(I18n.t(key),key,'Catalog entry must exist');
+    assert.strictEqual(root.lastError,I18n.t(key));
+    assert.strictEqual(root.activeOperation,'');
+    assert.strictEqual(Object.keys(root._pendingCallbacks).length,0);
+    root.clearLastError();
+    let handled;
+    root.refreshSnapshot(null,err => {handled=err;});
+    root.feedChunk(JSON.stringify({v:1,id:written.at(-1).id,error:{code,message:'Backend English fallback'}})+'\n');
+    assert.strictEqual(handled.messageKey,key);
+    assert.strictEqual(handled.message,I18n.t(key));
+    assert.strictEqual(root.lastError,'','Handled errors belong to their operation feedback');
+  }
+}
+I18n.setLocale('en');root.clearLastError();
+console.log('PASS: eight backend error codes use EN/RU catalogs through split wire chunks and callbacks');

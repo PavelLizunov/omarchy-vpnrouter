@@ -19,3 +19,10 @@ Confirmed during step 1: the full native actions suite emitted a delayed-focus
 TypeError when a request refreshed/destroyed its focused delegate. `Focus.reveal`
 now ignores a null item. The direct production-JS null regression failed before
 this guard; living focused/forced scrolling remains covered.
+
+Step 1 passed 13 Node suites, 40 isolated packaging cases, 99 actual-QML cases,
+qmllint and plugin validation. Commit `9440d7c` CI `40184054983` succeeded.
+Step 2 maps all eight previously unmapped backend errors with EN/RU keys.
+Split-chunk regressions cover global feedback and caller-owned error callbacks.
+Translation uses the bundled localization fallback and anti-slop wording review;
+no independent fluent-human translation approval is claimed.
