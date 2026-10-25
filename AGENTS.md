@@ -2,9 +2,10 @@
 
 Native QML/Quickshell plugin for Omarchy Quattro, backed by VPNRouter.Core via
 VPNRouter.Headless. The owner approved full Linux feature parity, not a launcher
-or a status-only prototype. Canonical approved task: VPNRouter repository
-`plans/phase-omarchy-plugin-2026-09-17.md`; protocol contract:
-`plans/omarchy-protocol-v1.md` in that repository.
+or a status-only prototype. Current architecture and limitations are recorded in
+[plans/implementation.md](plans/implementation.md) and
+[plans/current-status.md](plans/current-status.md). The backend owns the
+[Protocol v1 contract](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/VPNRouter.Headless/README.md#protocol-specification-v1).
 
 - Work on task branches; never push directly to main, merge, tag or release.
 - Keep GPL-3.0 provenance; do not relabel VPNRouter as MIT.
