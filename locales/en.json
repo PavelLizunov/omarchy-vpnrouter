@@ -287,7 +287,7 @@
   "list.loadMore": "Load more",
   "test.measured": "Latency: {0} ({1})",
   "test.unmeasured": "No latency measured for {0}. Try verification.",
-  "test.reachable": "Reachable: {0}. UDP latency cannot be measured here. Use Verify.",
+  "test.reachable": "Reachable: {0}. No reliable latency measured. Use Verify.",
   "test.timeout": "Latency test timed out: {0}.",
   "test.failed": "Latency test failed: {0}.",
   "verify.unsupported": "This server configuration is not supported by the verifier.",

@@ -289,8 +289,17 @@ for(const locale of ['en','ru']) {
   assert(Model.verificationText(root.serverVerification,root.servers,I18n).includes(I18n.t('error.timeout')));
   assert(Model.testText({id:'probe',reachable:true,latencyMs:null},root.servers,I18n).includes(I18n.t('test.reachable',['Probe fixture'])));
 }
+for (const locale of ['en','ru']) {
+  I18n.setLocale(locale);
+  assert(!/UDP/.test(I18n.t('test.reachable', ['Probe fixture'])), 'No probe kind is supplied by this response');
+  for (const protocol of ['vless', 'hysteria2', 'tuic']) {
+    const items = [{id:'probe',name:'Probe fixture',protocol}];
+    assert.strictEqual(Model.testText({id:'probe',reachable:true,latencyMs:null},items,I18n), I18n.t('test.reachable',['Probe fixture']));
+    assert.strictEqual(Model.testText({id:'probe',reachable:true,latencyMs:0},items,I18n), I18n.t('test.measured',['Probe fixture',I18n.t('latency.ms',[0])]));
+  }
+}
 I18n.setLocale('en');
-console.log('PASS: expired success/error ignored, newer callback preserved, same-kind error recovery and EN/RU UDP feedback');
+console.log('PASS: expired responses, error recovery and EN/RU protocol-neutral null/zero feedback');
 
 root.state='disconnected';root.capabilities={connect:true};root.configMode='generated';root.serversLoaded=true;root.servers=[];
 const beforeEmptyConnect=written.length;

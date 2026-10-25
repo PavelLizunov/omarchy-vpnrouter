@@ -647,7 +647,7 @@ Rectangle {
       equal(byName("vpnHero").availability,backend.tr("error.timeout"),"Home displays the translated stored error")
       go("servers");wait(20)
       backend.serverTest={id:"manual",reachable:true,latencyMs:null};wait(15)
-      equal(byName("vpnServersTestResult").text,backend.tr("test.reachable",["Probe fixture"]),"UDP reachable result is explicit")
+      equal(byName("vpnServersTestResult").text,backend.tr("test.reachable",["Probe fixture"]),"Reachable result does not infer a probe kind")
       go("free")
       backend.freeServers=[{id:"free",name:"Fresh basic probe",protocol:"vless",status:"unknown",latencyMs:42}]
       backend.freeTest={id:"free",reachable:true,latencyMs:42};wait(15)
