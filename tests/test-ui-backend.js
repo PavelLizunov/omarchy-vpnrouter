@@ -575,3 +575,24 @@ for(const locale of ['en','ru']) {
 }
 I18n.setLocale('en');root.controllerBusy=false;root.clearLastError();
 console.log('PASS: real wire errors finish callbacks and controller rejection remains localized after relay exit');
+
+// Reopening Home performs listServers while the attach relay can be down.
+root.fakeBackend=null;ctx.backendProc.running=false;
+for (const locale of ['en','ru']) {
+  I18n.setLocale(locale);
+  root.controllerBusy=true;
+  root.listServers(0,100);
+  assert.strictEqual(root.lastErrorKey,'backend.controllerBusy');
+  assert.strictEqual(root.lastError,I18n.t('backend.controllerBusy'));
+  root.backendStarted();
+  assert.strictEqual(root.controllerBusy,true,'Launching a relay is not a successful attach');
+  root.backendExited(0);
+  assert.strictEqual(root.lastErrorKey,'backend.controllerBusy');
+}
+root.fakeBackend={write(text){written.push(JSON.parse(text));}};ctx.backendProc.running=true;
+root._requestQueue.clearAll();root._pendingCallbacks={};root.activeRequestId='';root.activeOperation='';
+root.refreshSnapshot();reply(snapshot);
+assert.strictEqual(root.controllerBusy,false,'Validated handshake clears prior controller rejection');
+assert.strictEqual(root.lastError,'');
+I18n.setLocale('en');
+console.log('PASS: offline Home reads and failed attach retries preserve controller reason until valid handshake');

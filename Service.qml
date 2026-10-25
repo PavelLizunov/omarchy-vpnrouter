@@ -439,7 +439,6 @@ Item {
     root.helperPresent = true
     root.backendMissing = false
     root.snapshotLoaded = false
-    root.controllerBusy = false
     root.starting = false
     // Starting a wrapper is not a successful handshake.
     Qt.callLater(function() {
@@ -483,6 +482,7 @@ Item {
     root.flushAllQueued("process_exited", message)
 
     if (root._shuttingDown) return
+    if (exitCode !== 0) root.controllerBusy = false
     if (root.backendMissing) {
       root.clearLastError()
       retryTimer.stop()
@@ -665,9 +665,10 @@ Item {
         if (onError) onError({ code: "not_running", message: startupMessage })
         return null
       }
-      root.setLastError("backend.notRunning", [], "", method)
-      root.errorNotice("not_running", root.lastError)
-      if (onError) onError({ code: "not_running", message: root.lastError })
+      var unavailableCode = root.controllerBusy ? "controller_busy" : "not_running"
+      root.setLastError(root.controllerBusy ? "backend.controllerBusy" : "backend.notRunning", [], "", method)
+      root.errorNotice(unavailableCode, root.lastError)
+      if (onError) onError({ code: unavailableCode, message: root.lastError })
       return null
     }
     var reqId = Protocol.generateRequestId("req")
@@ -819,6 +820,8 @@ Item {
         if (onError) onError({ code: "invalid_snapshot", message: root.lastError })
         return
       }
+      if (root.controllerBusy) root.clearLastError()
+      root.controllerBusy = false
       applySnapshot(res)
       root.retryCount = 0
       root.retryBackoffMs = 2000
