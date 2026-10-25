@@ -31,3 +31,10 @@ through createChunkAccumulator produced frames=0/errors=1, because the
 accumulator mistook response.error for a parse error. This blocks typed socket
 controller errors and correlated operation failures alike. Route parsed
 response frames through the normal callback and test feedChunk end to end.
+
+Live follow-up: holding the controller while reopening Home replaced the
+controller_busy text with backend.notRunning (EN screenshot was actionable;
+RU navigation then issued listServers on the detached relay). Keep the typed
+controller reason across offline reads/retries and clear it only after a valid
+snapshot handshake. Cover navigation reads and failed startup in the actual
+Service.qml function test before repeating the VM scenario.
