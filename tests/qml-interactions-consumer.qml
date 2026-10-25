@@ -177,6 +177,8 @@ Rectangle {
       return [frame.x,frame.y,frame.width,frame.height,nav.x,nav.y]
     }
     function visibleNotice(key) {
+      var ink=fixture.find(consumer,function(x){return x.visible && x.objectName==="vpnNoticeText"})
+      if(ink) equal(String(ink.color),String(Commons.Color.popups.text),"Notice body uses popup text, including errors")
       var text=backend.tr(key)
       var notice=fixture.find(consumer,function(x){return x.visible && x.objectName==="vpnNoticeText" && x.text===text})
       expect(notice!==null,"Visible notice "+key)
@@ -623,6 +625,9 @@ Rectangle {
       equal(hero.availability,backend.tr("backend.notRunning"),"Stopped helper retains its distinct message")
       backend.state="unavailable";backend.backendMissing=true;backend.capabilities={connect:false};wait(20);expect(!button.enabled,"Missing backend cannot connect")
       expect(hero.availability.indexOf(backend.tr("backend.installHint"))!==-1,"Honest install hint")
+      equal(String(byName("vpnStateTitle").color),String(Commons.Color.popups.text),"Unavailable titles use contrasting popup text")
+      var shield=fixture.find(byName("vpnStateBadge"),function(x){return x.text!==undefined})
+      equal(String(shield.color),String(Commons.Color.popups.text),"Unavailable shield uses contrasting popup text")
       backend.backendMissing=false;backend.state="connecting";backend.lastError="";backend.busy=true;backend.activeOperation="connect";wait(30)
       expect(!button.enabled,"Connecting cannot duplicate")
       var start=arc.rotation;wait(130);expect(Math.abs(arc.rotation-start)>1,"Connecting arc moves")

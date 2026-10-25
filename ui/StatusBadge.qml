@@ -59,7 +59,7 @@ Item {
       Text {
         textFormat: Text.PlainText
         text: root.stateGlyph
-        color: root.statusColor
+        color: Commons.Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
         anchors.verticalCenter: parent.verticalCenter

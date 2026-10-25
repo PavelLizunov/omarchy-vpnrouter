@@ -105,12 +105,12 @@ Column {
         anchors.verticalCenter: ring.bottom
         anchors.verticalCenterOffset: -Commons.Style.space(3) / 2
         width: Commons.Style.space(30); height: width; radius: width / 2
-        color: root.connected || root.busy || root.failed || root.missing ? root.stateColor : Commons.Style.normalFill
+        color: root.connected || root.busy ? root.stateColor : Commons.Style.normalFill
         Text {
           anchors.centerIn: parent
           textFormat: Text.PlainText
           text: root.connected ? "\u{f0cc8}" : root.failed || root.missing ? "\u{f0ecd}" : "\u{f0499}"
-          color: root.connected || root.busy || root.failed || root.missing ? Commons.Color.popups.background : Commons.Color.popups.text
+          color: root.connected || root.busy ? Commons.Color.popups.background : Commons.Color.popups.text
           font.family: Commons.Style.font.family
           font.pixelSize: Commons.Style.font.heading
         }
@@ -124,7 +124,7 @@ Column {
     text: root.initializing ? root.tr("backend.starting") : root.failed ? root.tr("home.error") : root.needsSetup ? root.tr("home.addConfig") : root.service && root.service.state === "disconnected" ? root.tr("home.disconnected") : root.tr("state." + (root.service ? root.service.state : "unavailable"))
     horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.WordWrap
-    color: root.connected ? Commons.Color.accent : root.failed || root.missing ? Commons.Color.urgent : Commons.Color.popups.text
+    color: Commons.Color.popups.text
     font.family: Commons.Style.font.family
     font.pixelSize: Commons.Style.font.display
     font.weight: Font.DemiBold

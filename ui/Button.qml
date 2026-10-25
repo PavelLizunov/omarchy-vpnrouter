@@ -33,7 +33,7 @@ Item {
     iconText: root.busy ? "\u{f0772}" : root.icon
     iconSpinning: root.busy
     fontSize: root.fontSize
-    foreground: root.variant === "danger" ? Commons.Color.urgent : Commons.Color.popups.text
+    foreground: Commons.Color.popups.text
     accent: root.variant === "danger" ? Commons.Color.urgent : Commons.Color.accent
     background: root.variant === "solid" || root.variant === "primary" ? Commons.Style.selectedAccentFill : "transparent"
     bordered: root.variant !== "subtle"
