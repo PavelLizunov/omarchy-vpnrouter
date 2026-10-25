@@ -60,3 +60,10 @@ All 38 request wrappers have wire-error regressions; native form failures check
 released controls and one notice. The final local gate passed 13 Node suites,
 40 packaging cases, 99 QML cases, qmllint and plugin validation. No live backend,
 VM, shell restart, VPN operation or deployment was used for C3.
+
+View fixes (2026-10-25): V2-02/03/04/06/I1/09 and V1-01/05/06 are implemented; V2-01 Home is fixed and Servers is partial on dsh/omarchy-plugin-f1-visual-2026-10-25; final UI commit 8c1598a.
+V2-05 fixes Notice/Delete/Hero/StatusBadge ink; 23 installed theme palettes give at least 6.30:1 for these active foregrounds. BarWidget shield ink remains outside the F1 file scope.
+Every retained fix has exact-commit checks: 13 Node suites, 40 packaging cases in bwrap, qmllint and plugin validation exit 0; the final UI all-mode matrix passes 109 QML cases. Qmllint warnings remain; exact-SHA CI is green.
+Actual-QML regressions cover disclosure, full names on hover/focus, pending/failed/empty reads, row probes and deadlines, stable latency rows, and pinned Settings actions with unobscured focus. Evidence and 21 inspected before/after crop pairs: /home/slovn/.cache/vpnrouter-f1/.
+Deferred as requested: V2-08 Home density, V1-02 Free Pool search, and V1-03 diagnostic localization. V2-01 Servers action-before-details ordering needs F2-owned Panel.qml; V3-L02 and BarWidget contrast also remain for service/host follow-up; independent lead review is pending.
+Not installed, loaded, or published. Only inert offscreen consumers were used; workstation UI, busy VM, real VPN/backend and subscription data were untouched. PR 3, its branch/index, mascot art and host theme/font roles are preserved.
