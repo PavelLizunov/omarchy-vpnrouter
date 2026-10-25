@@ -299,6 +299,7 @@
   "error.storage": "Could not save the configuration.",
   "error.stopFailed": "The VPN core did not stop. Check Diagnostics.",
   "error.connectFailed": "Failed to start the VPN connection.",
+  "error.vpnConflict": "Another VPN already routes all traffic. Turn it off, then connect again.",
   "error.depthLimit": "JSON nesting exceeds the maximum allowed depth.",
   "error.duplicateKey": "Duplicate key in a JSON object.",
   "error.invalidId": "Request ID must contain 1–64 ASCII letters, digits or hyphens.",

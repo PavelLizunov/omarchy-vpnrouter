@@ -109,7 +109,7 @@ Item {
       timeout: "error.timeout", unavailable: "backend.connectUnavailable", not_removable: "error.notRemovable",
       not_found: "error.notFound", storage_error: "error.storage", internal_error: "error.generic",
       invalid_request: "error.protocol", invalid_argument: "form.failed", stop_failed: "error.stopFailed",
-      subscription_refresh_failed: "subscriptions.refreshFailed", connect_failed: "error.connectFailed",
+      subscription_refresh_failed: "subscriptions.refreshFailed", connect_failed: "error.connectFailed", vpn_conflict: "error.vpnConflict",
       depth_limit_exceeded: "error.depthLimit", duplicate_key: "error.duplicateKey", invalid_id: "error.invalidId",
       invalid_version: "error.invalidVersion", payload_too_large: "error.payloadTooLarge",
       unknown_method: "error.unknownMethod", unsupported: "error.unsupported" })[code] || ""
