@@ -388,7 +388,7 @@ Item {
       }
     }
 
-    onStarted: root.backendStarted()
+    onStarted: if (root) root.backendStarted()
     onExited: function(exitCode) { root.backendExited(exitCode) }
   }
 

@@ -198,7 +198,8 @@ validate_backend_executable() {
   # Avoids setup launching helper on default user configuration.
   # No arbitrary --version probe/fallback; detects v1 matching id result without tolerating error.
   local probe_dir
-  probe_dir="$(mktemp -d "$plugin_dir/bin/.probe_tmp.XXXXXX" 2>/dev/null || mktemp -d)"
+  # Keep probe writes outside the plugin tree watched by the live shell.
+  probe_dir="$(mktemp -d)"
 
   local ret=0
   if ! python3 -c '

@@ -25,6 +25,14 @@ function qmlFunctions(file, context) {
   }
   return context.root;
 }
+// A Process started signal can arrive while QML tears down its owning service.
+// Execute the actual signal handler with both a destroyed and a living owner.
+const startedHandler = new Function('root', read('Service.qml').match(/^    onStarted: (.+)$/m)[1]);
+assert.doesNotThrow(() => startedHandler(null), 'A late Process signal must tolerate a destroyed service');
+let starts = 0;
+startedHandler({backendStarted() { starts++; }});
+assert.strictEqual(starts, 1, 'A living service still receives the process start');
+
 const written = [];
 const later = [];
 const timer = {interval: 0, restarts: 0, stopped: false,

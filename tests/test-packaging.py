@@ -332,6 +332,24 @@ class TestSetupLifecycle(PackagingTestBase):
         self.assertIn("Wire Protocol: v1", res_present.stdout)
         self.assertIn(str(self.user_config_dir), res_present.stdout)
 
+    def test_status_probe_does_not_write_inside_the_watched_plugin(self):
+        """A read-only status handshake must not trigger the host's plugin reload."""
+        marker = self.test_root / "probe-directory"
+        record = ("from pathlib import Path\n"
+                  "probe = Path(sys.argv[sys.argv.index('--data-dir') + 1])\n"
+                  f"Path({str(marker)!r}).write_text(str(probe))\n"
+                  "(probe / 'backend-write').write_text('probe data')\n")
+        script = FAKE_BACKEND_SCRIPT.replace("MAX_FRAME_SIZE =", record + "MAX_FRAME_SIZE =", 1)
+        self.create_fake_backend(self.plugin_copy / "bin/backend", script)
+        result = subprocess.run(["./setup", "--status"], cwd=self.plugin_copy,
+                                env=self.env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Wire Protocol: v1", result.stdout)
+        probe = pathlib.Path(marker.read_text())
+        self.assertFalse(probe.is_relative_to(self.plugin_copy),
+                         "Backend probe data must stay outside the watched plugin tree")
+        self.assertFalse(probe.exists(), "Probe directory must be removed after the handshake")
+
     def test_setup_reports_only_the_headless_system_runtime(self):
         runtime = self.test_root / "system-runtime" / "sing-box"
         setup = self.plugin_copy / "setup"
