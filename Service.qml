@@ -155,6 +155,7 @@ Item {
   readonly property bool isError: state === "error" || errorCode !== ""
   readonly property bool isUnavailable: state === "unavailable"
 
+  signal backendReady()
   signal stateChangedNotice(string newState)
   signal progressNotice(var progressObj)
   signal errorNotice(string code, string message)
@@ -396,7 +397,9 @@ Item {
     root.snapshotLoaded = false
     root.starting = false
     // Starting a wrapper is not a successful handshake.
-    Qt.callLater(function() { if (backendProc.running) root.refreshSnapshot() })
+    Qt.callLater(function() {
+      if (backendProc.running) root.refreshSnapshot(function() { root.backendReady() })
+    })
   }
 
   function backendExited(exitCode) {

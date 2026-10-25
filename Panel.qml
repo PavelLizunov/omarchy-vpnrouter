@@ -41,15 +41,22 @@ Ui.Panel {
       if (mode === "simple") flickableContent.contentY = 0
       if (service) {
         service.refreshSnapshot()
-        service.listSubscriptions(0, 100)
-        service.getApps()
-        if (mode === "advanced") {
-          refreshTab(currentTab)
-        } else {
-          service.listServers(0, 100)
-        }
+        root.refreshPanelData()
       }
     }
+  }
+
+  function refreshPanelData() {
+    if (!root.service) return
+    root.service.listSubscriptions(0, 100)
+    root.service.getApps()
+    if (root.mode === "advanced") root.refreshTab(root.currentTab)
+    else root.service.listServers(0, 100)
+  }
+
+  Connections {
+    target: root.service
+    function onBackendReady() { if (root.opened) root.refreshPanelData() }
   }
 
   function switchPanel(direction) {

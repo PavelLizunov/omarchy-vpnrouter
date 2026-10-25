@@ -20,7 +20,25 @@ work does not install or activate the plugin.
 
 Hygiene outcome (2026-10-25): 22 historical reports and six obsolete QML fixtures
 or runners were removed; current tests use behavior names. English/Russian front
-pages are 59/62 lines, with details in docs. Validation passed: 13 Node suites,
+pages were shortened, with details moved to docs. Validation passed: 13 Node suites,
 38 packaging cases, 97 actual-QML interaction/theme cases, qmllint and plugin
 validation. These are isolated checks, not live installation or VPN acceptance.
 Exact commands, deletion reasons and inspection limits are in the C1 report.
+
+C2 follow-up scope: fix confirmed probe/setup/restart wording and recover an
+open panel after helper failure, using local and inert offscreen checks only.
+
+C2 outcome (2026-10-25): reachable probes without reliable latency now use
+protocol-neutral EN/RU text; measured zero remains valid. Setup checks the fixed
+system runtime path and leaves trust/capability authorization to the backend.
+All four install sequences warn that restarting the shell drops the VPN.
+Focused Home rows stay visible after later content growth/shrink. A validated
+startup snapshot now notifies an open panel to reload its data; recovery does
+not reconnect the VPN. The closed panel makes no recovery reads.
+
+C2 isolated checks passed: 13 Node suites, 39 packaging cases and 97 QML
+interaction/theme cases, plus qmllint and plugin validation. An earlier QML run
+exposed the Home focus defect; the new growth/shrink regression passes after
+its fix. Source checks matched 38 methods/parameter sets, 12 snapshot fields,
+six states and 298 EN/RU keys with placeholders. No live backend, shell restart,
+VPN operation or deployment was performed; the runtime limits above remain.

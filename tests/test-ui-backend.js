@@ -308,3 +308,21 @@ root.configMode='custom';root.activeServer='';
 assert.strictEqual(root.connect(),null,'Quick connect cannot submit an absent custom configuration');
 assert.strictEqual(written.length,beforeEmptyConnect);
 console.log('PASS: quick connect rejects empty generated and custom configurations without backend writes');
+
+// Only a validated startup response announces readiness to an open panel.
+root._requestQueue.clearAll();root._pendingCallbacks={};root.activeRequestId='';root.activeOperation='';
+let readyCount=0;
+root.backendReady=()=>{readyCount++;};
+ctx.backendProc.running=true;
+for (const [result, expected] of [[null,0],[snapshot,1]]) {
+  later.length=0;root.backendStarted();later.shift()();reply(result);
+  assert.strictEqual(readyCount,expected,'Only a valid startup snapshot announces readiness');
+}
+root.handleEvent('state',snapshot);
+root.refreshSnapshot();reply(snapshot);
+assert.strictEqual(readyCount,1,'State events and ordinary refreshes cannot repeat startup readiness');
+later.length=0;root.backendStarted();ctx.backendProc.running=false;
+const beforeStoppedStartup=written.length;later.shift()();
+assert.strictEqual(written.length,beforeStoppedStartup,'An exited process cannot start a delayed handshake');
+ctx.backendProc.running=true;
+console.log('PASS: validated startup readiness, malformed response rejection and exit-before-handshake guard');

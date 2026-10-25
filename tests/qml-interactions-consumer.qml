@@ -565,8 +565,31 @@ Rectangle {
       Commons.Style.reduceMotion=true;wait(25);expect(!hero.motionEnabled,"Hero sees host reducedMotion="+Commons.Style.reduceMotion);start=arc.rotation;wait(130);equal(arc.rotation,start,"Reduced motion stops rotation")
       Commons.Style.reduceMotion=false
       backend.activeOperation="";backend.busy=false;backend.state="disconnected";backend.capabilities={connect:true}
-      consumer.openSection("apps");wait(30)
-      console.log("QML_PASS states disconnected-connected-error-unavailable-connecting disabled-capability rotation-reduced-motion")
+      for (var previousState of ["connecting", "connected"]) {
+        fixture.stateName=previousState;backend.applySnapshot(fixture.snapshot())
+        backend.serversLoaded=true;backend.subscriptionsLoaded=true;backend.appsLoaded=true
+        backend.activeOperation=previousState==="connecting"?"connect":"";backend.busy=previousState==="connecting"
+        var beforeRecovery=fixture.messages.length
+        backend.backendExited(1);wait(20)
+        equal(backend.state,"unavailable","Exit discards the former connection state")
+        expect(!hero.connected && !hero.busy && !arc.visible && !button.enabled,"Exit never retains a connected or busy appearance")
+        equal(hero.availability,backend.tr("backend.retrying",[1]),"Exit explains the retry")
+        expect(!backend.serversLoaded && !backend.subscriptionsLoaded && !backend.appsLoaded,"Exit invalidates collection readiness")
+        fixture.stateName="disconnected";backend.backendStarted()
+        // The real Process is disabled; deliver its startup snapshot over the inert transport.
+        backend.refreshSnapshot(function() {backend.backendReady()})
+        tryVerify(function() {return backend.serversLoaded && backend.subscriptionsLoaded && backend.appsLoaded},2000,"Open Home reloads after startup readiness")
+        expect(button.enabled && !hero.connected && !hero.busy,"Recovered Home permits a new explicit connection")
+        expect(fixture.messages.slice(beforeRecovery).every(function(method) {return ["snapshot","servers.list","subscriptions.list","apps.list"].indexOf(method)!==-1}),"Recovery only reads data")
+      }
+      go("settings");var beforeSettings=count("settings.get")
+      backend.backendReady()
+      tryVerify(function() {return count("settings.get")===beforeSettings+1},2000,"Startup readiness reloads the open advanced section")
+      consumer.close();wait(20);var beforeClosed=fixture.messages.length
+      backend.backendReady();wait(20)
+      equal(fixture.messages.length,beforeClosed,"Closed panels do not refresh on readiness")
+      consumer.open();wait(30);consumer.openSection("apps");wait(30)
+      console.log("QML_PASS states disconnected-connected-error-unavailable-connecting disabled-capability rotation-reduced-motion crash-recovery open-section closed-panel")
     }
     function summary() {
       consumer.setDisplayMode("simple");wait(30)

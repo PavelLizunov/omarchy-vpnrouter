@@ -110,6 +110,8 @@ Free-pool **Apply** requires a successful verification. Application list editing
 waits for each acknowledged update to avoid replacing an in-flight change.
 Service errors are also shown in the open advanced section. Requests fail
 immediately when the helper is absent, so forms do not remain pending forever.
+After a backend restart, an open panel reloads its lists and current section.
+Reconnecting the VPN still requires an explicit Connect action.
 
 ## Dependencies
 
