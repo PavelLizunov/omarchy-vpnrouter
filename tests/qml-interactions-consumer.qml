@@ -256,6 +256,13 @@ Rectangle {
       console.log("QML_PASS rules edit invalid priority save import-empty import-error import-success format export-preserves-draft no-fake-file retry")
     }
     function settings() {
+      go("settings")
+      var unsupported=fixture.all(page("Settings"),function(x){return x.objectName==="vpnToggleDescription" && x.text.indexOf(backend.tr("settings.killSwitchUnsupported"))!==-1},[])
+      expect(unsupported.length>0,"Unsupported explanation is present")
+      for (var description of unsupported) {
+        var item=description
+        while (item && item!==page("Settings")) {equal(item.opacity,1,"Unsupported explanations keep full opacity");item=item.parent}
+      }
       go("settings");var p=page("Settings"),mtu=fixture.find(p,function(x){return x.placeholderText==="1420"}),cidr=byName("vpnSettingsCidrs")
       fill(mtu,"");keyClick(Qt.Key_1);keyClick(Qt.Key_4);keyClick(Qt.Key_0);keyClick(Qt.Key_0);equal(mtu.text,"1400","MTU typing is not clamped per keystroke")
       fill(mtu,"abc");activate(mtu);visibleNotice("settings.invalidMtu");equal(fixture.savedSettings.mtu,1420)

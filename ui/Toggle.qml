@@ -13,7 +13,6 @@ Item {
   signal toggled(bool nextState)
   implicitWidth: compact ? track.implicitWidth : Commons.Style.space(240)
   implicitHeight: compact ? track.implicitHeight : content.implicitHeight
-  opacity: enabled ? 1 : 0.5
   activeFocusOnTab: true
   onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { Focus.reveal(root) })
   Accessible.role: Accessible.CheckBox
@@ -25,6 +24,7 @@ Item {
   Keys.onSpacePressed: if (enabled) toggled(!checked)
   Ui.ToggleSwitch {
     id: track
+    opacity: root.enabled ? 1 : 0.5
     visible: root.compact
     anchors.centerIn: parent
     checked: root.checked
@@ -39,6 +39,7 @@ Item {
     spacing: Commons.Style.spacing.xs
     Ui.Toggle {
       id: row
+      opacity: root.enabled ? 1 : 0.5
       width: parent.width
       activeFocusOnTab: false
       label: root.label
