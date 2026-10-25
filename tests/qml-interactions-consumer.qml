@@ -121,6 +121,7 @@ Rectangle {
   Vpn.Service { id: backend; processDisabled:true;fakeBackend:fixture.respond }
   Vpn.BarWidget { id: barStateProbe; service: backend; settings: ({locale: fixture.locale}); visible: false }
   Vpn.Panel { id: consumer;objectName:"consumer";width:parent.width;height:parent.height;mode:"advanced";service:backend }
+  Component { id: lazyPanelFactory; Vpn.Panel { service:backend; mode:"simple"; width:440; height:764 } }
   Timer {
     interval:80;running:true
     onTriggered: {
@@ -130,7 +131,7 @@ Rectangle {
       if (fixture.stateName === "unavailable") {backend.backendMissing=true;backend.capabilities={connect:false}}
       if (fixture.stateName === "error") backend.lastError=backend.tr("error.timeout")
       if (fixture.stateName === "connecting") {backend.activeOperation="connect";backend.busy=true}
-      var apps=fixture.find(consumer,function(x){return x.objectName==="vpnAppsView"});apps.windowToplevels=[]
+      var apps=fixture.find(consumer,function(x){return x.objectName==="vpnAppsView"});if(apps) apps.windowToplevels=[]
     }
   }
   Timer {
@@ -408,7 +409,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="serviceQueue") serviceQueue()
+      if(fixture.suite==="lazySections") lazySections()
+      else if(fixture.suite==="serviceQueue") serviceQueue()
       else if(fixture.suite==="probesAndPreferences") probesAndPreferences()
       else if(fixture.suite==="subscriptions") subscriptions()
       else if(fixture.suite==="servers") serversImport()
@@ -776,6 +778,36 @@ Rectangle {
       }
       backend.setLocale(fixture.locale);backend.clearLastError()
       console.log("QML_PASS probesAndPreferences real-latency-controls custom-state-and-navigation empty-subscription probe-pending-results")
+    }
+    function lazySections() {
+      var probe=lazyPanelFactory.createObject(fixture)
+      expect(probe!==null,"Home probe created from the real Panel")
+      var names=["Servers","Subscriptions","FreePool","Apps","Profiles","Rules","CustomConfig","Settings","Diagnostics"]
+      function section(name) {return fixture.find(probe,function(x){return x.objectName==="vpn"+name+"View"})}
+      for(var name of names) equal(section(name),null,"Unvisited section is absent: "+name)
+      probe.open();wait(30)
+      for(var name of names) equal(section(name),null,"First Home open keeps sections uncreated: "+name)
+      probe.navigate("subscriptions","add");wait(35)
+      var subscriptions=section("Subscriptions")
+      expect(subscriptions!==null && subscriptions.showAddForm,"Navigation creates and opens a subscription draft")
+      var input=field(subscriptions,"subscriptions.namePlaceholder");input.text="Retained draft"
+      for(var name of names) if(name!=="Subscriptions") equal(section(name),null,"Only the visited section exists: "+name)
+      probe.openSection("settings");wait(35)
+      expect(section("Settings")!==null,"Settings created on demand")
+      probe.openSection("subscriptions");wait(35)
+      equal(section("Subscriptions"),subscriptions,"Visited section keeps the same instance")
+      equal(input.text,"Retained draft","Back navigation retains an unfinished draft")
+      expect(subscriptions.showAddForm,"The retained form remains open")
+      probe.navigate("servers","import");wait(35)
+      expect(section("Servers").showImportBox,"Navigation creates and opens server import")
+      probe.close();probe.open();wait(35)
+      equal(section("Subscriptions"),subscriptions,"Close/reopen retains visited sections")
+      probe.setDisplayMode("simple");wait(35)
+      equal(probe.mode,"simple","Back reaches Home")
+      var tabs=["servers","subscriptions","free","apps","profiles","rules","custom","settings","diagnostics"]
+      for(var i=0;i<tabs.length;i++) {probe.openSection(tabs[i]);wait(25);expect(section(names[i])!==null,"Every section can be created: "+tabs[i])}
+      probe.destroy();wait(30)
+      console.log("QML_PASS lazySections absent-unvisited forms retain-drafts same-instance reopen all-sections")
     }
     function serviceQueue() {
       var watchdog=null
