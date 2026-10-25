@@ -60,3 +60,17 @@ All 38 request wrappers have wire-error regressions; native form failures check
 released controls and one notice. The final local gate passed 13 Node suites,
 40 packaging cases, 99 QML cases, qmllint and plugin validation. No live backend,
 VM, shell restart, VPN operation or deployment was used for C3.
+
+## D3 lifetime candidate
+
+The separate lifetime branch builds on PR 3 and its C3 checkpoint. With the coordinated backend's
+user unit, the shell owns only an attach relay; the service owns the session.
+Stdio fallback retains the restart warning above. A valid wire error now reaches
+the request handler instead of being mistaken for a parse error; controller
+rejection has EN/RU feedback. See [candidate contract](session-lifetime-candidate.md).
+
+At plugin 3e455f9, CI 40181810915 and local checks passed: 13 Node suites,
+40 isolated packaging cases, 97 native QML cases, qmllint and plugin validation.
+The VM ran backend 2b1eb884 with the same service PID and selected server across
+shell restart; the plugin reattached. No real VPN connection was exercised.
+The UI still lacks independent lead acceptance; the density decision is unchanged.
