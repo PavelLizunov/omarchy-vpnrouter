@@ -38,7 +38,7 @@ console.log("=== Testing Model.js ===");
 
   assert.strictEqual(Model.stateGlyph("connected"), "󰖂");
   assert.strictEqual(Model.stateGlyph("connecting"), "󰦞");
-  assert.strictEqual(Model.stateGlyph("disconnecting"), "󱚤");
+  assert.strictEqual(Model.stateGlyph("disconnecting"), "󰌙");
   assert.strictEqual(Model.stateGlyph("error"), "󰅚");
   assert.strictEqual(Model.stateGlyph("unavailable"), "󰀦");
   console.log("✓ Protocol and glyph helpers passed");
