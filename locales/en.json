@@ -305,5 +305,8 @@
   "error.invalidVersion": "Unsupported protocol version.",
   "error.payloadTooLarge": "Input frame exceeds the maximum allowed size.",
   "error.unknownMethod": "Unknown request method.",
-  "error.unsupported": "The requested operation or parameter is unsupported."
+  "error.unsupported": "The requested operation or parameter is unsupported.",
+  "backend.startFailed": "VPNRouter service could not start. Retrying…",
+  "backend.startTimeout": "VPNRouter service did not start in time. Retrying…",
+  "error.transportStalled": "VPNRouter service is not responding. New requests are paused until the service restarts."
 }
