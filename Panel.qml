@@ -332,6 +332,7 @@ Ui.Panel {
                   width: parent.width
                   service: root.service
                   text: hero.longError ? hero.availability : ""
+                  autoExpand: !!root.service && root.service.unavailableReasonCode === "runtime-capabilities"
                   error: true
                   detailsOnly: true
                 }

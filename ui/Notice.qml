@@ -20,6 +20,8 @@ Ui.BorderSurface {
   property int i18nRevision: service ? service.i18nRevision : 0
   property bool detailsOnly: false
   property bool expanded: false
+  property bool autoExpand: false
+  onAutoExpandChanged: if (autoExpand && text) expanded = true
   readonly property bool hasDetails: detailsOnly || (error && (text.length > 180 || text.indexOf("\n") !== -1))
   signal dismissed()
   visible: text.length > 0
@@ -34,7 +36,7 @@ Ui.BorderSurface {
       Focus.reveal(root, true)
     })
   }
-  onTextChanged: { expanded = false; root.reveal() }
+  onTextChanged: { expanded = autoExpand; root.reveal() }
   implicitHeight: content.implicitHeight + Commons.Style.space(12)
   color: Commons.Style.normalFill
   radius: Commons.Style.cornerRadius

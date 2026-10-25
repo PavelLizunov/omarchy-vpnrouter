@@ -757,6 +757,10 @@ Rectangle {
           backend.unavailableReasonCode=state==="unavailable"?"runtime-capabilities":null
           backend.lastError=state==="error"?backend.tr("error.timeout"):"";wait(25)
           inside(primary,view,"Primary action "+state+" "+size[1]);inside(server,view,"Current server "+state);inside(title,view,"Status "+state)
+          if(state==="unavailable") {
+            var repair=byName("vpnHomeErrorDetails")
+            expect(repair.expanded && repair.text.indexOf("sudo setcap cap_net_admin,cap_net_raw+ep")!==-1,"Capability repair command is visible without opening details")
+          }
           equal(view.contentY,0,"Home never scrolls as a whole")
         }
         backend.state="error";backend.activeOperation="";backend.lastError="Technical fixture detail. ".repeat(150);wait(25)
