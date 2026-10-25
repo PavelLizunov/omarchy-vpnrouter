@@ -5,6 +5,10 @@
 
 [English](README.md) · [Релизы](https://github.com/PavelLizunov/omarchy-vpnrouter/releases) (релиза плагина пока нет) · [Текущий статус](plans/current-status.md)
 
+Плагин работает **без песочницы внутри общего процесса `omarchy-shell` с правами
+вашего пользователя**. Такой же доступ получают его код и зависимости; проверка
+Marketplace не является аудитом безопасности. См. [модель выполнения Omarchy](https://plugins.omarchy.org/develop.html).
+
 ## Установка
 
 Нужны Omarchy Quattro и пакет Arch `vpnrouter-headless`.
@@ -58,6 +62,18 @@ Kill switch и DNS lockdown на Linux недоступны. Элементы DN
 host. Они не подтверждают работу живой оболочки, маршрутизацию VPN-трафика,
 защиту от утечек или полный паритет функций. Открытые ограничения — в
 [текущем статусе](plans/current-status.md).
+
+## Удаление
+
+Отключите VPN, затем удалите плагин:
+
+```bash
+omarchy plugin remove io.github.pavellizunov.vpnrouter
+```
+
+При выгрузке плагина его backend получает запрос на остановку. Системный пакет,
+сохранённые данные VPN и скрытая копия архивной установки остаются.
+См. [полное удаление и остановку backend](docs/guide.ru.md#удаление-плагина-и-остановка-бэкенда).
 
 ## Лицензия
 
