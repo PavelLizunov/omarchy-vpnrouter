@@ -43,7 +43,6 @@ Ui.BarWidget {
   readonly property string vpnState: effectiveService ? effectiveService.state : "unavailable"
   readonly property bool isStarting: Model.backendStarting(effectiveService)
   readonly property bool isConnected: vpnState === "connected"
-  readonly property bool isBusy: effectiveService ? (effectiveService.busy || vpnState === "connecting" || vpnState === "disconnecting") : false
   readonly property bool isError: effectiveService ? (effectiveService.isError || vpnState === "error") : false
   readonly property string activeServerName: effectiveService ? effectiveService.activeServer : ""
   readonly property var activeServerItem: {
@@ -200,7 +199,6 @@ Ui.BarWidget {
         }
       }
 
-      // Latency badge or server label on bar if enabled and connected
       Text {
         textFormat: Text.PlainText
         visible: !root.vertical && root.showLatencySetting && root.isConnected && typeof root.serverLatency === "number" && isFinite(root.serverLatency) && root.serverLatency >= 0
