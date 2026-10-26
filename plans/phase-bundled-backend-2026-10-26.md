@@ -29,4 +29,9 @@ decision: ship the backend inside the plugin repository.
 
 ## Outcome
 
-Pending.
+Merged to main on 2026-10-26 together with the owner-chosen penguin bar mark
+(ui/PenguinMark.qml: side-view penguin on a tile, no contour; split tunnel fills
+the lower-right half, all traffic fills the tile, badge for problems).
+Checked: bash -n, omarchy plugin validate, qmllint, node UI tests, offscreen
+QML render of every mark state. Not live-tested: the pkexec prompt through the
+shell agent and the Install/Update buttons; the owner tests on their laptop.
