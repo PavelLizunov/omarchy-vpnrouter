@@ -59,9 +59,11 @@ Ui.BarWidget {
   readonly property bool showLatencySetting: setting("showLatency", true) !== false
 
   readonly property string visualState: effectiveService && effectiveService.backendMissing ? "missing" : isStarting ? "starting" : !effectiveService || vpnState === "unavailable" ? "unavailable" : isError ? "error" : vpnState === "connecting" || vpnState === "disconnecting" ? "connecting" : isConnected ? "connected" : "disconnected"
-  // Material Design shield family from the host bar's Nerd Font.
-  readonly property string stateIcon: ({ starting: "\u{f0498}", disconnected: "\u{f0498}", connecting: "\u{f11a2}", connected: "\u{f0565}", error: "\u{f0ecc}", unavailable: "\u{f099e}", missing: "\u{f0adc}" })[visualState]
-  readonly property color preferredInk: visualState === "connected" ? Commons.Color.accent : visualState === "connecting" ? Commons.Color.accent : visualState === "error" || visualState === "unavailable" || visualState === "missing" ? Commons.Color.urgent : visualState === "starting" ? Commons.Color.muted : Commons.Color.foreground
+  // The penguin mark stays monochrome like the neighbouring bar glyphs; the
+  // tile fill shows the routing mode and a badge marks a problem.
+  readonly property string markFill: isConnected ? (effectiveService && effectiveService.routingMode === "full" ? "full" : "split") : "off"
+  readonly property bool markBadge: visualState === "error" || visualState === "unavailable" || visualState === "missing"
+  readonly property color preferredInk: Commons.Color.bar.text
 
   readonly property color barSurface: root.bar && root.bar.background !== undefined ? root.bar.background : Commons.Color.bar.background
   readonly property color inkColor: Contrast.ratio(preferredInk, barSurface, Commons.Color.background) >= 3 ? preferredInk : Commons.Color.bar.text
@@ -179,27 +181,23 @@ Ui.BarWidget {
       anchors.centerIn: parent
       spacing: Style.space(5)
 
-      // Reuse the host's optical glyph sizing and baseline on both host versions.
-      Ui.BarIconButton {
-        bar: root.bar
-        text: root.stateIcon
-        foreground: root.inkColor
-        interactive: false
-        pressable: false
+      // Same slot width as the host's bar icon buttons.
+      Item {
+        width: Style.bar.iconSlot
+        height: mark.height
         anchors.verticalCenter: parent.verticalCenter
-      }
 
-      Text {
-        visible: root.visualState === "connecting"
-        textFormat: Text.PlainText
-        text: "\u{f0772}" // md-loading: progress without rotating the shield.
-        color: root.inkColor
-        font.family: Style.font.family
-        font.pixelSize: Style.font.iconSmall
-        anchors.verticalCenter: parent.verticalCenter
-        NumberAnimation on rotation {
-          running: root.visualState === "connecting" && !Style.reduceMotion
-          from: 0; to: 360; loops: Animation.Infinite; duration: 1000
+        VpnUi.PenguinMark {
+          id: mark
+          objectName: "vpnBarMark"
+          anchors.centerIn: parent
+          iconSize: Math.round(Style.bar.iconCanvas * 0.875)
+          color: root.inkColor
+          surface: root.barSurface
+          fill: root.markFill
+          dimmed: !root.isConnected
+          badge: root.markBadge
+          pulsing: root.visualState === "connecting" && !Style.reduceMotion
         }
       }
 
