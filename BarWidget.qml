@@ -191,7 +191,7 @@ Ui.BarWidget {
           id: mark
           objectName: "vpnBarMark"
           anchors.centerIn: parent
-          iconSize: Math.round(Style.bar.iconCanvas * 0.875)
+          iconSize: Style.bar.iconCanvas
           color: root.inkColor
           surface: root.barSurface
           fill: root.markFill
