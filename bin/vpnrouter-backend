@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# vpnrouter-backend - Check or install the vpnrouter-headless package bundled
+# with this plugin in backend/.
+#
+#   check    print one JSON line: {"state":"unbundled|missing|outdated|current",
+#            "bundled":"<version>","installed":"<version>"}
+#   install  verify the bundled package against backend/bundle.json and install
+#            it with pkexec pacman -U; the Omarchy shell shows the password prompt.
+#            Exit 126 means the prompt was dismissed.
+
+set -euo pipefail
+
+plugin_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+bundle="$plugin_dir/backend/bundle.json"
+
+field() { /usr/bin/jq -r --arg k "$1" '.[$k] // empty' "$bundle"; }
+
+installed_version() {
+  /usr/bin/pacman -Q vpnrouter-headless 2>/dev/null | /usr/bin/awk '{ print $2 }' || true
+}
+
+check() {
+  local bundled="" installed state
+  [[ -f "$bundle" ]] && bundled="$(field version)"
+  installed="$(installed_version)"
+  if [[ -z "$bundled" ]]; then
+    state=unbundled
+  elif [[ -z "$installed" ]]; then
+    state=missing
+  elif (( $(/usr/bin/vercmp "$installed" "$bundled") < 0 )); then
+    state=outdated
+  else
+    state=current
+  fi
+  /usr/bin/jq -cn --arg state "$state" --arg bundled "$bundled" --arg installed "$installed" \
+    '{state: $state, bundled: $bundled, installed: $installed}'
+}
+
+install() {
+  [[ -f "$bundle" ]] || { echo "no bundled backend package" >&2; exit 1; }
+  [[ "$(/usr/bin/uname -m)" == x86_64 ]] || { echo "the bundled package is x86_64 only" >&2; exit 1; }
+  local file sha pkg
+  file="$(field package)"
+  sha="$(field sha256)"
+  [[ "$file" =~ ^vpnrouter-headless-[A-Za-z0-9._+-]+-x86_64\.pkg\.tar\.zst$ ]] ||
+    { echo "invalid package name in bundle.json" >&2; exit 1; }
+  pkg="$plugin_dir/backend/$file"
+  [[ -f "$pkg" && ! -L "$pkg" ]] || { echo "bundled package is missing: $file" >&2; exit 1; }
+  echo "$sha  $pkg" | /usr/bin/sha256sum -c --quiet - >&2 ||
+    { echo "bundled package checksum mismatch" >&2; exit 1; }
+  /usr/bin/pkexec /usr/bin/pacman -U --noconfirm "$pkg" >&2
+  # Let the user manager see a newly installed unit before the plugin starts it.
+  /usr/bin/systemctl --user daemon-reload >/dev/null 2>&1 || true
+}
+
+case "${1:-}" in
+  check) check ;;
+  install) install ;;
+  *) echo "usage: vpnrouter-backend check|install" >&2; exit 2 ;;
+esac

@@ -26,6 +26,10 @@ Column {
   readonly property bool recovering: !!service && service.lastErrorKey === "backend.retrying"
   readonly property bool initializing: Model.backendStarting(service)
   readonly property bool missing: !service || service.backendMissing || (service.state === "unavailable" && !initializing)
+  readonly property bool installingBackend: !!service && service.backendInstallState === "installing"
+  readonly property bool offerBackendInstall: !!service && service.backendInstallState === "missing" && !connected && !busy
+  readonly property bool offerBackendUpdate: !!service && service.backendInstallState === "outdated" && !connected && !busy
+  readonly property bool installAction: offerBackendInstall || installingBackend
   readonly property bool failed: !!service && (service.state === "error" || service.state === "conflict")
   readonly property bool canConnect: !!service && service.capabilities && service.capabilities.connect === true && !missing && !initializing && (service.configMode === "custom" ? !!service.activeServer : service.serversLoaded && service.servers.length > 0)
   readonly property bool needsSetup: !!service && service.serversLoaded && service.subscriptionsLoaded && !service.servers.length && !service.subscriptions.length && !connected && !busy && !missing && !initializing && service.configMode !== "custom"
@@ -35,6 +39,9 @@ Column {
   function availabilityText() {
     var _ = root.i18nRevision
     if (root.connected) return ""
+    if (root.installingBackend) return root.tr("backend.installing")
+    if (root.service && root.service.backendInstallError) return root.tr("backend.installFailed", [root.service.backendInstallError])
+    if (root.offerBackendInstall) return root.tr("backend.notInstalled") + "\n" + root.tr("backend.installPrompt")
     if (root.service && root.service.backendMissing) return root.tr("backend.notInstalled") + "\n" + root.tr("backend.installHint")
     if (!root.service) return root.tr("backend.statusUnavailable")
     if (root.service.lastError) return root.service.lastErrorText || root.service.lastError
@@ -151,11 +158,24 @@ Column {
     implicitHeight: Commons.Style.space(48)
 
     fontSize: Commons.Style.font.title
-    icon: "⏻"
-    text: root.busy ? root.tr("home.wait") : root.connected ? root.tr("action.disconnect") : root.tr("action.connect")
-    variant: root.busy ? "normal" : root.connected ? "danger" : "solid"
-    enabled: !root.busy && !root.operationBusy && (root.connected || root.canConnect) && !root.needsSetup
-    onClicked: { if (root.connected) root.disconnectRequested(); else root.connectRequested() }
+    icon: root.installAction ? "\u{f01da}" : "⏻" // md-download
+    text: root.installingBackend ? root.tr("home.wait") : root.offerBackendInstall ? root.tr("action.installBackend") : root.busy ? root.tr("home.wait") : root.connected ? root.tr("action.disconnect") : root.tr("action.connect")
+    variant: root.busy || root.installingBackend ? "normal" : root.connected ? "danger" : "solid"
+    enabled: root.installAction ? !root.installingBackend : !root.busy && !root.operationBusy && (root.connected || root.canConnect) && !root.needsSetup
+    onClicked: {
+      if (root.offerBackendInstall) root.service.installBundledBackend()
+      else if (root.connected) root.disconnectRequested()
+      else root.connectRequested()
+    }
+  }
+  Button {
+    objectName: "vpnUpdateBackend"
+    visible: root.offerBackendUpdate
+    anchors.horizontalCenter: parent.horizontalCenter
+    icon: "\u{f01da}" // md-download
+    text: root.tr("action.updateBackend")
+    variant: "subtle"
+    onClicked: root.service.installBundledBackend()
   }
   Button {
     objectName: "vpnCancelOperation"

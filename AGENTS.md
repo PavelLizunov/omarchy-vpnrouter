@@ -16,8 +16,9 @@ or a status-only prototype. Current architecture and limitations are recorded in
 - One service-owned helper, bounded JSON-lines, cancellation and explicit
   unavailable/error states. No fake connected state or decorative controls.
 - Preserve configured process-name casing and Core routing semantics.
-- No sudo password fields, NOPASSWD, root shell, auto-install or implicit network
-  downloads from QML. System changes need separate owner authorization.
+- No sudo password fields, NOPASSWD, root shell or implicit network downloads
+  from QML. The bundled backend package in backend/ is installed only on an
+  explicit click, through `bin/vpnrouter-backend install` (pkexec pacman -U).
 - No live shell restart, plugin activation, VPN connection or route mutation.
 - omarchy-test is authorized for isolated exact-SHA tests and per-user SDK only.
 - harness-test is control plane: no platform SDK installation/heavy builds here.

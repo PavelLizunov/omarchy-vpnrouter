@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - name: Bash syntax check (setup/wrapper)
-        run: bash -n setup bin/vpnrouter-headless install.sh
+        run: bash -n setup bin/vpnrouter-headless bin/vpnrouter-backend tools/bundle-backend.sh
 
       - name: Python packaging tests
         run: python3 tests/test-packaging.py

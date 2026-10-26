@@ -11,17 +11,21 @@ Marketplace не является аудитом безопасности. См.
 
 ## Установка
 
-Нужна Omarchy Quattro на x86_64. Одна команда устанавливает или обновляет и пакет
-Arch `vpnrouter-headless` из последнего релиза, и сам плагин:
+Нужна Omarchy Quattro на x86_64.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/PavelLizunov/omarchy-vpnrouter/main/install.sh | bash
+omarchy plugin add https://github.com/PavelLizunov/omarchy-vpnrouter --enable
 ```
 
-[install.sh](install.sh) проверяет контрольную сумму пакета, останавливает старый
-backend, ставит пакет через `sudo pacman -U`, ставит плагин как git-клон, включает
-его справа в панели и один раз перезапускает оболочку. Настройки и подписки
-сохраняются; активное VPN-соединение разрывается. Для обновления запустите снова.
+Затем нажмите значок в панели и кнопку **Установить компонент VPN**. Плагин несёт
+пакет Arch `vpnrouter-headless` в [backend/](backend/bundle.json); кнопка проверяет
+контрольную сумму и ставит его через `pkexec pacman -U`, поэтому оболочка один раз
+попросит пароль. После `omarchy plugin update io.github.pavellizunov.vpnrouter`
+панель предложит **Обновить компонент VPN**, если в плагине пакет новее.
+Настройки и подписки в `~/.config/vpnrouter` сохраняются.
+
+Копию, установленную раньше без git, сначала удалите:
+`omarchy plugin remove io.github.pavellizunov.vpnrouter --yes`.
 
 Ручная установка: см. [инструкцию пакета backend](https://github.com/PavelLizunov/VPNRouter/blob/main/packaging/arch/README.md),
 затем установите плагин из репозитория на проверенном коммите:

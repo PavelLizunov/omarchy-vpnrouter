@@ -260,6 +260,7 @@ Item {
     root.effectiveLocale = I18n.getEffectiveLocale()
     I18n.addListener(_i18nListener)
     initAccumulator()
+    checkBundledBackend()
     checkHelperAndStart()
   }
 
@@ -488,6 +489,7 @@ Item {
     if (root.backendMissing) {
       root.clearLastError()
       retryTimer.stop()
+      checkBundledBackend()
       return
     }
     if (!root.controllerBusy) root.setLastError(startFailureKey || "backend.retrying", [], "", "snapshot")
@@ -505,6 +507,67 @@ Item {
       if (backendProc.running && !root.helperPresent) retryTimer.restart()
       else root.checkHelperAndStart()
     }
+  }
+
+  // ---- Bundled backend package ----------------------------------------------
+  // backend/ ships the vpnrouter-headless Arch package; installing it runs only
+  // on an explicit click and asks for the password through the shell's polkit agent.
+  readonly property string backendToolPath: Qt.resolvedUrl("bin/vpnrouter-backend").toString().replace("file://", "")
+  property string backendInstallState: "unknown" // unknown|unbundled|missing|outdated|current|installing
+  property string bundledBackendVersion: ""
+  property string installedBackendVersion: ""
+  property string backendInstallError: ""
+  readonly property bool canInstallBackend: backendInstallState === "missing" || backendInstallState === "outdated"
+
+  Process {
+    id: backendCheckProc
+    command: [root.backendToolPath, "check"]
+    stdout: StdioCollector { onStreamFinished: root.applyBundledBackendCheck(text) }
+  }
+
+  Process {
+    id: backendInstallProc
+    command: [root.backendToolPath, "install"]
+    stderr: StdioCollector { id: backendInstallStderr }
+    onExited: function(exitCode) { root.bundledBackendInstalled(exitCode, backendInstallStderr.text) }
+  }
+
+  function checkBundledBackend() {
+    if (root.processDisabled || backendCheckProc.running || backendInstallProc.running) return
+    backendCheckProc.running = true
+  }
+
+  function applyBundledBackendCheck(text) {
+    var result = null
+    try { result = JSON.parse(String(text).trim()) } catch (e) { return }
+    if (!result || typeof result.state !== "string") return
+    root.bundledBackendVersion = result.bundled || ""
+    root.installedBackendVersion = result.installed || ""
+    if (root.backendInstallState !== "installing") root.backendInstallState = result.state
+  }
+
+  function installBundledBackend() {
+    if (root.processDisabled || !root.canInstallBackend || backendInstallProc.running) return
+    root.backendInstallError = ""
+    root.backendInstallState = "installing"
+    // The running helper belongs to the old package; pacman replaces its files.
+    tearDown()
+    backendInstallProc.running = true
+  }
+
+  function bundledBackendInstalled(exitCode, stderrText) {
+    root.backendInstallState = "unknown"
+    // 126: the password prompt was dismissed; leave the previous state silently.
+    if (exitCode !== 0 && exitCode !== 126) {
+      var lines = String(stderrText || "").trim().split("\n")
+      root.backendInstallError = lines[lines.length - 1] || ("exit " + exitCode)
+    }
+    checkBundledBackend()
+    root._shuttingDown = false
+    root.retryCount = 0
+    root.retryBackoffMs = 2000
+    if (backendProc.running) retryTimer.restart()
+    else checkHelperAndStart()
   }
 
   // ---- Protocol Frame Handling ----------------------------------------------

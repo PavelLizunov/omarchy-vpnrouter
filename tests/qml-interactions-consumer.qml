@@ -634,7 +634,7 @@ Rectangle {
       backend.servers=[];backend.subscriptions=[];wait(15);expect(!hero.needsSetup,"Startup does not show a premature empty-configuration prompt")
       backend.servers=savedServers;backend.subscriptions=savedSubscriptions
       equal(barStateProbe.visualState,"starting","The actual bar binding recognizes startup")
-      equal(String(barStateProbe.preferredInk),String(Commons.Color.muted),"Startup bar has a neutral role")
+      equal(String(barStateProbe.preferredInk),String(Commons.Color.bar.text),"Bar mark keeps the bar text role")
       expect(Contrast.ratio(barStateProbe.inkColor,barStateProbe.barSurface,Commons.Color.background)>=3,"Startup shield remains readable")
       equal(String(hero.stateColor),String(Commons.Color.muted),"Startup hero is neutral")
       backend.capabilities={connect:true};wait(20);expect(!button.enabled,"Startup never enables Connect from stale capability")
