@@ -38,8 +38,10 @@ Ui.BorderSurface {
   radius: Commons.Style.cornerRadius
   color: "transparent"
   borderSpec: Commons.Border.controlSpec("normal", Commons.Color.popups.text, Commons.Color.accent)
-  Column {
+  Grid {
     id: rows
+    columns: 2
+    columnSpacing: Commons.Style.space(4)
     width: parent.width - Commons.Style.space(8)
     x: Commons.Style.space(4); y: Commons.Style.space(4)
     Repeater {
@@ -50,8 +52,8 @@ Ui.BorderSurface {
         required property var modelData
         required property int index
         objectName: "vpnTab-" + modelData.id
-        width: rows.width
-        height: Commons.Style.space(56)
+        width: (rows.width - rows.columnSpacing) / rows.columns
+        height: Commons.Style.space(36)
         activeFocusOnTab: true
         onActiveFocusChanged: if (activeFocus) Qt.callLater(function() { entry.reveal() })
         function reveal() { Focus.reveal(entry) }
@@ -92,6 +94,7 @@ Ui.BorderSurface {
           Text {
             width: parent.width
             textFormat: Text.PlainText
+            visible: false
             text: root.tr("nav.hint." + entry.modelData.id)
             color: Commons.Color.popups.text
             font.family: Commons.Style.font.family
@@ -106,7 +109,7 @@ Ui.BorderSurface {
           font.family: Commons.Style.font.family; font.pixelSize: Commons.Style.font.display
         }
         Rectangle {
-          visible: entry.index < root.tabs.length - 1
+          visible: entry.index < root.tabs.length - 2
           x: Commons.Style.space(42); y: parent.height-1
           width: parent.width-x-Commons.Style.space(12); height: 1
           color: Commons.Style.normalBorderColor

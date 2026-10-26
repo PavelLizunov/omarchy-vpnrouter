@@ -422,7 +422,8 @@ Rectangle {
     }
     function run() {
       var initial=JSON.stringify(geometry())
-      if(fixture.suite==="settingsFooter") settingsFooter()
+      if(fixture.suite==="compactLayout") compactLayout()
+      else if(fixture.suite==="settingsFooter") settingsFooter()
       else if(fixture.suite==="errorDetails") errorDetails()
       else if(fixture.suite==="barContrast") barContrast()
       else if(fixture.suite==="dangerContrast") dangerContrast()
@@ -475,7 +476,7 @@ Rectangle {
     }
     function homeReturn() {
       go("custom")
-      var target=fixture.find(consumer,function(x){return x.objectName==="vpnTab-custom"}),viewport=byName("vpnContentViewport"),focusExtent=null
+      var target=fixture.find(consumer,function(x){return x.objectName==="vpnTab-custom"}),viewport=fixture.find(consumer,function(x){return x.objectName==="vpnHomeNavigationViewport"}),focusExtent=null
       function recordExtent() {
         if(target.activeFocus && focusExtent===null) focusExtent={height:viewport.contentHeight,bottom:target.mapToItem(viewport.contentItem,0,0).y+target.height}
       }
@@ -744,6 +745,67 @@ Rectangle {
       consumer.open();wait(30);go("apps")
       console.log("QML_PASS brand host-luminance host-font change-server first-run language close")
     }
+    function compactLayout() {
+      var originalWidth=fixture.width,originalHeight=fixture.height,originalServers=fixture.servers
+      var sizes=[[440,704],[440,550],[440,448],[440,764],[440,656]]
+      function inside(item,view,label) {
+        var p=item.mapToItem(view,0,0)
+        expect(p.y>=-1 && p.y+item.height<=view.height+1,label+" is visible without panel scrolling")
+      }
+      for(var size of sizes) {
+        fixture.width=size[0];fixture.height=size[1]
+        consumer.setDisplayMode("simple",true);backend.clearLastError();wait(35)
+        var view=byName("vpnContentViewport"),primary=byName("vpnConnect"),server=byName("vpnHomeServerName"),title=byName("vpnStateTitle")
+        for(var state of ["disconnected","connected","connecting","error","unavailable"]) {
+          backend.state=state;backend.activeOperation=state==="connecting"?"connect":""
+          backend.snapshotLoaded=true;backend.starting=false;backend.helperPresent=true
+          backend.unavailableReasonCode=state==="unavailable"?"runtime-capabilities":null
+          backend.lastError=state==="error"?backend.tr("error.timeout"):"";wait(25)
+          inside(primary,view,"Primary action "+state+" "+size[1]);inside(server,view,"Current server "+state);inside(title,view,"Status "+state)
+          if(state==="unavailable") {
+            var repair=byName("vpnHomeErrorDetails")
+            expect(repair.expanded && repair.text.indexOf("sudo setcap cap_net_admin,cap_net_raw+ep")!==-1,"Capability repair command is visible without opening details")
+          }
+          equal(view.contentY,0,"Home never scrolls as a whole")
+        }
+        backend.state="error";backend.activeOperation="";backend.lastError="Technical fixture detail. ".repeat(150);wait(25)
+        var nav=byName("vpnHomeNavigationViewport"),notice=byName("vpnHomeErrorDetails")
+        var primaryY=primary.mapToItem(view,0,0).y,serverY=server.mapToItem(view,0,0).y
+        notice.expanded=true;wait(25);nav.contentY=Math.max(0,nav.contentHeight-nav.height);wait(25)
+        equal(primary.mapToItem(view,0,0).y,primaryY,"Expanded errors cannot displace Connect")
+        equal(server.mapToItem(view,0,0).y,serverY,"Expanded errors cannot displace the current server")
+        inside(primary,view,"Connect after inner scrolling");inside(server,view,"Server after inner scrolling")
+        backend.clearLastError();backend.state="disconnected";backend.unavailableReasonCode=null;wait(20)
+        consumer.close();consumer.open();wait(25)
+        equal(nav.contentY,0,"Fresh Home open resets the inner scroll position")
+        inside(byName("vpnTab-settings"),nav,"Settings entry "+size[1])
+        go("settings");inside(byName("vpnSettingsSave"),byName("vpnContentViewport"),"Save "+size[1])
+      }
+      fixture.servers=[]
+      for(var i=0;i<100;i++) fixture.servers.push({id:"row"+i,name:"Server "+i,protocol:"vless",source:"manual",removable:true})
+      fixture.selectedServer="row0";fixture.height=448;go("servers");backend.listServers(0,100);wait(40)
+      var view=byName("vpnContentViewport"),list=byName("vpnServerListViewport"),search=field(page("Servers"),"servers.searchPlaceholder")
+      var searchY=search.mapToItem(view,0,0).y
+      expect(list.contentHeight>list.height,"One hundred servers scroll inside their list")
+      list.contentY=list.contentHeight-list.height;wait(25)
+      equal(search.mapToItem(view,0,0).y,searchY,"Search remains fixed while the list scrolls")
+      equal(view.contentY,0,"Selecting servers does not scroll the panel")
+      var row=byName("vpnServerRow-row99");row.forceActiveFocus();wait(30);inside(row,list,"Last server keyboard focus")
+      keyClick(Qt.Key_Space);wait(35);equal(fixture.selectedServer,"row99","Last server can be selected by keyboard")
+      fill(search,"Server 42");wait(30)
+      expect(byName("vpnServerRow-row42")!==null,"Pinned search filters the list")
+      var serversPage=page("Servers")
+      serversPage.openImportForm();backend.lastError="Technical fixture detail. ".repeat(150);wait(30)
+      var serverError=byName("vpnServersError");serverError.expanded=true;wait(30)
+      var importSubmit=button(serversPage,"servers.importBtn")
+      importSubmit.forceActiveFocus();wait(30)
+      inside(importSubmit,view,"Import submit after an expanded error")
+      expect(list.height>=importSubmit.height,"An expanded error leaves space for form actions")
+      serversPage.cancelForm();backend.clearLastError()
+      fixture.servers=originalServers;fixture.selectedServer="manual";backend.listServers(0,100)
+      fixture.width=originalWidth;fixture.height=originalHeight;consumer.setDisplayMode("simple",true);wait(30)
+      console.log("QML_PASS compactLayout five-heights five-states pinned-primary-server-status expanded-errors save 100-servers search keyboard-selection")
+    }
     function settingsFooter() {
       go("settings")
       var p=page("Settings"),view=byName("vpnContentViewport"),footer=byName("vpnSettingsActions")
@@ -792,7 +854,7 @@ Rectangle {
       expect(!notice.expanded)
       activate(disclosure,Qt.Key_Space);expect(notice.expanded,"Space expands Home details")
       equal(primary.mapToItem(byName("vpnContentViewport"),0,0).y,initial,"Details do not move Connect")
-      expect(notice.y>=primary.y+primary.height,"Primary action precedes Home details")
+      expect(notice.mapToItem(primary,0,0).y>=primary.height,"Primary action precedes Home details")
       var details=fixture.find(notice,function(x){return x.objectName==="vpnNoticeDetails"})
       equal(details.text,longError,"Full error is retained and selectable")
       expect(details.readOnly && details.selectByMouse)
@@ -1128,7 +1190,7 @@ Rectangle {
     }
     function prepareCapture() {
       if(fixture.capture==="home" || fixture.capture==="home-bottom" || fixture.capture==="first-run") {
-        consumer.setDisplayMode("simple");wait(25)
+        consumer.setDisplayMode("simple",true);wait(25)
         // Capture entry has no focused navigation item; native return-focus is tested separately.
         consumer.forceActiveFocus();wait(10)
         if(fixture.capture==="first-run") {
@@ -1143,6 +1205,12 @@ Rectangle {
         fixture.holdMethod="snapshot";backend.refreshSnapshot();wait(15)
         backend.checkDeadlines(Date.now()+2000000);wait(30)
         consumer.forceActiveFocus();byName("vpnContentViewport").contentY=0
+      }
+      else if(fixture.capture==="server-import-error") {
+        go("servers");page("Servers").openImportForm()
+        backend.lastError="Technical fixture detail. ".repeat(150);wait(30)
+        byName("vpnServersError").expanded=true;wait(30)
+        button(page("Servers"),"servers.importBtn").forceActiveFocus();wait(30)
       }
       else if(fixture.capture==="connected") {backend.state="connected";wait(20)}
       else if(fixture.capture==="full") {fixture.route="full";backend.applySnapshot(fixture.snapshot());wait(20)}

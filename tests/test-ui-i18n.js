@@ -207,7 +207,9 @@ console.log("ALL I18N TESTS PASSED!\n");
 
 // Product wording must describe the service, not its implementation layers.
 for (const [key, value] of Object.entries(ruJson)) {
-  assert(!/\b(?:backend|runtime|helper|TUN|legacy|Smart)\b/i.test(value), `${key}: implementation jargon in Russian UI`);
+  // A literal repair command must retain the package's exact runtime path.
+  const prose = value.replace('/usr/lib/vpnrouter-headless/runtime/sing-box', '');
+  assert(!/\b(?:backend|runtime|helper|TUN|legacy|Smart)\b/i.test(prose), `${key}: implementation jargon in Russian UI`);
 }
 assert.strictEqual(ruJson['backend.notInstalled'], 'Служба VPNRouter не установлена');
 assert.strictEqual(enJson['backend.notInstalled'], 'VPNRouter service is not installed');

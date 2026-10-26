@@ -209,7 +209,7 @@
   "diagnostics.severity.unknown": "Неизвестно",
   "diagnostics.notConfigured": "Ещё не настроено: добавьте подписку или сервер.",
   "backend.reason.runtime-missing": "Компонент VPN не найден. Установите пакет vpnrouter-headless.",
-  "backend.reason.runtime-capabilities": "Компоненту VPN не хватает сетевых прав. Переустановите пакет vpnrouter-headless.",
+  "backend.reason.runtime-capabilities": "Компоненту VPN не хватает CAP_NET_ADMIN. Выполните один раз в терминале:\nsudo setcap cap_net_admin,cap_net_raw+ep /usr/lib/vpnrouter-headless/runtime/sing-box\nЕсли setcap не поддерживается, установите пакет на файловую систему с поддержкой xattr.",
   "backend.reason.runtime-untrusted": "Компонент VPN не прошёл проверку доверия. Переустановите пакет vpnrouter-headless.",
   "backend.reason.sandbox": "Эта среда ограничивает доступ к VPN.",
   "backend.reason.ownership": "Владелец или права доступа к файлам VPN не соответствуют требованиям.",
