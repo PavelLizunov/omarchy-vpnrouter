@@ -564,8 +564,12 @@ Item {
     repeat: true
     onTriggered: {
       elapsedMs += interval
-      if (backendProc.running && elapsedMs < 20000) return
+      if (backendProc.running && elapsedMs < 25000) return
       stop()
+      if (backendProc.running) {
+        root.bundledBackendInstalled(1, root.tr("error.stopFailed"))
+        return
+      }
       backendInstallProc.running = true
     }
   }
@@ -894,6 +898,7 @@ Item {
   // ---- Public API Actions ---------------------------------------------------
 
   function refreshSnapshot(onDone, onError) {
+    // First startup may reclaim a legacy helper (20 s) and its engine (6 s).
     return sendRequest("snapshot", {}, function(res) {
       if (!res || typeof res.state !== "string" || typeof res.revision !== "string" ||
           !res.capabilities || typeof res.capabilities.connect !== "boolean") {
@@ -907,7 +912,7 @@ Item {
       root.retryCount = 0
       root.retryBackoffMs = 2000
       if (onDone) onDone(res)
-    }, onError)
+    }, onError, false, root.snapshotLoaded ? root.requestDeadlineMs : 35000)
   }
 
   function connect(onDone, onError) {
