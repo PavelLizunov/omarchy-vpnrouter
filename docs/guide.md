@@ -219,6 +219,12 @@ An old package has no such unit. Check for a remaining legacy helper with the
 `kill -TERM PID` and wait for it to exit before replacing package files. The old
 shell-owned helper is not stopped by the new package's service masking.
 
+On an old version, dismiss any DNS authentication dialog opened during stop with
+Escape. After the helper exits, check `ip link show VPNRouter-TUN` and
+`ip rule show`. If detached VPNRouter rules from the old table 2022 / priorities
+9000-9010 remain, reboot with the plugin disabled before continuing. That legacy
+namespace is shared with other VPN clients; the new package does not sweep it.
+
 Install the reviewed Arch package as described in its
 [package guide](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-n4-lifetime/packaging/arch/README.md#install-and-verify).
 With the plugin still disabled, extract the reviewed plugin commit using the
