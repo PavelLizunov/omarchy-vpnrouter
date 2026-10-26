@@ -83,8 +83,16 @@ and Revert at the bottom of the visible page. On short screens the extra Home
 emblem is hidden and routing controls remain in the scrolling area.
 
 Right-click the icon toggles the connection; middle-click refreshes status.
-Advanced sections expose servers, subscriptions, apps, routing rules, profiles,
-custom configs, settings, diagnostics and the free pool.
+Advanced sections expose servers, subscriptions, apps, routing rules, app groups,
+custom configs, settings, diagnostics and the free pool. App groups show concrete
+processes and let you select several groups or individual apps using the same
+include list as Applications. They are not VPN server presets and do not limit
+All traffic mode or edit the All except selected bypass list.
+
+With the coordinated backend, Applications shows system bypass processes
+separately: `tailscaled` and `tailscale` stay direct, including in All traffic
+mode. The Tailscale IPv4 range is excluded even before its adapter starts.
+This source change does not establish recovery on the reporting laptop.
 
 The language control switches EN/RU/AUTO. Tab moves focus; Escape closes the
 panel. Multiline editors use Ctrl+Enter to submit. Basic Test and proxied HTTP

@@ -1165,7 +1165,8 @@ Item {
         include: (res && res.include) ? res.include : [],
         exclude: (res && res.exclude) ? res.exclude : [],
         running: (res && res.running) ? res.running : [],
-        runningApps: res && Array.isArray(res.runningApps) ? res.runningApps : null
+        runningApps: res && Array.isArray(res.runningApps) ? res.runningApps : null,
+        systemBypass: res && Array.isArray(res.systemBypass) ? res.systemBypass : null
       }
       root.appsLoaded = true
       if (onDone) onDone(root.apps)

@@ -80,6 +80,17 @@ Item {
       font.pixelSize: Commons.Style.font.caption
     }
 
+    Text {
+      visible: !!root.service && !!root.service.apps && Array.isArray(root.service.apps.systemBypass) && root.service.apps.systemBypass.length > 0
+      width: parent.width
+      text: root.tr("apps.systemBypass", [root.service && root.service.apps && Array.isArray(root.service.apps.systemBypass) ? root.service.apps.systemBypass.join(", ") : ""])
+      textFormat: Text.PlainText
+      wrapMode: Text.WordWrap
+      color: Commons.Color.popups.text
+      font.family: Commons.Style.font.family
+      font.pixelSize: Commons.Style.font.caption
+    }
+
     RowLayout {
       width: parent.width
       TextField {
