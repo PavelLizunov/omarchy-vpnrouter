@@ -3,7 +3,7 @@
 Нативная QML-панель и виджет VPNRouter внутри оболочки Omarchy.
 **Черновик разработки; полный паритет функций Linux пока не подтверждён.**
 
-[English](README.md) · [Релизы](https://github.com/PavelLizunov/omarchy-vpnrouter/releases) (релиза плагина пока нет) · [Текущий статус](plans/current-status.md)
+[English](README.md) · [Релизы](https://github.com/PavelLizunov/omarchy-vpnrouter/releases) · [Текущий статус](plans/current-status.md)
 
 Плагин работает **без песочницы внутри общего процесса `omarchy-shell` с правами
 вашего пользователя**. Такой же доступ получают его код и зависимости; проверка
@@ -11,9 +11,20 @@ Marketplace не является аудитом безопасности. См.
 
 ## Установка
 
-Нужны Omarchy Quattro и пакет Arch `vpnrouter-headless`.
-См. [инструкцию пакета backend](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-n4-lifetime/packaging/arch/README.md).
-Выполните из репозитория на проверенном коммите:
+Нужна Omarchy Quattro на x86_64. Одна команда устанавливает или обновляет и пакет
+Arch `vpnrouter-headless` из последнего релиза, и сам плагин:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/PavelLizunov/omarchy-vpnrouter/main/install.sh | bash
+```
+
+[install.sh](install.sh) проверяет контрольную сумму пакета, останавливает старый
+backend, ставит пакет через `sudo pacman -U`, ставит плагин как git-клон, включает
+его справа в панели и один раз перезапускает оболочку. Настройки и подписки
+сохраняются; активное VPN-соединение разрывается. Для обновления запустите снова.
+
+Ручная установка: см. [инструкцию пакета backend](https://github.com/PavelLizunov/VPNRouter/blob/main/packaging/arch/README.md),
+затем установите плагин из репозитория на проверенном коммите:
 
 С согласованным backend с user service плагин запускает systemd user service и
 подключается к приватному сокету. Перезапуск оболочки отключает UI, а сервис

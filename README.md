@@ -3,7 +3,7 @@
 Native QML panel and bar widget for VPNRouter, running inside the Omarchy shell.
 **Development draft; full Linux feature parity is not yet verified.**
 
-[Русский](README.ru.md) · [Releases](https://github.com/PavelLizunov/omarchy-vpnrouter/releases) (no plugin release yet) · [Current status](plans/current-status.md)
+[Русский](README.ru.md) · [Releases](https://github.com/PavelLizunov/omarchy-vpnrouter/releases) · [Current status](plans/current-status.md)
 
 The plugin runs **unsandboxed inside the shared `omarchy-shell` process with your
 user permissions**. Its code and dependencies have that same access; Marketplace
@@ -11,9 +11,20 @@ validation is not a security audit. See the [Omarchy execution model](https://pl
 
 ## Install
 
-Requires Omarchy Quattro and the `vpnrouter-headless` Arch package.
-See the backend's [package instructions](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-n4-lifetime/packaging/arch/README.md).
-From this repository at the reviewed commit:
+Requires Omarchy Quattro on x86_64. One command installs or upgrades both the
+`vpnrouter-headless` Arch package from the latest release and the plugin:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/PavelLizunov/omarchy-vpnrouter/main/install.sh | bash
+```
+
+[install.sh](install.sh) verifies the package checksum, stops an old backend,
+installs the package with `sudo pacman -U`, installs the plugin as a git checkout,
+enables it on the right of the bar and restarts the shell once. Settings and
+subscriptions are kept; an active VPN session is disconnected. Run it again to upgrade.
+
+Manual installation: see the backend's [package instructions](https://github.com/PavelLizunov/VPNRouter/blob/main/packaging/arch/README.md),
+then install the plugin from this repository at the reviewed commit:
 
 With the coordinated user-service backend, the plugin starts the systemd
 user service and attaches to its private socket. A shell restart detaches the
