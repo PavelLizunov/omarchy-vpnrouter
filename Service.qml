@@ -550,9 +550,24 @@ Item {
     if (root.processDisabled || !root.canInstallBackend || backendInstallProc.running) return
     root.backendInstallError = ""
     root.backendInstallState = "installing"
-    // The running helper belongs to the old package; pacman replaces its files.
+    // The running helper belongs to the old package. Let it stop its sing-box
+    // before pacman replaces the files, or the tunnel outlives its owner.
     tearDown()
-    backendInstallProc.running = true
+    installAfterStop.elapsedMs = 0
+    installAfterStop.start()
+  }
+
+  Timer {
+    id: installAfterStop
+    property int elapsedMs: 0
+    interval: 200
+    repeat: true
+    onTriggered: {
+      elapsedMs += interval
+      if (backendProc.running && elapsedMs < 20000) return
+      stop()
+      backendInstallProc.running = true
+    }
   }
 
   function bundledBackendInstalled(exitCode, stderrText) {
