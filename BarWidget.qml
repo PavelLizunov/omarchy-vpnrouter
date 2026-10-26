@@ -193,7 +193,6 @@ Ui.BarWidget {
           anchors.centerIn: parent
           iconSize: Style.bar.iconCanvas
           color: root.inkColor
-          surface: root.barSurface
           fill: root.markFill
           dimmed: !root.isConnected
           badge: root.markBadge
