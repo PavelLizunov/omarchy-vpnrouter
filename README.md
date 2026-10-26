@@ -11,17 +11,21 @@ validation is not a security audit. See the [Omarchy execution model](https://pl
 
 ## Install
 
-Requires Omarchy Quattro on x86_64. One command installs or upgrades both the
-`vpnrouter-headless` Arch package from the latest release and the plugin:
+Requires Omarchy Quattro on x86_64.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/PavelLizunov/omarchy-vpnrouter/main/install.sh | bash
+omarchy plugin add https://github.com/PavelLizunov/omarchy-vpnrouter --enable
 ```
 
-[install.sh](install.sh) verifies the package checksum, stops an old backend,
-installs the package with `sudo pacman -U`, installs the plugin as a git checkout,
-enables it on the right of the bar and restarts the shell once. Settings and
-subscriptions are kept; an active VPN session is disconnected. Run it again to upgrade.
+Then click the bar icon and press **Install VPN component**. The plugin ships the
+`vpnrouter-headless` Arch package in [backend/](backend/bundle.json); the button
+verifies its checksum and installs it with `pkexec pacman -U`, so the shell asks
+for your password once. After `omarchy plugin update io.github.pavellizunov.vpnrouter`
+the panel offers **Update VPN component** when the bundled package is newer.
+Settings and subscriptions in `~/.config/vpnrouter` are kept.
+
+A copy installed earlier without git must be removed first:
+`omarchy plugin remove io.github.pavellizunov.vpnrouter --yes`.
 
 Manual installation: see the backend's [package instructions](https://github.com/PavelLizunov/VPNRouter/blob/main/packaging/arch/README.md),
 then install the plugin from this repository at the reviewed commit:

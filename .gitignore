@@ -8,6 +8,7 @@ __pycache__/
 # Tracks the wrapper script but excludes compiled/unpacked binaries
 bin/*
 !bin/vpnrouter-headless
+!bin/vpnrouter-backend
 *.tmp
 *.bak
 
