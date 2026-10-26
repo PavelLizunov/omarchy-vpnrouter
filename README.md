@@ -12,7 +12,7 @@ validation is not a security audit. See the [Omarchy execution model](https://pl
 ## Install
 
 Requires Omarchy Quattro and the `vpnrouter-headless` Arch package.
-See the backend's [package instructions](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/packaging/arch/README.md).
+See the backend's [package instructions](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-n4-lifetime/packaging/arch/README.md).
 From this repository at the reviewed commit:
 
 With the coordinated user-service backend, the plugin starts the systemd
@@ -21,6 +21,8 @@ UI while the service retains the session. With an older package or plugin-local
 payload, stdio fallback still stops the backend and drops an active connection.
 The panel restores the live server, connection duration and TUN byte totals
 on reattach. See the [session contract](plans/session-lifetime-candidate.md).
+
+For an existing installation, follow [the upgrade sequence](docs/guide.md#upgrading-an-existing-installation) before replacing either component. A plugin-local backend takes priority over the Arch package and keeps stdio lifetime until removed.
 
 ```bash
 id=io.github.pavellizunov.vpnrouter

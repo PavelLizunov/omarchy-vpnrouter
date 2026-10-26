@@ -1,7 +1,7 @@
 # Session lifetime candidate
 
 The coordinated backend candidate is
-`dsh/omarchy-session-lifetime-2026-10-25` in VPNRouter. This plugin branch starts
+`dsh/omarchy-n4-lifetime` in VPNRouter. This plugin branch starts
 the packaged systemd user unit and attaches over the same NDJSON protocol.
 Backend/session ownership belongs to that unit; closing the panel, disabling
 the plugin or restarting the shell only terminates its relay client.
@@ -17,14 +17,17 @@ The service allows one controlling client. A second receives controller_busy;
 after the old client detaches, reattach receives a fresh snapshot. A running
 operation belongs to the service and can retain ordinary admission until it
 settles. Snapshot remains available; disconnect/cancel are explicit controls.
-Quit and systemctl --user stop terminate the session service. No VPN connection
-is authorized for candidate verification; live connected-session survival is
-still unverified. Stdio fallback still drops a connection when the shell exits.
+Quit and systemctl --user stop terminate the session service. The unit is part
+of graphical-session.target: logout stops it; a shell restart does not. Stdio
+fallback still drops a connection when the shell exits. An enabled plugin
+restarts a stopped service, so disable the plugin before an intentional stop.
 
-Verification: existing Node suites, packaging isolation, qmllint, full offscreen
-theme matrix and plugin validation; exact CI backend package plus this plugin
-on omarchy-test, preserving service PID and selected inert server across shell
-restart. Outcomes are recorded in the lead's D3 report.
+Verification at N4 backend 4ad09f87 / plugin b5eaee1: L and M exercised a real
+HY2 session across rescan and cold shell restart on omarchy-test, retaining
+service/core PIDs and egress. M also exercised VLESS, connected MTU changes and
+DNS cleanup. Earlier D3 covered only an inert selected server. These are scoped
+VM observations, not proof for the owner's other laptop or all protocols.
+Upgrade and removal commands are maintained in docs/guide.md and guide.ru.md.
 
 Confirmed transport defect before editing: a valid error response delivered
 through createChunkAccumulator produced frames=0/errors=1, because the

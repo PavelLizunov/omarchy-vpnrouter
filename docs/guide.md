@@ -209,7 +209,28 @@ omarchy plugin enable io.github.pavellizunov.vpnrouter
 
 ## Updating & Removal
 
-### Updating the Backend
+### Upgrading an existing installation
+
+Disconnect in the panel and wait for Disconnected. Disable the plugin with
+`omarchy plugin disable io.github.pavellizunov.vpnrouter`, then stop an installed
+`vpnrouter-headless.service` with `systemctl --user stop vpnrouter-headless.service`.
+An old package has no such unit. Check for a remaining legacy helper with the
+`pgrep` command in the removal section below; terminate only its listed PID with
+`kill -TERM PID` and wait for it to exit before replacing package files. The old
+shell-owned helper is not stopped by the new package's service masking.
+
+Install the reviewed Arch package as described in its
+[package guide](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-n4-lifetime/packaging/arch/README.md#install-and-verify).
+With the plugin still disabled, extract the reviewed plugin commit using the
+installation commands above. From that installed plugin directory, run
+`./setup --remove` to remove any old `bin/backend` payload that would take
+priority over the system package. Saved VPN configuration is preserved.
+Run `systemctl --user daemon-reload`, rescan, enable the plugin and run
+`omarchy restart shell` as shown above. This first cold restart loads the new QML
+transport; subsequent shell/plugin reloads preserve a service-owned VPN session.
+A package upgrade itself disconnects VPN and does not reconnect automatically.
+
+### Updating a plugin-local backend
 Before updating, ensure any active backend process has been stopped. Then re-run setup pointing to the new build directory:
 ```bash
 ./setup --backend-dir /path/to/updated-build

@@ -12,7 +12,7 @@ Marketplace не является аудитом безопасности. См.
 ## Установка
 
 Нужны Omarchy Quattro и пакет Arch `vpnrouter-headless`.
-См. [инструкцию пакета backend](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/packaging/arch/README.md).
+См. [инструкцию пакета backend](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-n4-lifetime/packaging/arch/README.md).
 Выполните из репозитория на проверенном коммите:
 
 С согласованным backend с user service плагин запускает systemd user service и
@@ -21,6 +21,8 @@ Marketplace не является аудитом безопасности. См.
 выход оболочки по-прежнему останавливает backend и разрывает соединение.
 После подключения к сервису панель получает текущий сервер, время соединения
 и счётчики TUN. См. [контракт сессии](plans/session-lifetime-candidate.md).
+
+Для существующей установки сначала выполните [порядок обновления](docs/guide.ru.md#обновление-существующей-установки). Локальный backend плагина имеет приоритет над пакетом Arch и сохраняет stdio-поведение, пока не будет удалён.
 
 ```bash
 id=io.github.pavellizunov.vpnrouter
