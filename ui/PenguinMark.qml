@@ -4,7 +4,7 @@ import QtQuick.Shapes
 // VPNRouter bar mark: a side-view penguin on a rounded tile, drawn on a
 // 16-unit grid. Even-odd filling inverts the penguin wherever the tile is
 // filled, so the silhouette stays whole in every state.
-//   off    penguin and tile contour
+//   off    penguin alone
 //   split  lower-right half of the tile filled (split tunnel)
 //   full   whole tile filled (all traffic through the tunnel)
 Item {
@@ -17,6 +17,8 @@ Item {
   property bool dimmed: false
   property bool badge: false
   property bool pulsing: false
+  // Draws the tile contour while the tile is not fully filled.
+  property bool outlined: false
 
   implicitWidth: iconSize
   implicitHeight: iconSize
@@ -56,7 +58,7 @@ Item {
 
         ShapePath {
           fillColor: "transparent"
-          strokeColor: root.fill === "full" ? "transparent" : root.color
+          strokeColor: root.outlined && root.fill !== "full" ? root.color : "transparent"
           strokeWidth: 1
           PathSvg { path: root.tilePath }
         }
