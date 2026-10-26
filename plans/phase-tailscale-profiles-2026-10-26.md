@@ -40,4 +40,9 @@ EN/RU text uses existing I18n keys and positional placeholders, with direct loca
 meaning/style review; no external localization skill or model call. No tests,
 linters, previews or runtime checks run. Task-owned source/diff reviewed.
 Original worktree branches/index are untouched; main, release 0.1.2 and installed
-backend r59 still contain the preceding code, not this fix. Checkpoint/PR next.
+backend r59 still contain the preceding code, not this fix.
+Implementation checkpoint 40db2662ea6759d619f3fdc1efd2878ec0a8cb38 was pushed
+and its exact remote commit observed; PR #7 automatic push/PR checks passed.
+Coordinated backend PR #632 is at 715811d4: build/contracts pass, but one
+general Linux process-identity child-liveness assertion remains failed. No
+installable new package or working-target claim is made.
