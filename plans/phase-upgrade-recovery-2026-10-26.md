@@ -49,4 +49,16 @@ This is CI provenance, not a separate reproducible-build equivalence claim.
 Automatic backend PR checks all passed at 56f87786; automatic plugin push/PR
 checks passed at 1bacfaf. No additional local verification was run.
 The plugin manifest is bumped to 0.1.2 for the coordinated update.
-Repository delivery and release publication are pending.
+Plugin PR #6 passed automatic checks at a5c5431ccee8900ca9ac8cfe491a85ed251abfe8
+and merged as 4e66c9eb3558d552bed744f2b85e8818018118b9. Release v0.1.2 is
+published, not a draft/prerelease, and its tag points to that exact main commit:
+https://github.com/PavelLizunov/omarchy-vpnrouter/releases/tag/v0.1.2
+Assets: the 21,716,083-byte Arch package, vpnrouter-headless-manifest.json,
+and SHA256SUMS. Remote task-branch, main and release tag SHAs were observed
+with git ls-remote. The original active worktree branches/index were preserved.
+
+Publication and source delivery are complete; local installation/loading and
+the reporting-laptop upgrade/recovery were not performed. No new local tests,
+linters, visual checks or additional model review were run. User-side update
+requires both the native plugin update and the panel's Update VPN component
+action; a backend package upgrade disconnects and requires explicit reconnect.
