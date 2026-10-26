@@ -48,7 +48,7 @@ const root = {
   servers: [], freeServers: [], errorNotice() {}, stateChangedNotice() {}, progressNotice() {}
 };
 const ctx = {root, Model, Protocol, I18n, retryTimer: timer,
-  backendProc: {running: true}, Qt: {callLater(fn) { later.push(fn); }}};
+  backendProc: {running: true}, backendCheckProc: {running: false}, backendInstallProc: {running: false}, Qt: {callLater(fn) { later.push(fn); }}};
 for (const key of Object.keys(root)) {
   Object.defineProperty(ctx, key, {get: () => root[key], set: value => { root[key] = value; }, configurable: true});
 }

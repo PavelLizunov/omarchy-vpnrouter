@@ -29,6 +29,7 @@ Column {
   readonly property bool installingBackend: !!service && service.backendInstallState === "installing"
   readonly property bool offerBackendInstall: !!service && service.backendInstallState === "missing" && !connected && !busy
   readonly property bool offerBackendUpdate: !!service && service.backendInstallState === "outdated" && !connected && !busy
+  readonly property bool installAction: offerBackendInstall || installingBackend
   readonly property bool failed: !!service && (service.state === "error" || service.state === "conflict")
   readonly property bool canConnect: !!service && service.capabilities && service.capabilities.connect === true && !missing && !initializing && (service.configMode === "custom" ? !!service.activeServer : service.serversLoaded && service.servers.length > 0)
   readonly property bool needsSetup: !!service && service.serversLoaded && service.subscriptionsLoaded && !service.servers.length && !service.subscriptions.length && !connected && !busy && !missing && !initializing && service.configMode !== "custom"
@@ -157,11 +158,10 @@ Column {
     implicitHeight: Commons.Style.space(48)
 
     fontSize: Commons.Style.font.title
-    readonly property bool installAction: root.offerBackendInstall || root.installingBackend
-    icon: installAction ? "\u{f01da}" : "⏻" // md-download
+    icon: root.installAction ? "\u{f01da}" : "⏻" // md-download
     text: root.installingBackend ? root.tr("home.wait") : root.offerBackendInstall ? root.tr("action.installBackend") : root.busy ? root.tr("home.wait") : root.connected ? root.tr("action.disconnect") : root.tr("action.connect")
     variant: root.busy || root.installingBackend ? "normal" : root.connected ? "danger" : "solid"
-    enabled: installAction ? !root.installingBackend : !root.busy && !root.operationBusy && (root.connected || root.canConnect) && !root.needsSetup
+    enabled: root.installAction ? !root.installingBackend : !root.busy && !root.operationBusy && (root.connected || root.canConnect) && !root.needsSetup
     onClicked: {
       if (root.offerBackendInstall) root.service.installBundledBackend()
       else if (root.connected) root.disconnectRequested()

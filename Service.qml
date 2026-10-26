@@ -533,7 +533,7 @@ Item {
   }
 
   function checkBundledBackend() {
-    if (processDisabled || backendCheckProc.running || backendInstallProc.running) return
+    if (root.processDisabled || backendCheckProc.running || backendInstallProc.running) return
     backendCheckProc.running = true
   }
 
@@ -547,7 +547,7 @@ Item {
   }
 
   function installBundledBackend() {
-    if (processDisabled || !root.canInstallBackend || backendInstallProc.running) return
+    if (root.processDisabled || !root.canInstallBackend || backendInstallProc.running) return
     root.backendInstallError = ""
     root.backendInstallState = "installing"
     // The running helper belongs to the old package; pacman replaces its files.
