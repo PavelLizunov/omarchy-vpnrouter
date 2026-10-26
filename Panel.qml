@@ -255,7 +255,9 @@ Ui.Panel {
             spacing: Commons.Style.space(8)
             VpnUi.HeroCard {
               id: hero
-              compact: flickableContent.height < Commons.Style.space(660)
+              // Reserve the menu's last row when routing labels wrap and the
+              // connected session adds its timer/traffic line.
+              compact: flickableContent.height < Commons.Style.space(740)
               width: parent.width
               service: root.service
               i18nRevision: root.i18nRevision

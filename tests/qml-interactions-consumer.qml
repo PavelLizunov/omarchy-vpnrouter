@@ -610,6 +610,8 @@ Rectangle {
     function states() {
       consumer.setDisplayMode("simple");wait(35)
       var hero=byName("vpnHero"),button=byName("vpnConnect"),arc=fixture.find(consumer,function(x){return x.objectName==="vpnConnectingArc"})
+      // Exercise expanded artwork here; compactLayout covers panel density.
+      hero.compact=false
       backend.state="disconnected";backend.backendMissing=false;backend.capabilities={connect:false};wait(20)
       expect(!button.enabled,"Connect disabled without capability")
       backend.capabilities={connect:true};wait(20);expect(button.enabled,"Connect enabled only with capability")
@@ -758,6 +760,7 @@ Rectangle {
         var view=byName("vpnContentViewport"),primary=byName("vpnConnect"),server=byName("vpnHomeServerName"),title=byName("vpnStateTitle")
         for(var state of ["disconnected","connected","connecting","error","unavailable"]) {
           backend.state=state;backend.activeOperation=state==="connecting"?"connect":""
+          backend.telemetry=state==="connected"?{connectedSinceUnixMs:Date.now()-65000,downloadBytes:1048576,uploadBytes:2097152}:null
           backend.snapshotLoaded=true;backend.starting=false;backend.helperPresent=true
           backend.unavailableReasonCode=state==="unavailable"?"runtime-capabilities":null
           backend.lastError=state==="error"?backend.tr("error.timeout"):"";wait(25)
@@ -767,6 +770,11 @@ Rectangle {
             expect(repair.expanded && repair.text.indexOf("sudo setcap cap_net_admin,cap_net_raw+ep")!==-1,"Capability repair command is visible without opening details")
           }
           equal(view.contentY,0,"Home never scrolls as a whole")
+          if(size[1]>=704 && state!=="unavailable") {
+            var homeView=byName("vpnHomeNavigationViewport")
+            for(var tab of ["servers","subscriptions","apps","rules","settings","diagnostics","free","profiles","custom"])
+              inside(byName("vpnTab-"+tab),homeView,"Home entry "+tab+" "+state+" "+size[1])
+          }
         }
         backend.state="error";backend.activeOperation="";backend.lastError="Technical fixture detail. ".repeat(150);wait(25)
         var nav=byName("vpnHomeNavigationViewport"),notice=byName("vpnHomeErrorDetails")
@@ -803,6 +811,7 @@ Rectangle {
       expect(list.height>=importSubmit.height,"An expanded error leaves space for form actions")
       serversPage.cancelForm();backend.clearLastError()
       fixture.servers=originalServers;fixture.selectedServer="manual";backend.listServers(0,100)
+      backend.telemetry=null
       fixture.width=originalWidth;fixture.height=originalHeight;consumer.setDisplayMode("simple",true);wait(30)
       console.log("QML_PASS compactLayout five-heights five-states pinned-primary-server-status expanded-errors save 100-servers search keyboard-selection")
     }
