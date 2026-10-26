@@ -39,4 +39,14 @@ socket budgets allow bounded legacy runtime recovery (26 seconds). No user-facin
 copy, geometry or VPN connection behavior was otherwise changed. Task-owned
 diff inspected; target-machine behavior and the upgrade dialog remain unverified.
 
-Fresh exact-revision backend bundle and repository delivery are pending.
+VPNRouter PR #630 was squash-merged as f6b39dbfc4d4de6e064b470037ea6b5a312c5a4c.
+Main Arch CI run 40348520604 completed successfully and produced package
+0.1.0.r59.gf6b39db-1. The existing bundling script imported that package and
+verified its CI sidecar; bundle.json records source revision and SHA256
+504056becc8b8db342a093ed58964da888b07f53ff68787bf202fd91fa4a9739.
+This is CI provenance, not a separate reproducible-build equivalence claim.
+
+Automatic backend PR checks all passed at 56f87786; automatic plugin push/PR
+checks passed at 1bacfaf. No additional local verification was run.
+The plugin manifest is bumped to 0.1.2 for the coordinated update.
+Repository delivery and release publication are pending.

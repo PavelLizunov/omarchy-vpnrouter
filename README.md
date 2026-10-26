@@ -24,6 +24,12 @@ for your password once. After `omarchy plugin update io.github.pavellizunov.vpnr
 the panel offers **Update VPN component** when the bundled package is newer.
 Settings and subscriptions in `~/.config/vpnrouter` are kept.
 
+Release 0.1.2 bundles backend r59 with recovery for legacy helpers and orphaned
+packaged runtimes after an update. The first startup can take about 30 seconds.
+A backend package upgrade disconnects the VPN; reconnect explicitly afterwards.
+The updater waits for the old helper and aborts if it cannot stop. Recovery has
+not yet been verified on the laptop that reported this problem.
+
 A copy installed earlier without git must be removed first:
 `omarchy plugin remove io.github.pavellizunov.vpnrouter --yes`.
 
