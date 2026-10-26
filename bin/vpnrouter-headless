@@ -103,8 +103,9 @@ done
 unit=/usr/lib/systemd/user/vpnrouter-headless.service
 if [[ "$transport" == auto && -z "$data_dir" && "$backend_bin" == "$system_bin" && -f "$unit" && ! -L "$unit" ]]; then
   /usr/bin/timeout 10s /usr/bin/systemctl --user start vpnrouter-headless.service >&2
-  # Type=exec proves exec, not listener readiness. Wait for the private socket.
-  for ((attempt=0; attempt<100; attempt++)); do
+  # Type=exec proves exec, not listener readiness. Legacy runtime recovery can
+  # take 26 seconds before the new service binds its private socket.
+  for ((attempt=0; attempt<700; attempt++)); do
     if [[ -n "${XDG_RUNTIME_DIR:-}" && -S "$XDG_RUNTIME_DIR/vpnrouter-headless/control.sock" ]]; then
       exec "$backend_bin" --attach
     fi

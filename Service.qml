@@ -550,9 +550,28 @@ Item {
     if (root.processDisabled || !root.canInstallBackend || backendInstallProc.running) return
     root.backendInstallError = ""
     root.backendInstallState = "installing"
-    // The running helper belongs to the old package; pacman replaces its files.
+    // The running helper belongs to the old package. Let it stop its sing-box
+    // before pacman replaces the files, or the tunnel outlives its owner.
     tearDown()
-    backendInstallProc.running = true
+    installAfterStop.elapsedMs = 0
+    installAfterStop.start()
+  }
+
+  Timer {
+    id: installAfterStop
+    property int elapsedMs: 0
+    interval: 200
+    repeat: true
+    onTriggered: {
+      elapsedMs += interval
+      if (backendProc.running && elapsedMs < 25000) return
+      stop()
+      if (backendProc.running) {
+        root.bundledBackendInstalled(1, root.tr("error.stopFailed"))
+        return
+      }
+      backendInstallProc.running = true
+    }
   }
 
   function bundledBackendInstalled(exitCode, stderrText) {
@@ -879,6 +898,7 @@ Item {
   // ---- Public API Actions ---------------------------------------------------
 
   function refreshSnapshot(onDone, onError) {
+    // First startup may reclaim a legacy helper (20 s) and its engine (6 s).
     return sendRequest("snapshot", {}, function(res) {
       if (!res || typeof res.state !== "string" || typeof res.revision !== "string" ||
           !res.capabilities || typeof res.capabilities.connect !== "boolean") {
@@ -892,7 +912,7 @@ Item {
       root.retryCount = 0
       root.retryBackoffMs = 2000
       if (onDone) onDone(res)
-    }, onError)
+    }, onError, false, root.snapshotLoaded ? root.requestDeadlineMs : 35000)
   }
 
   function connect(onDone, onError) {
