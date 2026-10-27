@@ -91,7 +91,8 @@ Item {
       Ui.BorderSurface {
         id: group
         required property var modelData
-        readonly property var processes: Array.isArray(modelData.processes) ? modelData.processes : []
+        // Repeater wraps nested arrays as QML array-like values.
+        readonly property var processes: modelData.processes ? Array.prototype.slice.call(modelData.processes) : []
         readonly property int selectedApps: root.selectedCount(processes)
         width: column.width
         implicitHeight: groupColumn.implicitHeight + Commons.Style.space(16)

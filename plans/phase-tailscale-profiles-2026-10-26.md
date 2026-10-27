@@ -46,3 +46,31 @@ and its exact remote commit observed; PR #7 automatic push/PR checks passed.
 Coordinated backend PR #632 is at 715811d4: build/contracts pass, but one
 general Linux process-identity child-liveness assertion remains failed. No
 installable new package or working-target claim is made.
+
+## Requested visual preview (2026-10-27)
+
+The owner asked to see the candidate. Render the actual ProfilesView with inert
+service data and installed native visual components, not the production shell.
+The first render exposed nested Repeater model data as a QML array-like object:
+Array.isArray was false although length was 1 and JSON contained ["Discord"].
+The guard therefore discarded every process list and displayed the backend
+update hint. Normalize this boundary to a plain JS array and rerender.
+The initial PNG is retained as failure evidence; it is not the intended design.
+AT-SPI bridge warnings prevent strict renderer acceptance; no input/a11y claim.
+
+Corrected the actual candidate boundary with Array.prototype.slice.call and
+rerendered the same consumer with full Linux catalog/demo selection. Inspected
+PNG groups-ru-corrected.png: Discord 1/1, Messengers 2/3, AI_Tools 3/3; concrete
+process toggles are visible and states differ. QML diagnostics contain no source
+warnings; the AT-SPI warnings persist, so report policy was used explicitly,
+not a strict-warning PASS. Renderer 0.3.0, Qt 6.12.0 software/offscreen, logical
+540x1000, DPR2 (1080x2000). Current palette #2c2525/#e6d9db/#f38d70.
+Evidence: /tmp/vpnrouter-groups-preview-00ivk2ps/ (fixture, host visual adapters,
+initial failure, metadata and final PNG). Host Style process hooks were removed
+and theme I/O replaced by captured style strings only in the fixture adapters.
+The product ProfilesView/Toggle/Button are the actual candidate copies.
+
+Visual limits: groups retain technical English catalog names/descriptions and
+all apps are expanded, producing a long list. No full-panel placement, click,
+keyboard, accessibility, real backend or live VPN verification was performed.
+The developer preview does not change main, bundle r59 or the installed shell.
