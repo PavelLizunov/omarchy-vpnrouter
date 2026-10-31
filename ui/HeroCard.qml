@@ -104,8 +104,10 @@ Column {
           anchors.centerIn: parent
           width: Commons.Style.space(52); height: width
           source: Brand.mascot
+          sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
           fillMode: Image.PreserveAspectFit
           smooth: true
+          mipmap: true
           asynchronous: true
         }
       }

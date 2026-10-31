@@ -31,8 +31,10 @@ Rectangle {
         anchors.fill: parent
         anchors.margins: Commons.Style.space(3)
         source: Brand.mascot
+        sourceSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio), Math.ceil(height * Screen.devicePixelRatio))
         fillMode: Image.PreserveAspectFit
         smooth: true
+        mipmap: true
         asynchronous: true
       }
     }

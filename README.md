@@ -72,6 +72,13 @@ A filesystem without extended attributes cannot retain these permissions; instal
 the package on a filesystem that supports them. Use an up-to-date Headless package
 for noninteractive DNS cleanup. Plugin setup and its launcher do not request root.
 
+## Interface tour
+
+[English video](docs/media/omarchy-tour.en.mp4) · [Русское видео](docs/media/omarchy-tour.ru.mp4)
+
+A 24-second recording of the real QML interface with sample data covers Home and
+all advanced sections. It is not a recording of a live VPN connection.
+
 ## Use
 
 Click the bar icon to open Home. Add a subscription or import servers, select a
