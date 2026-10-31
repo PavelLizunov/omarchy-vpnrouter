@@ -44,3 +44,9 @@ exposed the Home focus defect; the new growth/shrink regression passes after
 its fix. Source checks matched 38 methods/parameter sets, 12 snapshot fields,
 six states and 299 EN/RU keys with placeholders. No live backend, shell restart,
 VPN operation or deployment was performed; the runtime limits above remain.
+
+Mascot downscaling fix: enabled mipmap filtering in the header and Home hero.
+Both consumers shrink the original 640-pixel PNGs substantially; linear filtering
+alone can alias fine linework. The original assets and layout are unchanged.
+No tests, offscreen renders, installation or live-shell operations were performed
+for this fix; the visual result remains unverified.

@@ -95,6 +95,7 @@ Column {
           source: Brand.mascot
           fillMode: Image.PreserveAspectFit
           smooth: true
+          mipmap: true
           asynchronous: true
         }
       }
