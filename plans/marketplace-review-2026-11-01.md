@@ -91,8 +91,31 @@ Marketplace approval and live card/copy installation remain pending.
 
 ## Remaining limits
 
-Direct SSH to omarchy-test and site-and-git timed out. The available harness-test
-Tailnet address rejected this workstation's key. No VM changes, live activation,
-route changes, production-site deployment or package installation were performed.
+Direct SSH to omarchy-test and site-and-git timed out. The correct existing
+`dsh@harness-test` Tailnet hop works, and omarchy-test is reachable through it.
+The site host rejects both workstation and hop user/root keys; passwordless
+elevation on the hop is unavailable. No VM changes, live activation, route
+changes, production-site deployment or package installation were performed.
 Physical VPN routing/leak protection, screen-reader use, independent reproducible
 build and all-theme pixel inspection remain unverified.
+
+## Publication outcome
+
+Plugin PR #8 was merged at `11feb675390c449e3afee91aee816c4c6f6724e5`;
+the published runtime/media files match the reviewed candidate. A second fresh
+native add at this SHA passed with the same stubbed-shell limits; result:
+`/home/slovn/.cache/agent-tmp/vpnrouter-native-install-vp7oreqs/result.json`.
+Both plugin GitHub CI runs on the candidate passed.
+
+Marketplace submission: https://github.com/omacom/omarchy-plugin-marketplace/issues/13500
+The bot validated exactly `11feb675390c449e3afee91aee816c4c6f6724e5`.
+Baseline: review-required, no findings; capabilities: privilege, package-manager,
+service-management, installer. Maintainer approval is pending. No self-applied
+approval/verification labels; no live card/copy availability claim.
+
+Website PR #6 (media/section) and #7 (real playback/clipboard checks) were merged
+into the documented live-source branch `fix/current-help-guides`, final SHA
+`583041d02aeb59660d17177dcf0ada1c5e4f1b8b`. CI run 41245485534 passed lint,
+types, Docker production build and 29 browser checks, including actual EN/RU
+video playback/seek and clipboard equality. Its Omarchy screenshot was inspected.
+The production site is NOT deployed because the site host rejects available keys.
