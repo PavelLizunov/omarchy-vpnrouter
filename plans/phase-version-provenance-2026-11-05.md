@@ -92,8 +92,10 @@ directory; a second mount namespace or plugin-local backend is not the source.
 
 Scope: manifest version, mirrored release explanation, version policy and a CI
 guard against runtime changes under an already released version. Keep release
-tags immutable and do not change the active installation. Merge/tag/publication
-remain separately authorized actions. The bar icon's stepped geometry remains
+tags immutable and do not change the active installation. The owner authorized
+merge/publication on 2026-11-06 and gave standing authorization to complete future
+verified task PRs and releases without repeated approval. AGENTS.md records it.
+The bar icon's stepped geometry remains
 an open visual issue; this candidate does not claim to fix it.
 
 Verification: compare all tracked runtime paths against the local reference,

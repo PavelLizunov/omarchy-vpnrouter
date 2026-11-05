@@ -7,7 +7,9 @@ or a status-only prototype. Current architecture and limitations are recorded in
 [plans/current-status.md](plans/current-status.md). The backend owns the
 [Protocol v1 contract](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/VPNRouter.Headless/README.md#protocol-specification-v1).
 
-- Work on task branches; never push directly to main, merge, tag or release.
+- Work on task branches; never push directly to main.
+- Owner standing authorization (2026-11-06): after required checks pass, merge
+  completed task PRs and publish their matching releases without asking again.
 - manifest.json owns the plugin version; backend/bundle.json owns the separate
   backend version. Runtime changes after a release require a new plugin version.
   Keep release tags immutable; CI checks versions against fetched release tags.
