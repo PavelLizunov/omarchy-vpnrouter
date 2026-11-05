@@ -104,6 +104,7 @@ Ui.Panel {
         break
       case "profiles":
         service.listProfiles()
+        service.getApps()
         break
       case "rules":
         service.getRules()
