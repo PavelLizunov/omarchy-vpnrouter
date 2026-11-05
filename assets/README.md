@@ -12,3 +12,11 @@ place and scale the originals on tiles, rings and backgrounds.
 
 `tests/test-ui-brand-assets.js` pins all three SHA-256 digests. Runtime QML uses
 only the two PNGs in this directory.
+
+Every scaled mascot Image must decode at its displayed physical pixel size
+using sourceSize with Screen.devicePixelRatio, smooth: true and mipmap: true.
+smooth alone does not prevent jagged reduction of the large originals. Keep
+this policy in both Header.qml and HeroCard.qml; check new consumers too.
+Verify small light/dark icons at DPR 1 and 2 with isolated QML renders. Before
+calling a fix delivered, compare installed files with the reviewed commit;
+manifest version alone is insufficient (both sides of PR #8 report 0.1.2).

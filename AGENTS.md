@@ -7,11 +7,18 @@ or a status-only prototype. Current architecture and limitations are recorded in
 [plans/current-status.md](plans/current-status.md). The backend owns the
 [Protocol v1 contract](https://github.com/PavelLizunov/VPNRouter/blob/dsh/omarchy-mvp-2026-10-22/VPNRouter.Headless/README.md#protocol-specification-v1).
 
-- Work on task branches; never push directly to main, merge, tag or release.
+- Work on task branches; never push directly to main.
+- Owner standing authorization (2026-11-06): after required checks pass, merge
+  completed task PRs and publish their matching releases without asking again.
+- manifest.json owns the plugin version; backend/bundle.json owns the separate
+  backend version. Runtime changes after a release require a new plugin version.
+  Keep release tags immutable; CI checks versions against fetched release tags.
 - Keep GPL-3.0 provenance; do not relabel VPNRouter as MIT.
 - Plugin ID `io.github.pavellizunov.vpnrouter`; manifest at repository root.
 - User interface lives inside existing omarchy-shell. Never launch a second
   Quickshell or Avalonia. Use host Color/Style and existing popup lifecycle.
+- Mascot icons must retain DPR-aware sourceSize, smooth filtering and mipmaps;
+  see assets/README.md and tests/test-ui-brand-assets.js before icon changes.
 - Secrets never appear in command arguments, logs, telemetry or test fixtures.
 - One service-owned helper, bounded JSON-lines, cancellation and explicit
   unavailable/error states. No fake connected state or decorative controls.

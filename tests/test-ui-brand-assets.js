@@ -16,3 +16,18 @@ console.log('PASS: all three original mascot assets retain their exact SHA-256')
 
 assert.deepEqual(fs.readdirSync(path.join(__dirname, '../assets')).filter(name => name.endsWith('.png')).sort(),
   ['penguin_mascot.png', 'penguin_mascot_white.png'], 'Only the two runtime mascots belong to assets/');
+
+// smooth alone left the high-resolution artwork jagged at header size (PR #8).
+const uiDir = path.join(__dirname, '../ui');
+const consumers = fs.readdirSync(uiDir).filter(name => name.endsWith('.qml'))
+  .map(name => [name, fs.readFileSync(path.join(uiDir, name), 'utf8')])
+  .filter(([, source]) => /source:\s*Brand\.mascot\b/.test(source));
+assert.deepEqual(consumers.map(([name]) => name).sort(), ['Header.qml', 'HeroCard.qml'],
+  'Review filtering when adding or removing a mascot consumer');
+for (const [name, source] of consumers) {
+  const mascot = source.slice(source.indexOf('source: Brand.mascot')).split(/\n\s*}/, 1)[0];
+  assert.match(mascot, /sourceSize:\s*Qt\.size\(Math\.ceil\(width \* Screen\.devicePixelRatio\), Math\.ceil\(height \* Screen\.devicePixelRatio\)\)/, name + ': decode at physical display size');
+  assert.match(mascot, /smooth:\s*true\b/, name + ': smooth scaling');
+  assert.match(mascot, /mipmap:\s*true\b/, name + ': minification filtering');
+}
+console.log('PASS: both mascot consumers retain density-aware downscaling');
