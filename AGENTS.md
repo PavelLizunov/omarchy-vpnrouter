@@ -12,6 +12,8 @@ or a status-only prototype. Current architecture and limitations are recorded in
 - Plugin ID `io.github.pavellizunov.vpnrouter`; manifest at repository root.
 - User interface lives inside existing omarchy-shell. Never launch a second
   Quickshell or Avalonia. Use host Color/Style and existing popup lifecycle.
+- Mascot icons must retain DPR-aware sourceSize, smooth filtering and mipmaps;
+  see assets/README.md and tests/test-ui-brand-assets.js before icon changes.
 - Secrets never appear in command arguments, logs, telemetry or test fixtures.
 - One service-owned helper, bounded JSON-lines, cancellation and explicit
   unavailable/error states. No fake connected state or decorative controls.
