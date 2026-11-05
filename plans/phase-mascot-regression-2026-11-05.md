@@ -22,7 +22,7 @@ two backed-up files. Existing dirty changes in the original worktree stay intact
 
 - Build: N/A, no compiled sources change.
 - Tests: focused brand check passes; all six missing-property negative controls
-  and the pre-fix installed pair fail as expected. Exact-head GitHub CI pending.
+  and the pre-fix installed pair fail as expected. GitHub CI passed at `59007d8`.
 - Documentation: this record, AGENTS.md and asset rules.
 - Review: scoped source review; no independent review claimed for this small fix.
 - UI: published PR #8 has isolated QML evidence; new live visual acceptance is
@@ -39,3 +39,10 @@ after the file replacement. No shell restart or backend/package mutation ran.
 This proves file delivery and unchanged service ownership, not live pixel quality
 or dataplane continuity. The source regression protects filtering declarations;
 the earlier PR #8 record owns isolated rendering evidence. No fresh render claimed.
+
+## Scope correction after owner feedback
+
+This task concerns only the Header/Hero PNGs. The separate general bar icon and
+different update sources were not verified by that fix. Do not call the owner's
+complete icon complaint resolved. See the
+[version/source investigation](phase-version-provenance-2026-11-05.md).
