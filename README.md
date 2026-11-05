@@ -5,6 +5,11 @@ Native QML panel and bar widget for VPNRouter, running inside the Omarchy shell.
 
 [Русский](README.ru.md) · [Releases](https://github.com/PavelLizunov/omarchy-vpnrouter/releases) · [Current status](plans/current-status.md)
 
+Plugin 0.1.3 identifies the current Omarchy interface with the penguin bar icon
+and corrected Header/Hero image scaling. Plugin Control's stable channel receives
+this version through a published v0.1.3 release; branch updates are selected
+separately. The plugin version is separate from the bundled backend version (r59).
+
 The plugin runs **unsandboxed inside the shared `omarchy-shell` process with your
 user permissions**. Its code and dependencies have that same access; Marketplace
 validation is not a security audit. See the [Omarchy execution model](https://plugins.omarchy.org/develop.html).

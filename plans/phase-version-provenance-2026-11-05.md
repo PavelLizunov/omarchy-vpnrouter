@@ -72,12 +72,46 @@ proof of a completed update.
 
 ## Unknowns and verification
 
-Second computer: installed commit, backend and exact update command remain
-unverified. Read-only machine linking and an update-method question were offered.
-Until that evidence arrives, shield/old bootstrap or release-channel behavior
-are identified explanations, not a claimed remote-machine diagnosis.
+The owner confirmed Plugin Control as the other machine's update method, then
+clarified the actual scope on 2026-11-06: the working local installation is the
+accepted current product. Reconcile that product with GitHub versions; do not
+require diagnosis of another machine. No remote-machine work is in scope.
 
 No builds or full local suites were run. Investigation used GitHub source/tag
 metadata, source inspection, SHA-256 comparisons and read-only package checks.
 The earlier PR #9 code head `59007d8` has green CI; this report makes no new
 rendering, loaded-QML pixel, live VPN continuity or release-readiness claim.
+
+## Version reconciliation candidate, 2026-11-06
+
+Use the accepted local runtime as the reference, preserve its interface and
+penguin bar mark, and prepare plugin 0.1.3 with the existing r59 backend. All
+installable runtime bytes except manifest version must match the accepted local
+copy. The running shell was checked to share this filesystem, HOME and plugin
+directory; a second mount namespace or plugin-local backend is not the source.
+
+Scope: manifest version, mirrored release explanation, version policy and a CI
+guard against runtime changes under an already released version. Keep release
+tags immutable and do not change the active installation. Merge/tag/publication
+remain separately authorized actions. The bar icon's stepped geometry remains
+an open visual issue; this candidate does not claim to fix it.
+
+Verification: compare all tracked runtime paths against the local reference,
+exercise the version guard against duplicate/older labels and documentation-only
+changes, then run existing suites in exact-head GitHub CI. No build is needed
+for this QML/version-only change. Rollback is reverting the candidate commit;
+no installed package or user configuration is modified by candidate preparation.
+
+Candidate checks: all 45 tracked runtime files (excluding Markdown and the
+versioned manifest) match the local reference byte-for-byte. Focused version and
+mascot guards pass. Nine isolated Git-fixture cases accept the released baseline,
+root/asset documentation changes and a new version, and reject changed runtime,
+changed backend bundle, old versions, tag mismatch and missing release history.
+The fixture check caught an overbroad assets/README.md classification; Markdown
+is now excluded from runtime comparison. Exact-head CI remains required.
+Candidate release scope is recorded in [0.1.3 notes](../docs/releases/0.1.3.md).
+
+GitHub rejected the first push because its OAuth token cannot modify workflows.
+The candidate keeps the existing workflow unchanged: the automatically discovered
+version test fetches only release-tag refs on GitHub Actions. No token scopes or
+repository permissions were changed; the unpublished candidate commit was amended.
