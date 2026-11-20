@@ -41,7 +41,7 @@
   "servers.searchPlaceholder": "Search servers…",
   "servers.empty": "No servers yet. Add a subscription or import a server.",
   "servers.importTitle": "Import Server",
-  "servers.importPlaceholder": "Paste VLESS, Hysteria2, TUIC, Shadowsocks URI lines, or WireGuard configuration…",
+  "servers.importPlaceholder": "Paste VLESS, Hysteria2, TUIC, Shadowsocks or DNSTT URI lines, or WireGuard configuration…",
   "servers.importBtn": "Import Server",
   "servers.testAll": "Test All",
   "servers.colName": "Server",

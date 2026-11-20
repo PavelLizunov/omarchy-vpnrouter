@@ -35,6 +35,8 @@ console.log("=== Testing Model.js ===");
   assert.strictEqual(Model.protocolDisplay("wg"), "WireGuard");
   assert.strictEqual(Model.protocolDisplay("ss"), "Shadowsocks");
   assert.strictEqual(Model.protocolDisplay("hysteria2"), "Hysteria 2");
+  assert.ok(Model.PROTOCOLS.includes("dnstt"));
+  assert.strictEqual(Model.protocolDisplay("dnstt"), "DNSTT");
 
   assert.strictEqual(Model.stateGlyph("connected"), "󰖂");
   assert.strictEqual(Model.stateGlyph("connecting"), "󰦞");

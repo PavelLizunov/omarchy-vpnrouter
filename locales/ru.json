@@ -41,7 +41,7 @@
   "servers.searchPlaceholder": "Поиск серверов…",
   "servers.empty": "Серверов пока нет. Добавьте подписку или импортируйте сервер.",
   "servers.importTitle": "Импорт сервера",
-  "servers.importPlaceholder": "Вставьте строки VLESS, Hysteria2, TUIC, Shadowsocks или конфигурацию WireGuard…",
+  "servers.importPlaceholder": "Вставьте строки VLESS, Hysteria2, TUIC, Shadowsocks, DNSTT или конфигурацию WireGuard…",
   "servers.importBtn": "Импортировать",
   "servers.testAll": "Проверить все",
   "servers.colName": "Сервер",
