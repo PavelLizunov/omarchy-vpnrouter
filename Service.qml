@@ -676,7 +676,8 @@ Item {
         root.refreshSnapshot()
     } else {
       // An unrelated read must not hide a failed mutation or verification.
-      if (root.lastErrorMethod === cb.method && (!result || (result.ok !== false && result.reachable !== false)))
+      var needsTunnel = cb.method === "servers.test" && result && result.requiresTunnel === true
+      if (root.lastErrorMethod === cb.method && (!result || (result.ok !== false && (result.reachable !== false || needsTunnel))))
         root.clearLastError()
       if (cb && typeof cb.onDone === "function") {
         cb.onDone(result)
