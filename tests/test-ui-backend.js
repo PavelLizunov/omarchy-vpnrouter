@@ -233,6 +233,9 @@ for (const latencyMs of [0,42,null]) {
 }
 root.testServer('probe'); reply({code:'not_found',message:'Server not found'},true);
 assert.match(Model.testText(root.serverTest,root.servers,I18n),/Latency test failed/);
+root.setLastError('error.timeout', [], '', 'servers.test');
+root.testServer('probe'); reply({id:'probe',reachable:false,latencyMs:null,requiresTunnel:true});
+assert.strictEqual(root.lastError,'','A conclusive tunnel-required response clears the prior quick-test error');
 for(const locale of ['en','ru']) {
   I18n.setLocale(locale);
   assert(Model.testText({id:'probe',errorCode:'timeout'},root.servers,I18n).includes(I18n.t('test.timeout',['Probe fixture'])));
@@ -301,10 +304,12 @@ assert.strictEqual(root.lastErrorKey,'error.timeout');
 reply({id:'probe',ok:true,latencyMs:42});
 assert.strictEqual(root.lastError,'','Successful retry clears the same operation error');
 root.verifyServer('probe'); reply({code:'timeout',message:'Raw timeout'},true);
+root.testServer('probe'); reply({id:'probe',reachable:false,latencyMs:null,requiresTunnel:true});
 for(const locale of ['en','ru']) {
   I18n.setLocale(locale);
   assert(Model.verificationText(root.serverVerification,root.servers,I18n).includes(I18n.t('error.timeout')));
   assert(Model.testText({id:'probe',reachable:true,latencyMs:null},root.servers,I18n).includes(I18n.t('test.reachable',['Probe fixture'])));
+  assert.strictEqual(Model.testText(root.serverTest,root.servers,I18n), I18n.t('test.requiresTunnel',['Probe fixture']));
 }
 for (const locale of ['en','ru']) {
   I18n.setLocale(locale);
