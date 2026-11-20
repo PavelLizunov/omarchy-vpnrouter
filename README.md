@@ -5,9 +5,11 @@ Native QML panel and bar widget for VPNRouter, running inside the Omarchy shell.
 
 [Русский](README.ru.md) · [Releases](https://github.com/PavelLizunov/omarchy-vpnrouter/releases) · [Current status](plans/current-status.md)
 
-Plugin 2.51.0 bundles VPNRouter Headless 2.51.0-r1. After updating the VPN
-component, refresh your subscription to see DNSTT profiles if the provider
-includes them. The Arch package has its own upgrade sequence.
+Plugin **2.51.0** includes VPNRouter Headless **2.51.0-r1** in a separately
+versioned Arch package. Follow the [upgrade steps](docs/guide.md#upgrading-an-existing-installation)
+if you previously installed a plugin-local backend with `setup --backend-dir`.
+Then refresh the subscription to load any DNSTT profiles the provider offers.
+See [release notes](docs/releases/2.51.0.md) for the exact package version.
 
 The plugin runs **unsandboxed inside the shared `omarchy-shell` process with your
 user permissions**. Its code and dependencies have that same access; Marketplace
@@ -28,11 +30,9 @@ for your password once. After `omarchy plugin update io.github.pavellizunov.vpnr
 the panel offers **Update VPN component** when the bundled package is newer.
 Settings and subscriptions in `~/.config/vpnrouter` are kept.
 
-Release 0.1.2 bundles backend r59 with recovery for legacy helpers and orphaned
-packaged runtimes after an update. The first startup can take about 30 seconds.
-A backend package upgrade disconnects the VPN; reconnect explicitly afterwards.
-The updater waits for the old helper and aborts if it cannot stop. Recovery has
-not yet been verified on the laptop that reported this problem.
+The first startup can take about 30 seconds. A backend package upgrade
+disconnects the VPN. The updater waits for the old helper and aborts if it
+cannot stop. Reconnect after the upgrade.
 
 A copy installed earlier without git must be removed first:
 `omarchy plugin remove io.github.pavellizunov.vpnrouter --yes`.
