@@ -294,6 +294,7 @@
   "list.loadMore": "Load more",
   "test.measured": "Latency: {0} ({1})",
   "test.unmeasured": "No latency measured for {0}. Try verification.",
+  "test.requiresTunnel": "The quick test cannot measure the route for {0}. Connect to it to check traffic.",
   "test.reachable": "Reachable: {0}. No reliable latency measured. Use Verify.",
   "test.timeout": "Latency test timed out: {0}.",
   "test.failed": "Latency test failed: {0}.",

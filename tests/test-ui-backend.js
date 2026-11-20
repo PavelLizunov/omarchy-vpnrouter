@@ -301,10 +301,12 @@ assert.strictEqual(root.lastErrorKey,'error.timeout');
 reply({id:'probe',ok:true,latencyMs:42});
 assert.strictEqual(root.lastError,'','Successful retry clears the same operation error');
 root.verifyServer('probe'); reply({code:'timeout',message:'Raw timeout'},true);
+root.testServer('probe'); reply({id:'probe',reachable:false,latencyMs:null,requiresTunnel:true});
 for(const locale of ['en','ru']) {
   I18n.setLocale(locale);
   assert(Model.verificationText(root.serverVerification,root.servers,I18n).includes(I18n.t('error.timeout')));
   assert(Model.testText({id:'probe',reachable:true,latencyMs:null},root.servers,I18n).includes(I18n.t('test.reachable',['Probe fixture'])));
+  assert.strictEqual(Model.testText(root.serverTest,root.servers,I18n), I18n.t('test.requiresTunnel',['Probe fixture']));
 }
 for (const locale of ['en','ru']) {
   I18n.setLocale(locale);
