@@ -1,8 +1,8 @@
 {
-  "package": "vpnrouter-headless-0.1.0.r83.gbdb6b63-1-x86_64.pkg.tar.zst",
-  "version": "0.1.0.r83.gbdb6b63-1",
-  "sha256": "abbe1728943e93efa3a563d15b0513b12066901977c3640043de7c6b7ee78dd0",
+  "package": "vpnrouter-headless-0.1.0.r84.g54f3ac4-1-x86_64.pkg.tar.zst",
+  "version": "0.1.0.r84.g54f3ac4-1",
+  "sha256": "cf177865394d0e5750a98e2c6075ad218a24e3733840869f531331fa10819075",
   "source": "https://github.com/PavelLizunov/VPNRouter",
-  "sourceCommit": "bdb6b63e875ef268de2fc64d99975e5b668601ac",
-  "ciRun": 44753856905
+  "sourceCommit": "54f3ac433951409293491a2398479e809b1b2e41",
+  "ciRun": 44755989344
 }
